@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Jorge's
+/mpx.prod.2022_12_08.sql
