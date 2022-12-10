@@ -1,49 +1,82 @@
+import os
+
 import dash
 from dash import html
 from dash import dcc
-from dash import State
-from dash import dash_table
-from dash import callback_context
-
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 
 import plotly.express as px
 import pandas as pd
 
-from pages.tool_page_components import user_query_input
-#from src.covsonar.app_controller import get_freq_mutation
-#from src.covsonar.app_controller import match_controller
-#from src.covsonar.app_controller import sonarBasics
-#from src.covsonar.sonar import parse_args
-
-
 
 dash.register_page(__name__, path="/Tool")
 
+###mutations and countries####
+new_data = pd.read_csv(os.getcwd()+'/pages/out.csv')
 
-############## TEST DATA EXPERIMENT ################
-note_data = pd.read_csv('data/Data.csv')
-coord_data = pd.read_csv('data/location_coordinates.csv')
+new_fig = px.scatter_geo(
+    new_data,
+    locations='COUNTRY',
+    locationmode='country names',
+    color='MUTATION',
+    size='OCCURENCES'
+)
+##############################
 
-result = pd.merge(note_data, coord_data, left_on='COUNTRY', right_on='name')
+####example data for example map######
+Sample_data = px.data.carshare()
 
-mutation_list = ['del:3-9', 'del:2-20', 'del:16', 'del:20']
-
-result['number'] = [len(x.split(',')) for x in result['NUC_PROFILE']]
-new_res = result.groupby(['COUNTRY', 'lon', 'lat', 'RELEASE_DATE'])['number'].sum().reset_index()
-
-fig0 = px.scatter_mapbox(
-    new_res,
-    lat="lat",
-    lon="lon",
-    size="number",
-    #size_max=15,
-    animation_frame="RELEASE_DATE",
+fig = px.scatter_mapbox(
+    Sample_data,
+    lat="centroid_lat",
+    lon="centroid_lon",
+    color="peak_hour", size="car_hours",
+    color_continuous_scale=px.colors.cyclical.IceFire,
+    size_max=15,
     zoom=10,
     mapbox_style="carto-positron"
 )
-####################################################
+#######################################
+
+####example data for example 2map######
+url = "https://raw.githubusercontent.com/hflabs/city/master/city.csv"
+geodata = pd.read_csv(url)
+
+fig_ = px.scatter_mapbox(
+    geodata,
+    lat="geo_lat",
+    lon="geo_lon",
+    size="population",
+    color_continuous_scale=px.colors.cyclical.IceFire,
+    size_max=15,
+    zoom=10,
+    mapbox_style="carto-positron"
+)
+#######################################
+
+
+card = dbc.Card(
+    dbc.CardBody(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            "direct MPXSonar query: ",
+                            html.Br(),
+                            dcc.Input(
+                                id="my-input", type="text", size="100"
+                            ),
+                            html.Button('Run direct MPXSonar query', id='btn-1', n_clicks=0),
+                        ]
+                    )
+                ]
+            )
+        ]
+    ),
+    style={"width": "18rem"},
+)
 
 
 
@@ -57,9 +90,10 @@ layout = html.Div(
                     className ='checkbox_1',
                     id='references-list',
                     options=[
-                        {'label': 'MT903344.1', 'value': 'MT903344.1'},
-                        {'label': 'NC_063383.1', 'value': 'NC_063383.1'},
-                        {'label': 'ON563414.3', 'value': 'ON563414.3'},
+                        {'label': 'some-ref-gen', 'value': 'I1ST2'},
+                        {'label': 'some-ref-gen', 'value': 'I2ST2'},
+                        {'label': 'some-ref-gen', 'value': 'I3ST2'},
+                        {'label': 'ssome-ref-gen', 'value': 'I4ST2'},
                     ],
                     labelStyle={'display': 'block'}
             )
@@ -101,33 +135,14 @@ layout = html.Div(
                 )
             ]
         ),
-
         html.Br(style={'line-height': '10'}),
+        card,
         html.Br(style={'line-height': '10'}),
-        user_query_input,
-        html.Br(style={'line-height': '10'}),
-
-        html.Div(id="user-output", children=""),
-        html.Div(
-            [
-                dash_table.DataTable(
-                    id="my-output-df",
-                    page_current=0,
-                    page_size=10,
-                    style_table={
-                        'maxHeight': '50ex',
-                        'overfrlowY': 'scroll',
-                        'width': '40%',
-                        'minWidth': '40%'
-                    }
-                ),
-            ]
-        ),
         html.Div(
             [
                 html.Br(),
                 html.H1("Here is a map"),
-                dcc.Graph(figure=fig0),
+                dcc.Graph(figure=new_fig),
                 html.Br(),
                 html.Div(
                     [
@@ -139,46 +154,3 @@ layout = html.Div(
         )
     ]
 )
-
-
-'''
-@app.callback(
-    Output(component_id="user-output", component_property="children"),
-    Output(component_id="my-output-df", component_property="data"),
-    Output(component_id="my-output-df", component_property="columns"),
-    Input("btn-1", "n_clicks"),
-    State("my-input", "value"),
-)
-def update_output_sonar(n_clicks, commands):
-    # calls backend
-    _list = commands.split()
-    print(_list)
-    # need to implement mini parser
-    data = None
-    columns = None
-    try:
-        args = parse_args(_list)
-        output = ""
-        if args.tool == "list-prop":
-            df = sonarBasicsChild.list_prop()
-            columns = [{"name": col, "id": col} for col in df.columns]
-            data = df.to_dict(orient="records")
-        elif args.tool == "match":
-            _tmp_output = match_controller(args)
-            if type(_tmp_output) == int:
-                output = _tmp_output
-            else:
-                df = _tmp_output
-                columns = [{"name": col, "id": col} for col in df.columns]
-                data = df.to_dict(orient="records")
-        elif args.tool == "dev":
-            get_freq_mutation(args)
-        else:
-
-            output = "This command is not available."
-    except argparse.ArgumentError as exc:
-        output = exc.message
-    except SystemExit:
-        output = "error: unrecognized arguments/commands"
-    return output, data, columns
-'''
