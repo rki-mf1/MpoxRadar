@@ -12,7 +12,7 @@ app.layout = html.Div(
         html.Img(src=r'assets/rki_logo.png',alt='Img_RKI', style={'float':'right', 'height':'15%', 'width':'15%'}),
         html.Img(src=r'assets/DAKI-FWS_logo.png',alt='Img_DAKI-FWS', style={'float':'right', 'height':'15%', 'width':'15%'}),
         
-        html.Div("A genomic surveiillance dashboard for MonkeyPox."),
+        html.Div("A genomic surveillance dashboard for the MonkeyPox virus."),
         html.Br(),
         html.Div(
             [
