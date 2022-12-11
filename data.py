@@ -63,13 +63,13 @@ class DataFrameLoader():
             if table_name in self.needed_columns:
                 columns = columns.intersection(self.needed_columns[table_name])
                 types = {column : self.column_dtypes[table_name][column] for column in columns}
-                #### a '.' in the column names implies ``-quoting the column name for a mariadb-query
+                ### a '.' in the column names implies ``-quoting the column name for a mariadb-query
                 quoted_column_names = []
                 for column in columns:
                     if '.' in column:
                         column = '`'+column+'`'
                     quoted_column_names.append(column)
-                ####
+                ###
                 queried_columns = ', '.join(quoted_column_names)
             else:
                 types = {column : self.column_dtypes[table_name][column] for column in columns}
