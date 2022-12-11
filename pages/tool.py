@@ -13,7 +13,7 @@ import pandas as pd
 
 ########### added by Jorge ##########
 import os
-from sql_data import load_all_sql_files, get_database_connection
+from data import load_all_sql_files, get_database_connection
 
 #####################################
 
