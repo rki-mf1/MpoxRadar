@@ -9,12 +9,18 @@ import dash_mantine_components as dmc
 import plotly.express as px
 import pandas as pd
 
-from data import load_all_sql_files, get_database_connection
+
+
+########### added by Jorge ##########
+import os
+from sql_data import load_all_sql_files, get_database_connection
+
+#####################################
 
 dash.register_page(__name__, path="/Tool")
 
 ###mutations and countries####
-new_data = pd.read_csv(os.getcwd()+'/pages/out.csv')
+new_data = pd.read_csv(os.getcwd()+'/pages/out.csv') # changed to relative by Jorge
 
 new_fig = px.scatter_geo(
     new_data,
