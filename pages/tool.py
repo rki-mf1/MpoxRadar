@@ -10,6 +10,8 @@ import plotly.express as px
 import pandas as pd
 
 
+dash.register_page(__name__, path="/Tool")
+
 ######### added by Jorge ##########
 ## inspired by covradar/server.py ##
 #
@@ -21,23 +23,22 @@ from data import load_all_sql_files, get_database_connection
 #    register_callbacks_report_latest 
 #    register_dashapp (see covradar/frontend/app/__init__.py)
 #
-###
 if 'MYSQL_DB' in os.environ:
     db_name = os.environ.get('MYSQL_DB')
     db_connection = get_database_connection(db_name)
-    df_dict_mpox = load_all_sql_files(db_name) 
-####################################
-
-dash.register_page(__name__, path="/Tool")
-
-######### added by Jorge ##########
+    df_dict_mpox = load_all_sql_files(db_name)
+else:
+    df_dict_mpox = pd.read_csv("df_mpox['propertyView'].csv")
+#
+#### shaping the data for the map:
+#### and experimentation !
 ## db = mpox_testdata@asusdebian ##
 import numpy as np
 mpox_testdata = df_dict_mpox['propertyView']
 alpha = mpox_CONTRY_absolute_counts = mpox_testdata[mpox_testdata['property.name'] == 'COUNTRY']['value_text'].value_counts()
 betha = pd.DataFrame(data=np.array([alpha.index, alpha.values]), index = ['COUNTRY', 'OCCURRENCES']).T
 betha['OCCURRENCES'] = betha['OCCURRENCES'].astype(str).astype(int)
-
+#
 mpox_fig = px.scatter_geo(
     betha,
     locations='COUNTRY',
