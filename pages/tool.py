@@ -9,6 +9,7 @@ import dash_mantine_components as dmc
 import plotly.express as px
 import pandas as pd
 
+from data import load_all_sql_files, get_database_connection
 
 dash.register_page(__name__, path="/Tool")
 
