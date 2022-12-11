@@ -37,3 +37,10 @@ Quick Demo, please run below.
 ```
 python example.app.py
 ```
+
+----
+
+A version with a running local mariadb-server. This uses data.py.
+```
+MYSQL_HOST=127.0.0.1 MYSQL_USER=root MYSQL_PW= MYSQL_DB=mpox_testdata python app.py
+```
