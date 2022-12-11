@@ -6,13 +6,13 @@ from dash import html
 app = Dash(__name__, use_pages=True)
 app.layout = html.Div(
     [
-        html.H1("MonkeyPox Radar", style={'display':'inline-block'}),
+        html.H1("MPox Radar", style={'display':'inline-block'}),
         
         html.Img(src=r'assets/hpi_logo.png',alt='Img_HPI', style={'float':'right', 'height':'15%', 'width':'15%'}),
         html.Img(src=r'assets/rki_logo.png',alt='Img_RKI', style={'float':'right', 'height':'15%', 'width':'15%'}),
         html.Img(src=r'assets/DAKI-FWS_logo.png',alt='Img_DAKI-FWS', style={'float':'right', 'height':'15%', 'width':'15%'}),
         
-        html.Div("A genomic surveillance dashboard for the MonkeyPox virus."),
+        html.Div("An interactive dashboard for genomic surveillance of the Monkey Pox Virus."),
         html.Br(),
         html.Div(
             [
@@ -32,7 +32,7 @@ app.layout = html.Div(
         html.Br(),
         # style={'height':'99999999px;', 'width':'100%', 'bottom':'0', 'left':'0', 'position':'absolute'}
         html.Footer([
-            html.A("About MPXRadar", href="About", style={'color':'black', 'display':'inline-block'}),
+            html.A("About MPoxRadar", href="About", style={'color':'black', 'display':'inline-block'}),
             html.Div(children="Supported by:", style={'float':'right', "margin-right": "250px"}),
             html.Br(),
             html.A("Contact Us", href="Contact", style={'color':'black'}),
@@ -49,6 +49,8 @@ app.layout = html.Div(
             html.Img(src=r'assets/Bundesministerium_für_Wirtschaft_und_Energie_Logo.svg.png',alt='Img_RKI', style={'float':'right', 'height':'15%', 'width':'15%'}),]),
     ]
 )
+
+app.title = 'MPox Report'
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0")
