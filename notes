@@ -1,3 +1,4 @@
-installed sqlalchemy per conda install and I don't know how to atomatize that when someone clones the reposiroty and creates the environment
+installed sqlalchemy per conda install and I don't know how to atomatize the environment creaton for git clone
 
+installed pymysql per conda install and I don't know how to atomatize the environment creation for git clone
 
