@@ -130,3 +130,4 @@ dmypy.json
 
 # Jorge's
 /mpx.prod.2022_12_08.sql
+/test.mpx.min.sql 
