@@ -7,3 +7,5 @@ applied:
 $ sudo mysql -u root -p -e "create user jorge@localhost identified by '';"
 $ sudo mysql -u root -p -e "create user jorge@mpox_testdata identified by '';"
 $ sudo mysql -u root -p -e "GRANT ALL PRIVILEGES ON *.* TO jorge@localhost identified by '';"
+
+installed pyarrow per conda install and I don't know how to atomatize the environment creation for git clone
