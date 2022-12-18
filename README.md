@@ -1,3 +1,8 @@
+# ===========STATUS===========
+2022.12.18. - this branch/fork will not be developed anymore.
+              all work goes now to the dev-branch
+============================
+
 # MPXRadar-frontend
 MonkeyPoxRadar frontend codebase.
 
