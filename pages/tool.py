@@ -200,9 +200,9 @@ def calculate_coordinate(ouput_df):
     result = pd.merge(ouput_df, coord_data, left_on="COUNTRY", right_on="name")
     result.drop(columns=["location_ID", "name"], inplace=True)
 
-    result["number"] = [
-        len(x.split(",")) for x in result["NUC_PROFILE"]
-    ]  # just count all mutation occur in each sample.
+    # result["number"] = [
+    #    len(x.split(",")) for x in result["NUC_PROFILE"]
+    # ]  # just count all mutation occur in each sample.
     # new_res = result.groupby(['COUNTRY', 'lon', 'lat', 'RELEASE_DATE'])['number'].sum().reset_index()
 
     # sort DAte

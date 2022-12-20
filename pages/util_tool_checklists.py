@@ -304,7 +304,7 @@ custom_cmd_cards = html.Div(
                                                             "We are currently working to resolve bugs :)..Thank you for your understanding and patience while we work on solutions! "
                                                             "Please visit ",
                                                             html.A(
-                                                                "MPXSonar",
+                                                                "MpoxSonar",
                                                                 href="https://github.com/rki-mf1/MpoxSonar",
                                                             ),
                                                             " for more usage and detail.",
