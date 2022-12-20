@@ -12,17 +12,17 @@ dash.register_page(__name__, path="/Help")
 layout = (
     html.Div(
         children=[
-            html.H2(children="MPoxRadar Help Page:", style={"textAlign": "center"}),
+            html.H2(children="MpoxRadar Help Page:", style={"textAlign": "center"}),
             html.Div(
                 children="""
-                MPoxRadar is a website visualising the distribution of mpox mutations and allowing the user to filter which information they are interested in having visualised. The website also allows the download of the selected filter of information. In the following section, you will see an explanation for each functionality and section of the “Tool” page of our website. Followed by a section dedicated to answering frequently asked questions (FAQ) and a description of the tested browser compatibility of our website.
+                MpoxRadar is a website visualising the distribution of mpox mutations and allowing the user to filter which information they are interested in having visualised. The website also allows the download of the selected filter of information. In the following section, you will see an explanation for each functionality and section of the “Tool” page of our website. Followed by a section dedicated to answering frequently asked questions (FAQ) and a description of the tested browser compatibility of our website.
             """,
                 style={"textAlign": "center"},
             ),
             html.Br(),
             html.Div(
                 children="""
-                Functionalities from MPoxRadar explained:
+                Functionalities from MpoxRadar explained:
             """,
                 style={"margin-left": "10px"},
             ),
@@ -103,7 +103,7 @@ layout = (
                                 ]
                             ),
                             html.Li(
-                                "The user can choose exactly one reference genome from this list for the further steps. "
+                                "The user can choose any reference genome from this list. If none is chosen, we will show the mutations compared to all reference genomes. "
                             ),
                             html.Li("The default reference genome is NC_063383.1"),
                         ]
@@ -191,7 +191,7 @@ layout = (
                     html.Li(
                         [
                             "Users can also directly give in a ",
-                            html.Strong("query using the MPoxSonar notation"),
+                            html.Strong("query using the MpoxSonar notation"),
                             ". You can read more about the possible commands below.",
                         ]
                     ),
@@ -205,8 +205,8 @@ layout = (
                     html.Li(
                         [
                             "Users can press the “",
-                            html.Strong("Play animation"),
-                            "” button to see the visualisations one after the other from a certain date.",
+                            html.Strong("Play button"),
+                            "” to see the visualisations of each day one after the other.",
                         ]
                     ),
                     html.Li(
@@ -216,23 +216,23 @@ layout = (
                     ),
                     html.Li(
                         [
-                            "The result should also be downloadable using the button “",
+                            "The result are also downloadable using the button “",
                             html.Strong("Download results as a csv file"),
-                            "”.",
+                            "”. With this function, we want to empower other scientists to conduct further research. ",
                         ]
                     ),
                 ]
             ),
             html.H4(
                 children="""
-                MPoxSonar commnand - user manual
+                MpoxSonar commnand - user manual
             """
             ),
             html.P(
-                "MPoxRadar provides an interactive map and informative data to explore and understand current Monkeypox data. It builds on top of MPoxSonar (GITHUB) and integrates closely with many reliable python libraries and data structures. MPoxSonar is an extension of Covsonar (the database-driven system for handling genomic sequences of SARS-CoV-2 and screening genomic profiles, developed at the RKI (https://github.com/rki-mf1/covsonar)) that adds support for multiple genome references and quick processing with MariaDB.  Hence, with MPoxSonar as the backend, we can quickly collect mutation profiles from sequence data. Currently, the MPoxRadar provides the feature to interact with MPoxSonar for a specific type of query."
+                "MpoxRadar provides an interactive map and informative data to explore and understand current mpox data. It builds on top of MpoxSonar and integrates closely with many reliable python libraries and data structures. MpoxSonar is an extension of Covsonar (the database-driven system for handling genomic sequences of SARS-CoV-2 and screening genomic profiles, developed at the RKI (https://github.com/rki-mf1/covsonar)) that adds support for multiple genome references and quick processing with MariaDB.  Hence, with MpoxSonar as the backend, we can quickly collect mutation profiles from sequence data. Currently, the MpoxRadar provides the feature to interact with MpoxSonar for a specific type of query."
             ),
             html.P(
-                "Due to security reason, we limit some MPoxSonar commands to be accessible. The following commands are currently available in MPoxRadar website;"
+                "Due to security reason, we limit some MpoxSonar commands to be accessible. The following commands are currently available in MpoxRadar website;"
             ),
             table_2,
             html.Li(
