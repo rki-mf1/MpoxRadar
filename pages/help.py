@@ -341,6 +341,11 @@ layout = (
             """
             ),
             dbc.Table(table),
+            html.Div(
+                children="""
+                Note that these are the browser versions we specifically used for testing. Older versions will likely also work. Mobile browsers and Internet Explorer are generally not supported.
+            """
+            ),
         ],
     ),
 )
