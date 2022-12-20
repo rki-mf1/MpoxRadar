@@ -120,7 +120,7 @@ layout = html.Div(
 )
 
 
-
+# update map here
 @callback(
     Output("alertmsg", "children"),
     Output("loading-output", "children"),
@@ -179,24 +179,35 @@ def update_figure(
         output_df,
         lat="lat",
         lon="lon",
-        size="CaseNumber",
+        size="Case",
         animation_frame="RELEASE_DATE",
-        animation_group="COUNTRY",
+        animation_group="NUC_PROFILE",
         size_max=50,
-        zoom=1,
-        hover_data=["COUNTRY", "RELEASE_DATE", "CaseNumber"],
+        height=600,
+        zoom=3,
+        hover_data= {'lat':False, 'lon':False, 'RELEASE_DATE':True , 'Case':True, 'COUNTRY': True},  # ["NUC_PROFILE", "COUNTRY", "RELEASE_DATE", "CaseNumber"],
         center=dict(lat=8.584314, lon=-75.95781),
         mapbox_style="carto-positron",
-        color="CaseNumber",
+        color="NUC_PROFILE",
         color_continuous_scale=px.colors.sequential.Reds,
     )
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    fig.update_layout(
+        legend=dict(
+        title=None, orientation = 'h', y=1, yanchor="bottom", x=0.5, xanchor="center"
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
     return alertmsg, "", fig
 
 
 def calculate_coordinate(ouput_df):
+    """
+    TODO:
+    1. improve performance of map
+    """
     # concate the coordinate
+    selected_column = ["COUNTRY", "RELEASE_DATE", "NUC_PROFILE" ,"REFERENCE_ACCESSION"]
+    ouput_df = ouput_df[selected_column]
     result = pd.merge(ouput_df, coord_data, left_on="COUNTRY", right_on="name")
     result.drop(columns=["location_ID", "name"], inplace=True)
 
@@ -208,16 +219,19 @@ def calculate_coordinate(ouput_df):
     # sort DAte
     result["RELEASE_DATE"] = pd.to_datetime(result["RELEASE_DATE"]).dt.date
     result.sort_values(by="RELEASE_DATE", inplace=True)
-    result["CaseNumber"] = result.groupby(["COUNTRY", "RELEASE_DATE"])[
-        "COUNTRY"
-    ].transform("count")
 
     # change the CaseNumber to MutationNumber
 
-    # change the CaseNumber to MutationNumber
 
     # add accumulator?
+    result['NUC_PROFILE'] = result['NUC_PROFILE'].str.split(',').map(lambda elements: [e.strip() for e in elements])
+    result = result.explode('NUC_PROFILE')
 
+    result["Case"] = result.groupby(["COUNTRY", "NUC_PROFILE", "RELEASE_DATE"])[
+        "NUC_PROFILE"
+    ].transform("count")
+
+    result.reset_index(drop=True, inplace=True)
     print(result)
     return result
 
@@ -242,6 +256,9 @@ def reference_text(value):
     Input(component_id="my-input", component_property="value"),
 )
 def update_output_div(input_value):
+    """
+    This function will developed for validation of sonar command
+    """
     return f"sonar {input_value}"
 
 
@@ -254,7 +271,7 @@ def update_output_div(input_value):
 )
 def update_output_sonar(n_clicks, commands):
     """
-    Callback handle mpxsonar commands
+    Callback handle mpxsonar commands to output table/Div
     """
     # calls backend
     _list = shlex.split(commands)
@@ -296,6 +313,9 @@ def update_output_sonar(n_clicks, commands):
     [State("4_checklist_input", "options")],
 )
 def seqtech_select_all_none(all_selected, options):
+    """
+    Callback handle select all seq tech
+    """
     all_or_none = []
     all_or_none = [option["value"] for option in options if all_selected]
     return all_or_none
@@ -306,6 +326,9 @@ def seqtech_select_all_none(all_selected, options):
     [State("2_checklist_input", "options")],
 )
 def mutation_select_all_none(all_selected, options):
+    """
+    Callback handle select all NT mutation
+    """
     all_or_none = []
     all_or_none = [option["value"] for option in options if all_selected]
     return all_or_none
