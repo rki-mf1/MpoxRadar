@@ -120,6 +120,7 @@ layout = html.Div(
 )
 
 
+
 @callback(
     Output("alertmsg", "children"),
     Output("loading-output", "children"),
@@ -173,6 +174,7 @@ def update_figure(
 
         output_df = calculate_coordinate(output_df)
 
+
     fig = px.scatter_mapbox(
         output_df,
         lat="lat",
@@ -209,6 +211,8 @@ def calculate_coordinate(ouput_df):
     result["CaseNumber"] = result.groupby(["COUNTRY", "RELEASE_DATE"])[
         "COUNTRY"
     ].transform("count")
+
+    # change the CaseNumber to MutationNumber
 
     # change the CaseNumber to MutationNumber
 
@@ -286,7 +290,6 @@ def update_output_sonar(n_clicks, commands):
         output = "error: unrecognized arguments/commands"
     return output, data, columns
 
-
 @callback(
     Output("4_checklist_input", "value"),
     [Input("seqtech_all-or-none", "value")],
@@ -296,7 +299,6 @@ def seqtech_select_all_none(all_selected, options):
     all_or_none = []
     all_or_none = [option["value"] for option in options if all_selected]
     return all_or_none
-
 
 @callback(
     Output("2_checklist_input", "value"),

@@ -225,7 +225,7 @@ def get_value_by_reference(checked_ref):
 
 def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
     output_df = pd.DataFrame()
-
+    
     if len(checked_ref) == 0:  # all hardcode for now TODO:
         checked_ref = ["NC_063383.1", "MT903344.1", "ON563414.3"]
 
@@ -233,6 +233,12 @@ def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
     if seqtech_checklist:
         propdict["SEQ_TECH"] = seqtech_checklist
     print("SEQ_TECH:" + str(propdict))
+    
+    mut_profiles = []
+    if mut_checklist:
+        mut_profiles.append(mut_checklist)
+
+    print(mut_profiles)
 
     mut_profiles = []
     if mut_checklist:
