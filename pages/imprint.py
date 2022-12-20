@@ -19,7 +19,7 @@ layout = (
             html.Br(),
             html.H4("Contact: "),
             dcc.Link(
-                html.A("fuchss@rki.de"), href="mailto:fuchss@rki.de", target="_blank"
+                html.A("fuchsS@rki.de"), href="mailto:fuchsS@rki.de", target="_blank"
             ),
             html.Br(),
             html.Br(),
@@ -28,8 +28,8 @@ layout = (
             html.H4("1. Introductory Remarks"),
             html.P(
                 [
-                    "This page is used to inform website visitors regarding our policies with the collection, use, and disclosure of personal data if anyone decided to use our Service, the MPoxRadar website (",
-                    dcc.Link(href="https://mpxradar.ddns.net/", target="_blank"),
+                    "This page is used to inform website visitors regarding our policies with the collection, use, and disclosure of personal data if anyone decided to use our Service, the MpoxRadar website (",
+                    dcc.Link(href="https://mpoxradar.net/", target="_blank"),
                     "). Personal data is information that makes it possible to identify a person. In addition to direct personal information, such as name, date of birth or telephone number or IP address, this also includes data on personal characteristics, beliefs or relationships that allow a conclusion to be drawn about a specific person. The operators of these pages take the protection of your personal data very seriously. We treat your personal data confidentially and according to the legal data protection regulations as well as this Privacy Policy. If you choose to use our Service, then you agree to the collection and use of information in relation with this policy. The personal information that we collect is used for providing and improving the Service. We will not use or share your information with anyone except as described in this Privacy Policy. We would like to point out that the data transmission on the Internet (e.g. communication by e-mail) can have security gaps. A complete protection of data against access by third parties is not possible.",
                 ]
             ),
@@ -46,7 +46,7 @@ layout = (
             html.Div("Prof. Dr. Bernhard Renard", style={"marginBottom": "10px"}),
             html.H4("5. Purpose"),
             html.P(
-                "The purpose of the MPoxRadar service is to provide insights into mutation frequency in public MonkeyPox (mpox) genomes as well as temporal and spatial distributions of genomic mpox variants."
+                "The purpose of the MpoxRadar service is to provide insights into mutation frequency in public mpox genomes as well as temporal and spatial distributions of genomic mpox variants."
             ),
             html.H4("6. Scope of Data Processing"),
             html.H4("Storage of Browser Data"),
@@ -119,7 +119,7 @@ layout = (
                     dcc.Link(
                         href="https://www.denbi.de/privacy-policy", target="_blank"
                     ),
-                    ")apply. We may update our Privacy Policy from time to time. Thus, we advise you to review this page periodically for any changes. We will notify you of any changes by posting the new Privacy Policy on this page. These changes are effective immediately, after they are posted on this page. If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us.",
+                    ") apply. We may update our Privacy Policy from time to time. Thus, we advise you to review this page periodically for any changes. We will notify you of any changes by posting the new Privacy Policy on this page. These changes are effective immediately, after they are posted on this page. If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us.",
                 ]
             ),
         ],
