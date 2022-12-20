@@ -50,7 +50,7 @@ checklist_2 = dbc.Card(
                 labelStyle={"display": "inline-block"},
             ),
             dbc.FormText(
-                "most common mutations",
+                "To select samples that have mutation from the list.",
                 color="secondary",
             ),
         ],
