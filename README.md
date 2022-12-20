@@ -1,7 +1,7 @@
 # MpoxRadar-frontend
-MpoxRadar is a worldwide interactive dashboard for genomic surveillance of mpox. 
+MpoxRadar is a worldwide interactive dashboard for genomic surveillance of mpox.
 
-This application is a result of a collaboration between Hasso Plattner Institute and Robert-Koch Institute. 
+This application is a result of a collaboration between Hasso Plattner Institute and Robert-Koch Institute.
 
 -------
 

@@ -13,7 +13,6 @@ from dash import Output
 from dash import State
 import dash_bootstrap_components as dbc
 from dotenv import load_dotenv
-from flask import Flask
 
 from mpxsonar.sonar import parse_args
 
@@ -27,10 +26,7 @@ load_dotenv()
 
 # stylesheet with the .dbc class
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-flask_server = Flask(__name__)
-app = Dash(
-    __name__, server=flask_server, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css]
-)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css])
 custom_cmd_cards = html.Div(
     [
         dbc.Card(
@@ -109,7 +105,7 @@ custom_cmd_cards = html.Div(
                                                 ),
                                             ],
                                             header="Translate into Sonar command",
-                                            style={"marginTop": "15px"},
+                                            style={"margin-top": "15px"},
                                         ),
                                     ],
                                     width=3,
@@ -244,7 +240,7 @@ custom_cmd_cards = html.Div(
                                                     title="FMI",
                                                 ),
                                             ],
-                                            style={"marginTop": "15px"},
+                                            style={"margin-top": "15px"},
                                         )
                                     ],
                                     width=8,

@@ -36,19 +36,19 @@ When you're finished with the changes, create a pull request, also known as a PR
 ## First time add MPXsonar
 Add MPXsonar repository into this respository like
 ```
-git subtree add --prefix pages/libs/mpxsonar https://github.com/silenus092/mpxsonar dev --squash
+git subtree add --prefix pages/libs/mpxsonar https://github.com/rki-mf1/MpoxSonar dev --squash
 ```
 
 ## Pull new MPXsonar commits
 Pull any new updates to the subtree from the remote.
 ```
-git subtree pull --prefix pages/libs/mpxsonar https://github.com/silenus092/mpxsonar dev --squash
+git subtree pull --prefix pages/libs/mpxsonar https://github.com/rki-mf1/MpoxSonar dev --squash
 ```
 
 ## Updating/Pushing to the subtree remote repository
 If you make a change to anything in subtree the commit will be stored in the MPXRadar-frontend repository and its logs. To update the subtree remote repository with that commit, you must run the same command, excluding --squash and replacing pull for push.
 ```
-git subtree push --prefix pages/libs/mpxsonar https://github.com/silenus092/mpxsonar dev
+git subtree push --prefix pages/libs/mpxsonar https://github.com/rki-mf1/MpoxSonar dev
 ```
 
 Note: Normally, we don't update the MPXsonar from the MPXRadar-frontend site, but it can happen occasionally. Hence, please consider updating the code from MPXsonar and then using `subtree pull` to update the code.

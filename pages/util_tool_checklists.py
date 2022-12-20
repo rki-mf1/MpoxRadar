@@ -49,7 +49,6 @@ checklist_2 = dbc.Card(
                 value=["All"],
                 labelStyle={"display": "inline-block"},
             ),
-
             dbc.FormText(
                 "most common mutations",
                 color="secondary",
@@ -305,8 +304,8 @@ custom_cmd_cards = html.Div(
                                                             "We are currently working to resolve bugs :)..Thank you for your understanding and patience while we work on solutions! "
                                                             "Please visit ",
                                                             html.A(
-                                                                "MPXSonar",
-                                                                href="https://github.com/rki-mf1/covsonar/tree/dev/cov2_mpire",
+                                                                "MpoxSonar",
+                                                                href="https://github.com/rki-mf1/MpoxSonar",
                                                             ),
                                                             " for more usage and detail.",
                                                         ]
@@ -323,7 +322,6 @@ custom_cmd_cards = html.Div(
                         ),  # end row
                     ]
                 ),  # end card body
-            
             ],
             className="mb-3",
         ),
@@ -332,41 +330,41 @@ custom_cmd_cards = html.Div(
 
 
 Output_mpxsonar = dbc.Card(  # Output
+    [
+        html.H3("Output result from MpoxSonar command."),
+        dbc.Accordion(
+            [
+                dbc.AccordionItem(
                     [
-                        html.H3("Output result from MpoxSonar command."),
-                        dbc.Accordion(
+                        html.Div(id="my-output", children=""),
+                        html.Div(
                             [
-                                dbc.AccordionItem(
-                                    [
-                                        html.Div(id="my-output", children=""),
-                                        html.Div(
-                                            [
-                                                dash_table.DataTable(
-                                                    id="my-output-df",
-                                                    page_current=0,
-                                                    page_size=10,
-                                                    style_data={
-                                                        "whiteSpace": "normal",
-                                                        "height": "auto",
-                                                        # all three widths are needed
-                                                        "minWidth": "300px",
-                                                        "width": "300px",
-                                                        "maxWidth": "300px",
-                                                    },
-                                                    style_table={"overflowX": "auto"},
-                                                    export_format="csv",
-                                                ),
-                                            ]
-                                        ),
-                                    ],
-                                    title="Click to hide/show output:",
+                                dash_table.DataTable(
+                                    id="my-output-df",
+                                    page_current=0,
+                                    page_size=10,
+                                    style_data={
+                                        "whiteSpace": "normal",
+                                        "height": "auto",
+                                        # all three widths are needed
+                                        "minWidth": "300px",
+                                        "width": "300px",
+                                        "maxWidth": "300px",
+                                    },
+                                    style_table={"overflowX": "auto"},
+                                    export_format="csv",
                                 ),
                             ]
                         ),
                     ],
-                    body=True,
-                    className="mx-1 my-1",
-                )  # end of Output
+                    title="Click to hide/show output:",
+                ),
+            ]
+        ),
+    ],
+    body=True,
+    className="mx-1 my-1",
+)  # end of Output
 
 query_card = dbc.Card(
     dbc.CardBody(

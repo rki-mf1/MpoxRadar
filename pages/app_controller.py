@@ -240,9 +240,17 @@ def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
 
     print(mut_profiles)
 
+    mut_profiles = []
+    if mut_checklist:
+        mut_profiles.append(mut_checklist)
+
+    # print(mut_profiles)
+
     for ref in checked_ref:
         print("Query " + ref)
-        _df = sonarBasicsChild.match(DB_URL, profiles=mut_profiles, reference=ref, propdict=propdict)
+        _df = sonarBasicsChild.match(
+            DB_URL, profiles=mut_profiles, reference=ref, propdict=propdict
+        )
         if type(_df) == str:
             continue
         output_df = pd.concat([output_df, _df], ignore_index=True)
@@ -256,6 +264,8 @@ def get_high_mutation():
         for _dict in list_dict:
             # print(_dict)
 
-            _list.append({"value": _dict["variant.label"], "label": _dict["variant.label"]})
+            _list.append(
+                {"value": _dict["variant.label"], "label": _dict["variant.label"]}
+            )
     # logging_radar.info(_dict)
     return _list

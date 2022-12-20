@@ -147,13 +147,13 @@ class DBManager(object):
 
     def get_high_mutation(self):
         """
-        List only NT mutations that have freq. 500 
+        List only NT mutations that have freq. 500
 
         SELECT  `variant.label`  , COUNT(*) AS Freq
             FROM   variantView
-            WHERE `element.type` = "source" 
+            WHERE `element.type` = "source"
             Group By `variant.label`
-            HAVING Freq > 500 
+            HAVING Freq > 500
             ORDER BY Freq DESC
         """
         sql = "SELECT `variant.label`, COUNT(*) AS Freq FROM variantView WHERE `element.type` = 'source' Group By `variant.label`  HAVING Freq > 1000 ORDER BY Freq DESC ;"

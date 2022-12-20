@@ -516,7 +516,7 @@ class sonarBasics(object):
         debug="False",
         showNX=False,
     ):
-        # print(propdict)
+        # print(profiles)
         with sonarDBManager(db, debug=debug) as dbm:
             if format == "vcf" and reference is None:
                 reference = dbm.get_default_reference_accession()
