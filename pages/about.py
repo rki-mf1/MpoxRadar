@@ -11,16 +11,16 @@ layout = html.Div(
         html.Div(
             [
                 """
-                        Mpox is an infectious disease caused by a smallpox virus, recently spreading in multiple countries with over 82,800 cases and declared a global emergency by the World Health Organization """,
+                        Mpox is an infectious disease caused by a smallpox virus, recently spreading in multiple countries with over 83,000 cases and declared a global emergency by the World Health Organization """,
                 dcc.Link(
                     html.A("[1]"),
-                    href="https://www.cdc.gov/poxvirus/monkeypox/response/2022/world-map.html",
+                    href="https://worldhealthorg.shinyapps.io/mpx_global/",
                     target="_blank",
                 ),
                 """. Normally, the virus is rarely observed outside of Africa, but in recent months it has occurred in over 110 countries """,
                 dcc.Link(
-                    html.A("[2]"),
-                    href="https://www.cdc.gov/poxvirus/monkeypox/response/2022/world-map.html",
+                    html.A("[1]"),
+                    href="https://worldhealthorg.shinyapps.io/mpx_global/",
                     target="_blank",
                 ),
                 """. This alarming behavior demands action and highlights the need for genomic surveillance and spatio-temporal analyses.
@@ -265,7 +265,7 @@ layout = html.Div(
                     href="https://www.ncbi.nlm.nih.gov/labs/virus/vssi/#/",
                     target="_blank",
                 ),
-                ")",
+                ").",
             ]
         ),
         html.Br(),
@@ -283,10 +283,15 @@ layout = html.Div(
         ),
         html.Div(
             [
-                """You can find a link to the code below: """,
+                """There are two actively moderated repositories for this project. One mainly containing the backend named MpoxSonar, while the other is for the developement of the front-end named MpoxRadar. Link to the repositories: """,
                 dcc.Link(
-                    html.A("Link to Github"),
-                    href=("https://github.com/ferbsx/MPXRadar-frontend"),
+                    html.A("Link to MpoxSonar"),
+                    href=("https://github.com/rki-mf1/MpoxSonar"),
+                    target="_blank",
+                ),
+                dcc.Link(
+                    html.A("Link to MpoxRadar"),
+                    href=("https://github.com/rki-mf1/MpoxRadar"),
                     target="_blank",
                 ),
             ]
@@ -308,7 +313,7 @@ layout = html.Div(
                     href=("https://github.com/rki-mf1/covsonar"),
                     target="_blank",
                 ),
-                """for showing the need for genomic surveillance dashboard and database for SARS-CoV-2, therefore inspiring the initiation of this project. We are always open to feedback and promise a continued support and developement of our tool. """,
+                """ for showing the need for genomic surveillance dashboard and database for SARS-CoV-2, therefore inspiring the initiation of this project. We are always open to feedback and promise a continued support and developement of our tool. """,
                 dcc.Link(
                     html.A("Don't hesitate to get in touch."),
                     href=("Contact"),
