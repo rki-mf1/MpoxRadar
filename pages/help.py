@@ -139,7 +139,7 @@ layout = (
                             ),
                         ]
                     ),
-                    html.Li(html.Strong("visualisation methods:")),
+                    html.Li(html.Strong("Visualisation methods:")),
                     html.Ul(
                         [
                             html.Li(
@@ -195,11 +195,19 @@ layout = (
                             ". You can read more about the possible commands below.",
                         ]
                     ),
-                    html.Li(
+                    html.Li(html.Strong("Map:")),
+                    html.Ul(
                         [
-                            "The ",
-                            html.Strong("map"),
-                            " will then use the chosen visualisation method and visualise the mutations chosen for the time period selected.",
+                            html.Li(
+                                [
+                                    "The interactive map shows the spatial distribution of selected mutations within a given time span. If mutations are present, the plot displays a central data point for each country."
+                                ]
+                            ),
+                            html.Li(
+                                [
+                                    "Clicking on a data point triggers the subplots to show additional information about the mutation distribution and the time course of the mutation frequencies for a specific region.",
+                                ]
+                            ),
                         ]
                     ),
                     html.Li(
@@ -225,7 +233,7 @@ layout = (
             ),
             html.H4(
                 children="""
-                MpoxSonar commnand - user manual
+                MpoxSonar command - user manual
             """
             ),
             html.P(
