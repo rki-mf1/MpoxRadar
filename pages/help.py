@@ -219,7 +219,7 @@ layout = (
                     ),
                     html.Li(
                         [
-                            "Furthermore, the query results can be shown as a table by pressing the “Show results in a table” button."
+                            "Furthermore, the query results can be shown as a table by pressing the “Click to hide/show output” button."
                         ]
                     ),
                     html.Li(
