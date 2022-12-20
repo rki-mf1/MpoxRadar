@@ -9,7 +9,7 @@ row1 = html.Tr(
                     html.Li(
                         [
                             html.A(
-                                "About MPoxRadar",
+                                "About MpoxRadar",
                                 href="About",
                                 style={"color": "black"},
                             )
