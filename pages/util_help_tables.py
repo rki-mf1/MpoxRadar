@@ -22,9 +22,9 @@ table_header = [
 row1 = html.Tr(
     [
         html.Td("Linux"),
-        html.Td("CentOS 7"),
-        html.Td("Not tested"),
-        html.Td("61. 0"),
+        html.Td("Ubuntu 22.04.1 LTS"),
+        html.Td("108.0.5359.124"),
+        html.Td("108.0.1"),
         html.Td("n/a"),
         html.Td("n/a"),
     ]
@@ -34,7 +34,7 @@ row2 = html.Tr(
         html.Td("MacOS"),
         html.Td("HighSierra"),
         html.Td("Not tested"),
-        html.Td("61. 0"),
+        html.Td("61.0"),
         html.Td("n/a"),
         html.Td("12.0"),
     ]
@@ -43,9 +43,9 @@ row3 = html.Tr(
     [
         html.Td("Windows"),
         html.Td("10"),
-        html.Td("Not tested"),
-        html.Td("61. 0"),
-        html.Td("42.17134.1.0"),
+        html.Td("108.0.5359.124"),
+        html.Td("102.4.0esr"),
+        html.Td("108.0.1462.54"),
         html.Td("n/a"),
     ]
 )
