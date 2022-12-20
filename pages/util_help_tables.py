@@ -34,9 +34,9 @@ row2 = html.Tr(
         html.Td("MacOS"),
         html.Td("HighSierra"),
         html.Td("Not tested"),
-        html.Td("61.0"),
+        html.Td("Not tested"),
         html.Td("n/a"),
-        html.Td("12.0"),
+        html.Td("Not tested"),
     ]
 )
 row3 = html.Tr(
