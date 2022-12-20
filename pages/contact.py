@@ -30,8 +30,8 @@ layout = (
                 [
                     "GitHub repository link: ",
                     dcc.Link(
-                        html.A("Link to Github"),
-                        href=("https://github.com/ferbsx/MPXRadar-frontend"),
+                        html.A("Link to MpoxRadar Github"),
+                        href=("https://github.com/rki-mf1/MpoxRadar"),
                         target="_blank",
                     ),
                 ]
