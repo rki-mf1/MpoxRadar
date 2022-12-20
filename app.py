@@ -31,7 +31,7 @@ table = dbc.Table(table_body, bordered=True)
 
 app.layout = html.Div(
     [
-        html.H1("MPox Radar", style={"display": "inline-block"}),
+        html.H1("MpoxRadar", style={"display": "inline-block"}),
         html.Img(
             src=r"assets/hpi_logo.png",
             alt="Img_HPI",
@@ -41,7 +41,13 @@ app.layout = html.Div(
         html.Img(
             src=r"assets/rki_logo.png",
             alt="Img_RKI",
-            style={"float": "right", "height": "10%", "width": "10%"},
+            style={
+                "float": "right",
+                "height": "10%",
+                "width": "10%",
+                "margin-top": "50px",
+                "margin-right": "20px",
+            },
             className="responsive",
         ),
         html.Img(
@@ -50,7 +56,7 @@ app.layout = html.Div(
             style={"float": "right", "height": "10%", "width": "10%"},
             className="responsive",
         ),
-        html.Div("A genomic surveiillance dashboard for MonkeyPox."),
+        html.Div("An interactive dashboard for genomic surveillance of mpox."),
         html.Br(),
         html.Div(
             [
