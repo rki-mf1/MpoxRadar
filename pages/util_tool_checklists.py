@@ -4,11 +4,12 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 from pages.app_controller import get_all_references
-from pages.app_controller import get_all_seqtech
+from pages.app_controller import get_all_seqtech, get_high_mutation
 
 # preload reference,
 dat_checkbox_list_of_dict = get_all_references()
 seqTech_checkbox_list_of_dict = get_all_seqtech()
+mutation_checkbox_list_of_dict = get_high_mutation()
 
 checklist_1 = dbc.Card(
     dbc.CardBody(
@@ -30,16 +31,28 @@ checklist_1 = dbc.Card(
 checklist_2 = dbc.Card(
     dbc.CardBody(
         [
-            dbc.Label("Mutations displayed: "),
+            dbc.Label("NT mutations displayed: "),
+            html.Br(),
             dbc.Checklist(
-                options=[
-                    {"label": "All", "value": 1},
-                    {"label": "Mutation 1", "value": 2},
-                    {"label": "Mutation 2", "value": 3},
-                    {"label": "...", "value": 4},
-                ],
+                options=mutation_checkbox_list_of_dict,
                 value=[],
                 id="2_checklist_input",
+                style={
+                    "height": 120,
+                    "overflowY": "scroll",
+                },
+            ),
+            html.Br(),
+            dbc.Checklist(
+                id="mutation_all-or-none",
+                options=[{"label": "Select All", "value": "All"}],
+                value=["All"],
+                labelStyle={"display": "inline-block"},
+            ),
+
+            dbc.FormText(
+                "most common mutations",
+                color="secondary",
             ),
         ],
     )
@@ -77,6 +90,13 @@ checklist_4 = dbc.Card(
                     "overflowY": "scroll",
                 },
             ),
+            html.Br(),
+            dbc.Checklist(
+                id="seqtech_all-or-none",
+                options=[{"label": "Select All", "value": "All"}],
+                value=["All"],
+                labelStyle={"display": "inline-block"},
+            ),
         ],
     )
 )
@@ -89,10 +109,10 @@ custom_cmd_cards = html.Div(
                     [
                         html.H3(
                             [
-                                "MPXSonar command!",
-                                dbc.Badge(
-                                    "Alpha-Test", className="ms-1", color="warning"
-                                ),
+                                "MpoxSonar command!",
+                                # dbc.Badge(
+                                #     "Alpha-Test", className="ms-1", color="warning"
+                                # ),
                             ]
                         )
                     ]
@@ -107,7 +127,7 @@ custom_cmd_cards = html.Div(
                                             [
                                                 dcc.Input(
                                                     id="my-input",
-                                                    value="match --count",
+                                                    value="match -r NC_063383.1 --COUNTRY USA --SEQ_TECH 'Illumina MiSeq' --RELEASE_DATE 2022-08-01:2022-08-31",
                                                     type="text",
                                                     size="100",
                                                 ),
@@ -303,9 +323,17 @@ custom_cmd_cards = html.Div(
                         ),  # end row
                     ]
                 ),  # end card body
-                dbc.Card(  # Output
+            
+            ],
+            className="mb-3",
+        ),
+    ]
+)
+
+
+Output_mpxsonar = dbc.Card(  # Output
                     [
-                        html.H3("Output"),
+                        html.H3("Output result from MpoxSonar command."),
                         dbc.Accordion(
                             [
                                 dbc.AccordionItem(
@@ -331,19 +359,14 @@ custom_cmd_cards = html.Div(
                                             ]
                                         ),
                                     ],
-                                    title="click me:",
+                                    title="Click to hide/show output:",
                                 ),
                             ]
                         ),
                     ],
                     body=True,
                     className="mx-1 my-1",
-                ),  # end of Output
-            ],
-            className="mb-3",
-        ),
-    ]
-)
+                )  # end of Output
 
 query_card = dbc.Card(
     dbc.CardBody(
@@ -353,7 +376,7 @@ query_card = dbc.Card(
                     dbc.Checklist(
                         options=[
                             {
-                                "label": "Use MPoxSonar query result to map: ",
+                                "label": "Use MpoxSonar query result to map: ",
                                 "value": "mpoxsonar_checked",
                             }
                         ],

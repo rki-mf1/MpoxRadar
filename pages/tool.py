@@ -1,4 +1,5 @@
 import argparse
+import shlex
 
 import dash
 from dash import callback
@@ -15,7 +16,7 @@ from pages.util_tool_checklists import checklist_1
 from pages.util_tool_checklists import checklist_2
 from pages.util_tool_checklists import checklist_3
 from pages.util_tool_checklists import checklist_4
-from pages.util_tool_checklists import query_card
+from pages.util_tool_checklists import query_card, Output_mpxsonar
 from .app_controller import get_freq_mutation
 from .app_controller import get_value_by_filter
 from .app_controller import match_controller
@@ -48,7 +49,8 @@ sql_query = (
     ";"
 )
 layout = html.Div(
-    [
+    [      
+        html.Div(id= "alertmsg"),
         html.Div(
             [
                 dbc.Row(
@@ -109,6 +111,7 @@ layout = html.Div(
                     [
                         # html.Button("Download CSV", id="csv-download"),
                         # dcc.Download(id="df-download"),
+                        Output_mpxsonar
                     ]
                 ),
             ]
@@ -117,7 +120,9 @@ layout = html.Div(
 )
 
 
+
 @callback(
+    Output("alertmsg", "children"),
     Output("loading-output", "children"),
     Output("my-map", component_property="figure"),
     [
@@ -126,59 +131,75 @@ layout = html.Div(
         Input("3_checklist_input", "value"),
         Input("4_checklist_input", "value"),
         Input("mpoxsonar_output_checkbox", "value"),
+        Input("my-output-df", "data"),
+        Input("my-output-df", "columns"),
     ],
 )
 def update_figure(
-    ref_checklist, mut_checklist, viz_checklist, seqtech_checklist, mpoxsonar_check
+    ref_checklist, mut_checklist, viz_checklist, seqtech_checklist, mpoxsonar_check,
+    rows, columns
 ):
+    alertmsg = ""
     all_or_none = ref_checklist + mut_checklist + viz_checklist + seqtech_checklist
-
+    output_df = pd.DataFrame(columns=['COUNTRY','RELEASE_DATE', 'lat','lon','CaseNumber'])
     if mpoxsonar_check:
-        pass
-    else:
+        print(rows)
 
+        print(columns)
+        if  rows is not None:
+            output_df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
+            output_df = calculate_coordinate(output_df)
+
+        else:
+            alertmsg= dbc.Alert("Table result is empty, please submit a query", color="warning", dismissable=True)   
+    else:
         if len(all_or_none) == 0:
             msg = "All"
         else:
             msg = all_or_none
         print(msg)
-        output_df = get_value_by_filter(ref_checklist, seqtech_checklist)
+
+        output_df = get_value_by_filter(ref_checklist, mut_checklist, seqtech_checklist)
 
         output_df = calculate_coordinate(output_df)
+
 
     fig = px.scatter_mapbox(
         output_df,
         lat="lat",
         lon="lon",
-        size="number",
+        size="CaseNumber",
         animation_frame="RELEASE_DATE",
         animation_group="COUNTRY",
         size_max=50,
         zoom=1,
-        hover_data=["COUNTRY", "RELEASE_DATE", "number"],
+        hover_data=["COUNTRY", "RELEASE_DATE", "CaseNumber"],
         center=dict(lat=8.584314, lon=-75.95781),
         mapbox_style="carto-positron",
-        color="number",
+        color="CaseNumber",
         color_continuous_scale=px.colors.sequential.Reds,
     )
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
-    return "", fig
+    return alertmsg, "", fig
 
 
 def calculate_coordinate(ouput_df):
     # concate the coordinate
     result = pd.merge(ouput_df, coord_data, left_on="COUNTRY", right_on="name")
     result.drop(columns=["location_ID", "name"], inplace=True)
-    # result['number'] = [len(x.split(',')) for x in result['NUC_PROFILE']] # just count all mutation occur in each sample.
+    
+    result['number'] = [len(x.split(',')) for x in result['NUC_PROFILE']] # just count all mutation occur in each sample.
     # new_res = result.groupby(['COUNTRY', 'lon', 'lat', 'RELEASE_DATE'])['number'].sum().reset_index()
 
     # sort DAte
     result["RELEASE_DATE"] = pd.to_datetime(result["RELEASE_DATE"]).dt.date
     result.sort_values(by="RELEASE_DATE", inplace=True)
-    result["number"] = result.groupby(["COUNTRY", "RELEASE_DATE"])["COUNTRY"].transform(
+    result["CaseNumber"] = result.groupby(["COUNTRY", "RELEASE_DATE"])["COUNTRY"].transform(
         "count"
     )
+
+    # change the CaseNumber to MutationNumber
 
     # add accumulator?
 
@@ -217,8 +238,11 @@ def update_output_div(input_value):
     State("my-input", "value"),
 )
 def update_output_sonar(n_clicks, commands):
+    """
+        Callback handle mpxsonar commands
+    """
     # calls backend
-    _list = commands.split()
+    _list = shlex.split(commands)
     print(_list)
     # need to implement mini parser
     data = None
@@ -250,3 +274,24 @@ def update_output_sonar(n_clicks, commands):
     except SystemExit:
         output = "error: unrecognized arguments/commands"
     return output, data, columns
+
+@callback(
+    Output("4_checklist_input", "value"),
+    [Input("seqtech_all-or-none", "value")],
+    [State("4_checklist_input", "options")],
+)
+def seqtech_select_all_none(all_selected, options):
+    all_or_none = []
+    all_or_none = [option["value"] for option in options if all_selected]
+    return all_or_none
+
+@callback(
+    Output("2_checklist_input", "value"),
+    [Input("mutation_all-or-none", "value")],
+    [State("2_checklist_input", "options")],
+)
+def mutation_select_all_none(all_selected, options):
+    all_or_none = []
+    all_or_none = [option["value"] for option in options if all_selected]
+    return all_or_none 
+  

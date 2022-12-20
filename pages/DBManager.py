@@ -144,3 +144,19 @@ class DBManager(object):
         self.cursor.execute(sql)
         rows = self.cursor.fetchall()
         return rows
+
+    def get_high_mutation(self):
+        """
+        List only NT mutations that have freq. 500 
+
+        SELECT  `variant.label`  , COUNT(*) AS Freq
+            FROM   variantView
+            WHERE `element.type` = "source" 
+            Group By `variant.label`
+            HAVING Freq > 500 
+            ORDER BY Freq DESC
+        """
+        sql = "SELECT `variant.label`, COUNT(*) AS Freq FROM variantView WHERE `element.type` = 'source' Group By `variant.label`  HAVING Freq > 1000 ORDER BY Freq DESC ;"
+        self.cursor.execute(sql)
+        rows = self.cursor.fetchall()
+        return rows
