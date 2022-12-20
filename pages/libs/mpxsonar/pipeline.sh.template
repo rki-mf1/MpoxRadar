@@ -1,0 +1,28 @@
+#!/bin/bash
+# version 1
+# 0/50 0 0 ? * * * pipeline.sh >/dev/null 2>&1
+
+# OUTPUT DIR
+CACHE_DIR=/mnt/c/data/cache
+DOWNLOAD_DIR=/mnt/c/data/prod_mpx
+#
+ANALYSIS_DATE=$(date +'%Y-%m-%d') # 2022-11-22
+INPUT_FASTA=/mnt/c/data/prod_mpx/${ANALYSIS_DATE}/output/seq.min.fasta
+INPUT_META=/mnt/c/data/prod_mpx/${ANALYSIS_DATE}/output/meta.tsv
+
+CPUS=8
+source /home/note/miniconda3/etc/profile.d/conda.sh
+
+conda activate mpxsonar-dev
+# 1.
+# TODO: need to adjust the script to handle the parameters or arguments
+# Right now just assume, there is the .env file in the same directory.
+python NCBI.downloader.py --date $ANALYSIS_DATE -o ${DOWNLOAD_DIR}/${ANALYSIS_DATE}
+
+# 2.
+# Load into database
+#sonar import -r MT903344.1 --fasta $INPUT_FASTA --tsv $INPUT_META --cols sample=ID --cache $CACHE_DIR/cache_MT903 --threads $CPUS
+#sonar import -r ON563414.3 --fasta $INPUT_FASTA --tsv $INPUT_META --cols sample=ID --cache $CACHE_DIR/cache_ON563 --threads $CPUS
+# sonar import -r ON585033.1 --fasta $INPUT_FASTA --tsv $INPUT_META --cols sample=ID --cache $CACHE_DIR/cache_ON585 --threads $CPUS
+#sonar import -r NC_063383.1 --fasta $INPUT_FASTA  --tsv $INPUT_META --cols sample=ID --cache $CACHE_DIR/cache_NC063 --threads $CPUS
+# sonar import -r ON568298.1 --fasta $INPUT_FASTA  --tsv $INPUT_META --cols sample=ID --cache $CACHE_DIR/cache_ON568 --threads $CPUS

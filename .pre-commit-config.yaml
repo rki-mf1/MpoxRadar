@@ -1,0 +1,32 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: check-yaml
+        exclude: ^libs/
+    -   id: end-of-file-fixer
+        exclude_types: [csv, tsv]
+        exclude: ^libs/
+    -   id: trailing-whitespace
+        exclude_types: [csv, tsv]
+        exclude: ^libs/
+-   repo: local
+    hooks:
+    -   id: zimports
+        name: zimports
+        entry: poetry run zimports -m pages,tests
+        language: system
+        types: [python]
+        exclude: ^pages/libs/
+    -   id: black
+        name: black
+        entry: poetry run black pages
+        language: system
+        types: [python]
+        exclude: ^pages/libs/
+    -   id: flake8
+        name: flake8
+        entry: poetry run flake8
+        language: system
+        types: [python]
+        exclude: ^pages/libs/
