@@ -57,7 +57,7 @@ table = dbc.Table(
     bordered=True,
     style={
         "width": "100%",
-        "margin-top": "10px",
+        "marginTop": "10px",
         "margin-left": "auto",
         "marginRight": "auto",
     },
@@ -104,7 +104,7 @@ table_body_1 = [html.Tbody([row_1, row_2, row_3])]
 table_1 = dbc.Table(
     table_header_1 + table_body_1,
     bordered=True,
-    style={"width": "80%", "margin-top": "10px"},
+    style={"width": "80%", "marginTop": "10px"},
     className="relative",
 )
 

@@ -5,6 +5,14 @@ import dash_bootstrap_components as dbc
 
 dash.register_page(__name__, path="/About")
 
+card_style = {
+    "box-shadow": "4px 4px 4px",
+    "width": "15rem",
+    "display": "inline-block",
+}
+img_style = {"width": "170px", "height": "180px"}
+
+
 layout = html.Div(
     [
         html.H1(children="Project Description"),
@@ -38,218 +46,207 @@ layout = html.Div(
         html.H1(children="Who are we?"),
         html.Div(
             [
-                dbc.Card(
+                dbc.Row(
                     [
-                        dbc.CardImg(
-                            src="assets/Prof. Dr. Bernhard Renard.jpeg",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/Prof.Dr.BR.jpeg",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Prof. Dr. Bernhard Renard"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
                         ),
-                        dbc.CardBody(
-                            [
-                                html.P("Prof. Dr. Bernhard Renard"),
-                            ]
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/Dr.SF.png",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Dr. Stephan Fuchs"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
+                        ),
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/Dr.AJS.jpeg",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P(
+                                                "Dr. Anna-Juliane Schmachtenberg",
+                                                style={"font-size": "0.82em"},
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
+                        ),
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/AW.jpeg",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Alice Wittig"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
+                        ),
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/FN.jpeg",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Ferdous Nasri"),
+                                        ]
+                                    ),
+                                ],
+                                style=card_style,
+                                className="mb-2",
+                            ),
                         ),
                     ],
-                    style={
-                        "width": "15rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
+                    className="mb-4",
                 ),
-                dbc.Card(
+                dbc.Row(
                     [
-                        dbc.CardImg(
-                            src="assets/Dr. Stephan Fuchs.png",
-                            top=True,
-                            style={
-                                "width": "238px",
-                                "height": "auto",
-                                "padding": "auto",
-                            },
-                            className="align-self-center",
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/K2.jpg",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Kunaphas Kongkitimanon"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
                         ),
-                        dbc.CardBody(
-                            [
-                                html.P("Dr. Stephan Fuchs"),
-                            ]
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/JSC.png",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Jorge Sánchez Cortés"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
                         ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                        "height": "auto",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Dr. Anna-Juliane Schmachtenberg.jpeg",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/IP.jpeg",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Injun Park"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
                         ),
-                        dbc.CardBody(
-                            [
-                                html.P("Dr. Anna-Juliane Schmachtenberg"),
-                            ],
-                            style={"padding": "5px"},
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/IT.png",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Ivan Tunov"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
                         ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Alice Wittig.jpeg",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
+                        dbc.Col(
+                            dbc.Card(
+                                [
+                                    dbc.CardImg(
+                                        src="assets/PK.png",
+                                        top=True,
+                                        style=img_style,
+                                        className="align-self-center mt-2",
+                                    ),
+                                    dbc.CardBody(
+                                        [
+                                            html.P("Pavlo Konoplev"),
+                                        ]
+                                    ),
+                                ],
+                                className="mb-2",
+                                style=card_style,
+                            ),
                         ),
-                        dbc.CardBody(
-                            [
-                                html.P("Alice Wittig"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Ferdous Nasri.jpeg",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
-                        ),
-                        dbc.CardBody(
-                            [
-                                html.P("Ferdous Nasri"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Kunaphas Kongkitimanon  .png",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
-                        ),
-                        dbc.CardBody(
-                            [
-                                html.P("Kunaphas Kongkitimanon"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Jorge Sánchez Cortés.png",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
-                        ),
-                        dbc.CardBody(
-                            [
-                                html.P("Jorge Sánchez Cortés"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Injun Park.jpeg",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
-                        ),
-                        dbc.CardBody(
-                            [
-                                html.P("Injun Park"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Ivan Tunov.png",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
-                        ),
-                        dbc.CardBody(
-                            [
-                                html.P("Ivan Tunov"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
-                ),
-                dbc.Card(
-                    [
-                        dbc.CardImg(
-                            src="assets/Pavlo Konoplev.png",
-                            top=True,
-                            style={"width": "238px", "height": "auto"},
-                            className="align-self-center",
-                        ),
-                        dbc.CardBody(
-                            [
-                                html.P("Pavlo Konoplev"),
-                            ]
-                        ),
-                    ],
-                    style={
-                        "width": "15rem",
-                        "margin-top": "1rem",
-                        "margin-right": "5rem",
-                        "display": "inline-block",
-                    },
+                    ]
                 ),
             ],
             className="dbc_card",

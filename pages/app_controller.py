@@ -168,7 +168,7 @@ def match_controller(args):  # noqa: C901
                 )
             # reserved_props[pname] = getattr(args, pname)
     format = "count" if args.count else args.format
-    print(props)
+    # print(props)
     output = sonarBasicsChild.match(
         args.db,
         args.profile,
@@ -225,20 +225,20 @@ def get_value_by_reference(checked_ref):
 
 def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
     output_df = pd.DataFrame()
-    
+
     if len(checked_ref) == 0:  # all hardcode for now TODO:
         checked_ref = ["NC_063383.1", "MT903344.1", "ON563414.3"]
 
     propdict = {}
     if seqtech_checklist:
         propdict["SEQ_TECH"] = seqtech_checklist
-    print("SEQ_TECH:" + str(propdict))
-    
+    # print("SEQ_TECH:" + str(propdict))
+
     mut_profiles = []
     if mut_checklist:
         mut_profiles.append(mut_checklist)
 
-    print(mut_profiles)
+    # print(mut_profiles)
 
     mut_profiles = []
     if mut_checklist:
