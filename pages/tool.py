@@ -13,13 +13,13 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from pages.config import logging_radar
 from pages.util_tool_checklists import checklist_1
 from pages.util_tool_checklists import checklist_2
 from pages.util_tool_checklists import checklist_3
 from pages.util_tool_checklists import checklist_4
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
+from pages.util_tool_summary import descriptive_summary_panel
 from .app_controller import get_freq_mutation
 from .app_controller import get_value_by_filter
 from .app_controller import match_controller
@@ -43,81 +43,105 @@ color_schemes = (
     + px.colors.cyclical.Edge
 )
 
+tab_explored_tool = [
+    dbc.Container(
+        [
+            html.Div(id="alertmsg"),
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [checklist_1, html.Div(id="selected-ref-values")],
+                                style={
+                                    "display": "inline-block",
+                                    "width": "23%",
+                                    "marginRight": "3%",
+                                },
+                                className="relative",
+                            ),
+                            dbc.Form(
+                                [checklist_2],
+                                style={
+                                    "display": "inline-block",
+                                    "width": "23%",
+                                    "marginRight": "3%",
+                                },
+                                className="relative",
+                            ),
+                            dbc.Form(
+                                [checklist_3],
+                                style={
+                                    "display": "inline-block",
+                                    "width": "23%",
+                                    "marginRight": "3%",
+                                },
+                                className="relative",
+                            ),
+                            dbc.Form(
+                                [checklist_4],
+                                style={"display": "inline-block", "width": "22%"},
+                                className="relative",
+                            ),
+                        ]
+                    ),
+                ]
+            ),
+            html.Br(style={"lineHeight": "10"}),
+            html.Div(
+                [
+                    html.Br(),
+                    html.H1("Here is a map"),
+                    dbc.Spinner(
+                        dcc.Graph(id="my-map"),
+                        color="info",
+                        type="grow",
+                        spinner_style={"width": "3rem", "height": "3rem"},
+                    ),
+                    html.Br(),
+                ]
+            ),
+        ]
+    )
+]
+
+tab_advanced_tool = html.Div(
+    [
+        dbc.Row(
+            dbc.Col(
+                html.H2(
+                    [
+                        "MpoxSonar Tool!",
+                        # dbc.Badge(
+                        #     "Test", className="ms-1", color="warning"
+                        # ),
+                    ],
+                    style={"textAlign": "center"},
+                )
+            )
+        ),
+        dbc.Row(dbc.Col(query_card)),
+        dbc.Row(dbc.Col(Output_mpxsonar)),
+        # html.Button("Download CSV", id="csv-download"),
+        # dcc.Download(id="df-download"),
+    ]
+)
+
 layout = html.Div(
     [
-        html.Div(id="alertmsg"),
-        html.Div(
+        html.Div(descriptive_summary_panel),
+        dbc.Card(
             [
-                dbc.Row(
+                dbc.CardBody(
                     [
-                        dbc.Col(
-                            [checklist_1, html.Div(id="selected-ref-values")],
-                            style={
-                                "display": "inline-block",
-                                "width": "23%",
-                                "marginRight": "3%",
-                            },
-                            className="relative",
-                        ),
-                        dbc.Form(
-                            [checklist_2],
-                            style={
-                                "display": "inline-block",
-                                "width": "23%",
-                                "marginRight": "3%",
-                            },
-                            className="relative",
-                        ),
-                        dbc.Form(
-                            [checklist_3],
-                            style={
-                                "display": "inline-block",
-                                "width": "23%",
-                                "marginRight": "3%",
-                            },
-                            className="relative",
-                        ),
-                        dbc.Form(
-                            [checklist_4],
-                            style={"display": "inline-block", "width": "22%"},
-                            className="relative",
-                        ),
+                        dbc.Tabs(
+                            [
+                                dbc.Tab(tab_explored_tool, label="Explore Tool"),
+                                dbc.Tab(tab_advanced_tool, label="Advanced Tool"),
+                            ]
+                        ),  # end tabs
                     ]
                 ),
-            ]
-        ),
-        html.Br(style={"lineHeight": "10"}),
-        html.Div(
-            [
-                html.Br(),
-                html.H1("Here is a map"),
-                dbc.Spinner(
-                    dcc.Graph(id="my-map"),
-                    color="info",
-                    type="grow",
-                    spinner_style={"width": "3rem", "height": "3rem"},
-                ),
-                html.Br(),
-            ]
-        ),
-        html.Div(
-            [
-                dbc.Row(
-                    dbc.Col(
-                        html.H1(
-                            [
-                                "MpoxSonar Tool!",
-                                # dbc.Badge(
-                                #     "Test", className="ms-1", color="warning"
-                                # ),
-                            ]
-                        )
-                    )
-                ),
-                dbc.Row(dbc.Col(query_card)),
-                dbc.Row(dbc.Col(Output_mpxsonar)),
-                # html.Button("Download CSV", id="csv-download"),
-                # dcc.Download(id="df-download"),
             ]
         ),
     ]
@@ -246,8 +270,8 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
         inplace=True,
     )
     # print(len(ouput_df))
-    a = ouput_df[column_profile].unique()
-    logging_radar.debug(a)
+    # a = ouput_df[column_profile].unique()
+    # logging_radar.debug(a)
     # ouput_df.to_csv("test-after.csv")
     ouput_df.reset_index(drop=True, inplace=True)
     return ouput_df
@@ -413,9 +437,9 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         size="Case",
         animation_frame="RELEASE_DATE",
         animation_group="AA_PROFILE",
-        size_max=20,
+        size_max=14,
         height=800,
-        zoom=3,
+        zoom=1,
         hover_data={
             "lat": False,
             "lon": False,

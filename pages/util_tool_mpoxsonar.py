@@ -7,18 +7,6 @@ custom_cmd_cards = html.Div(
     [
         dbc.Card(
             [
-                dbc.CardHeader(
-                    [
-                        html.H4(
-                            [
-                                "Specialized searches with MpoxSonar command",
-                                # dbc.Badge(
-                                #     "Alpha-Test", className="ms-1", color="warning"
-                                # ),
-                            ]
-                        )
-                    ]
-                ),
                 dbc.CardBody(
                     [
                         dbc.Row(
@@ -29,13 +17,13 @@ custom_cmd_cards = html.Div(
                                             [
                                                 dcc.Input(
                                                     id="my-input",
-                                                    value="match -r NC_063383.1",
+                                                    value="match -r NC_063383.1 --COUNTRY USA",
                                                     type="text",
                                                     size="100",
                                                 ),
                                                 dbc.FormText(
-                                                    "type the sonar command here and press submit (no need to put sonar at the begining)",
-                                                    color="secondary",
+                                                    "Type the sonar command here and press submit (no need to put 'sonar' at the begining).",
+                                                    color="info",
                                                 ),
                                                 html.Br(),
                                                 dbc.Row(
@@ -237,90 +225,96 @@ custom_cmd_cards = html.Div(
 )
 
 
-Output_mpxsonar = dbc.Card(
-    [  # Output
-        dbc.CardBody(
-            [
-                dbc.Row(html.H2("Output result from MpoxSonar command.")),
-                dbc.Row(()),
-                dbc.Accordion(
-                    [
-                        dbc.AccordionItem(
-                            [
-                                dbc.Spinner(
-                                    [
-                                        html.Div(id="my-output", children=""),
-                                        html.Div(
-                                            [
-                                                dash_table.DataTable(
-                                                    id="my-output-df",
-                                                    page_current=0,
-                                                    page_size=10,
-                                                    style_data={
-                                                        "whiteSpace": "normal",
-                                                        "height": "auto",
-                                                        "lineHeight": "15px",
-                                                        # all three widths are needed
-                                                        "minWidth": "50px",
-                                                        "width": "400px",
-                                                        "maxWidth": "750px",
-                                                    },
-                                                    fixed_rows={"headers": True},
-                                                    style_cell={"fontSize": 12},
-                                                    style_table={"overflowX": "auto"},
-                                                    export_format="csv",
-                                                    filter_action="native",
-                                                ),
-                                            ],
-                                            id="my-div-table",
-                                        ),
-                                    ],
-                                    color="success",
-                                    type="grow",
-                                    spinner_style={"width": "3rem", "height": "3rem"},
+Output_mpxsonar = [
+    dbc.Row(html.H4("Output result from MpoxSonar command.")),
+    dbc.Row(()),
+    dbc.Accordion(
+        [
+            dbc.AccordionItem(
+                [
+                    dbc.Spinner(
+                        [
+                            html.Div(id="my-output", children=""),
+                            html.Div(
+                                [
+                                    dash_table.DataTable(
+                                        id="my-output-df",
+                                        page_current=0,
+                                        page_size=10,
+                                        style_data={
+                                            "whiteSpace": "normal",
+                                            "height": "auto",
+                                            "lineHeight": "15px",
+                                            # all three widths are needed
+                                            "minWidth": "50px",
+                                            "width": "400px",
+                                            "maxWidth": "750px",
+                                        },
+                                        fixed_rows={"headers": True},
+                                        style_cell={"fontSize": 12},
+                                        style_table={"overflowX": "auto"},
+                                        export_format="csv",
+                                        filter_action="native",
+                                    ),
+                                ],
+                                id="my-div-table",
+                            ),
+                        ],
+                        color="success",
+                        type="grow",
+                        spinner_style={"width": "3rem", "height": "3rem"},
+                    ),
+                ],
+                title="Result:",
+            ),
+            dbc.AccordionItem(
+                [
+                    dbc.Spinner(
+                        [
+                            dbc.Row(
+                                html.Div(
+                                    dbc.Alert(
+                                        "Note: the count and list-prop command cannot be used with map.",
+                                        color="warning",
+                                        id="alert-msg-map",
+                                    )
                                 ),
-                            ],
-                            title="Result:",
-                        ),
-                        dbc.AccordionItem(
-                            [
-                                dbc.Spinner(
-                                    [
-                                        dbc.Row(
-                                            html.Div(
-                                                dbc.Alert(
-                                                    "Note: the count and list-prop command cannot be used with map.",
-                                                    color="warning",
-                                                    id="alert-msg-map",
-                                                )
-                                            ),
-                                            id="alert-msg-map-div",
-                                        ),
-                                        dbc.Row(dbc.Col(dcc.Graph(id="mysonar-map"))),
-                                    ],
-                                    color="warning",
-                                    type="grow",
-                                    spinner_style={"width": "3rem", "height": "3rem"},
-                                ),
-                            ],
-                            title="Map:",
-                        ),
-                    ]
-                ),  # Accordion
-            ]
-        ),  # CardBody
-    ],
-    body=True,
-    className="mx-1 my-1",
-)  # end of Output
+                                id="alert-msg-map-div",
+                            ),
+                            dbc.Row(dbc.Col(dcc.Graph(id="mysonar-map"))),
+                        ],
+                        color="warning",
+                        type="grow",
+                        spinner_style={"width": "3rem", "height": "3rem"},
+                    ),
+                ],
+                title="Map:",
+            ),
+        ]
+    ),  # Accordion
+]
 
 query_card = dbc.Card(
-    dbc.CardBody(
-        [
-            html.Div([]),
-            custom_cmd_cards,
-        ]
-    ),
+    [
+        dbc.CardHeader(
+            [
+                html.Div(
+                    [
+                        "Specialized searches with MpoxSonar command",
+                        # dbc.Badge(
+                        #     "Alpha-Test", className="ms-1", color="warning"
+                        # ),
+                    ]
+                )
+            ]
+        ),
+        dbc.CardBody(
+            [
+                html.Div([]),
+                custom_cmd_cards,
+            ]
+        ),
+    ],
     style={"width": "100%"},
-    className="relative",
+    className="relative mb-2",
 )
