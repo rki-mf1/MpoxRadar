@@ -84,6 +84,7 @@ class DBManager(object):
         # if self.debug:
         #    con.set_trace_callback(logging.debug)
         con.row_factory = self.dict_factory
+        # always return as a dictionary
         cur = con.cursor(dictionary=True)
         return con, cur
 
@@ -160,3 +161,70 @@ class DBManager(object):
         self.cursor.execute(sql)
         rows = self.cursor.fetchall()
         return rows
+
+    def count_all_samples(self):
+        """ """
+        sql = "SELECT COUNT(id) AS count FROM sample;"
+        self.cursor.execute(sql)
+        number_of_rows = self.cursor.fetchone()["count"]
+        return number_of_rows
+
+    def count_lastAdded30D_sample(self):
+        """
+        we use fix id (8 = release date)
+        """
+        sql = (
+            "SELECT COUNT(sample_id) AS count "
+            "FROM sample2property "
+            "WHERE property_id = 8 AND DATE(VALUE_DATE) >=  DATE(NOW() - INTERVAL 30 DAY)"
+        )
+        self.cursor.execute(sql)
+        number_of_rows = self.cursor.fetchone()["count"]
+        return number_of_rows
+
+    def count_all_country(self):
+        """ """
+        sql = (
+            "SELECT COUNT(DISTINCT value_text) AS count "
+            "FROM sample2property "
+            "WHERE property_id = 12;"
+        )
+        self.cursor.execute(sql)
+        number_of_rows = self.cursor.fetchone()["count"]
+        return number_of_rows
+
+    def count_top3_country(self):
+        """
+        we use fix id (8 = release date)
+        """
+        sql = (
+            "SELECT  value_text , COUNT(value_text) AS count "
+            "FROM sample2property "
+            "WHERE property_id = 12 GROUP BY value_text ORDER BY count DESC LIMIT 3;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def count_unique_MutRef(self):
+        """
+        "Number of mutations", i.e., min and max of number of unique mutations
+        (compared to each reference genome). So if with ref-genome-1,
+        there are 100 mutations and with ref-2, there are 220 and with ref-3 there are 60 mutation,
+        then this field will show: "60 - 220"
+        """
+
+        sql = (
+            "SELECT `reference.accession` , MAX(T1.Freq) AS max_each_ref "
+            "FROM ( "
+            "SELECT `reference.accession`,  COUNT(`variant.label`) AS Freq "
+            "From   variantView "
+            "WHERE `element.type` = 'cds' "
+            "Group By `reference.accession` "
+            "ORDER BY Freq DESC) AS T1 "
+            "Group BY `reference.accession` "
+            "ORDER BY max_each_ref DESC;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows

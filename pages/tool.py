@@ -1,5 +1,6 @@
 import argparse
 import shlex
+import time
 
 import dash
 from dash import callback
@@ -46,6 +47,14 @@ color_schemes = (
 tab_explored_tool = [
     dbc.Container(
         [
+            dbc.Row(
+                html.H2(
+                    [
+                        "Filter",
+                    ],
+                    style={"textAlign": "center"},
+                )
+            ),
             html.Div(id="alertmsg"),
             html.Div(
                 [
@@ -111,7 +120,7 @@ tab_advanced_tool = html.Div(
             dbc.Col(
                 html.H2(
                     [
-                        "MpoxSonar Tool!",
+                        "MpoxSonar Tool",
                         # dbc.Badge(
                         #     "Test", className="ms-1", color="warning"
                         # ),
@@ -239,7 +248,7 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
 
     # NOTE: add Date for accumulation?
 
-    # FIXME: Remove emtpy mutation profile, please note disable this IF needed,
+    # FIXME: Remove emtpy mutation profile, please disable this IF needed,
     ouput_df.drop(ouput_df[ouput_df[column_profile] == "-"].index, inplace=True)
     # convert to list of string.
     ouput_df[column_profile] = (
@@ -257,7 +266,7 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
 
     # print(len(ouput_df))
     # ouput_df.to_csv("test.csv")
-    # Drop duplication
+    # TODO: Check the Drop duplication
     ouput_df.drop_duplicates(
         subset=[
             "COUNTRY",
@@ -307,7 +316,7 @@ def update_output_div(input_value):
         args = parse_args(_list)
         print(args)
 
-    except Exception:
+    except:  # noqa: E722
         badge = html.Div(
             [
                 dbc.Badge(
@@ -326,6 +335,7 @@ def update_output_div(input_value):
     Output(component_id="my-output", component_property="children"),
     Output(component_id="my-output-df", component_property="data"),
     Output(component_id="my-output-df", component_property="columns"),
+    Output(component_id="exe_time-table", component_property="children"),
     Input("submit-button-state", "n_clicks"),
     State("my-input", "value"),
     running=[(Output("submit-button-state", "disabled"), True, False)],
@@ -336,6 +346,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
     """
     Callback handle mpxsonar commands to output table/Div
     """
+
     # calls backend
     _list = shlex.split(commands)
     # print(_list)
@@ -343,6 +354,8 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
     data = None
     columns = None
     toggle_value = {"display": "none"}
+    # get the start time
+    st = time.time()
     try:
         args = parse_args(_list)
         output = ""
@@ -382,8 +395,12 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
         output = exc.message
     except SystemExit:
         output = "error: unrecognized arguments/commands or it is not a valid variant definition."
-
-    return toggle_value, output, data, columns
+    # get the end time
+    et = time.time()
+    # get the execution time
+    elapsed_time = et - st
+    execution_time = f"Duration for query: {elapsed_time:.3f} sec"
+    return toggle_value, output, data, columns, execution_time
 
 
 @callback(
@@ -400,7 +417,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     Callback handle sonar ouput to map.
     """
     hidden_state = {"display": "none"}
-    if not rows:
+
+    if rows is None or len(rows) == 0:
         print("empty data")
         hidden_state = {"display": "block"}
         fig = go.Figure()
@@ -417,7 +435,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
                 }
             ],
         )
-        return fig, "", hidden_state
+        return fig, hidden_state
 
     table_df = pd.DataFrame(rows, columns=[c["name"] for c in columns])
     selected_column = [

@@ -56,25 +56,29 @@ custom_cmd_cards = html.Div(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Toast(
-                                            [
-                                                dbc.Row(
-                                                    html.Div(
-                                                        id="my-command", children=""
-                                                    )
-                                                ),
-                                                dbc.Row(
-                                                    html.P(
-                                                        "----  Argument check ----",
-                                                        className="mb-0",
-                                                    )
-                                                ),
-                                                dbc.Row(
-                                                    html.Div(id="command-valid-badge")
-                                                ),
-                                            ],
-                                            header="Translate into Sonar command",
-                                            style={"marginTop": "15px"},
+                                        dbc.Spinner(
+                                            dbc.Toast(
+                                                [
+                                                    dbc.Row(
+                                                        html.Div(
+                                                            id="my-command", children=""
+                                                        )
+                                                    ),
+                                                    dbc.Row(
+                                                        html.P(
+                                                            "----  Argument check ----",
+                                                            className="mb-0",
+                                                        )
+                                                    ),
+                                                    dbc.Row(
+                                                        html.Div(
+                                                            id="command-valid-badge"
+                                                        )
+                                                    ),
+                                                ],
+                                                header="Translate into Sonar command",
+                                                style={"marginTop": "15px"},
+                                            ),
                                         ),
                                     ],
                                     width=3,
@@ -150,7 +154,7 @@ custom_cmd_cards = html.Div(
                                                         ),
                                                         dbc.Badge(
                                                             "list-prop",
-                                                            color="white",
+                                                            color="blue",
                                                             text_color="secondary",
                                                             className="border me-1",
                                                             id="cmd-7",
@@ -258,6 +262,13 @@ Output_mpxsonar = [
                                     ),
                                 ],
                                 id="my-div-table",
+                            ),
+                            dbc.Badge(
+                                "Duration for query: 0 sec",
+                                color="white",
+                                text_color="muted",
+                                className="border me-1",
+                                id="exe_time-table",
                             ),
                         ],
                         color="success",
