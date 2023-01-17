@@ -231,7 +231,26 @@ custom_cmd_cards = html.Div(
 
 Output_mpxsonar = [
     dbc.Row(html.H4("Output result from MpoxSonar command.")),
-    dbc.Row(()),
+    dbc.Row(
+        [
+            dbc.Toast(
+                "The map and table are updated!",
+                id="mpoxsonar-updated-noti",
+                header="MpoxSonar Tool",
+                is_open=False,
+                duration=5000,
+                icon="info",
+                # top: 66 positions the toast below the navbar
+                style={
+                    "position": "fixed",
+                    "top": "5px",
+                    "right": "40%",
+                    "width": "250px",
+                    "z-index": 9990,
+                },
+            ),
+        ]
+    ),
     dbc.Accordion(
         [
             dbc.AccordionItem(
@@ -298,10 +317,49 @@ Output_mpxsonar = [
                         type="grow",
                         spinner_style={"width": "3rem", "height": "3rem"},
                     ),
+                    dbc.Row(
+                        html.Div(
+                            [
+                                html.Hr(className="my-2"),
+                                dbc.Button(
+                                    "Note",
+                                    id="simple-toast-toggle",
+                                    color="primary",
+                                    className="mb-3",
+                                    n_clicks=0,
+                                ),
+                                dbc.Toast(
+                                    [
+                                        html.P(
+                                            "1. Map will be updated when the table result gets an update.",
+                                            className="mb-0",
+                                        ),
+                                        html.P(
+                                            "2. Map legends display mutations in accordance with their sizes.",
+                                            className="mb-0",
+                                        ),
+                                        html.P(
+                                            "3. For more flexibility in map rendering, mutations with frequencies less than 10 are filtered out (please download the full result from the table for downstream analysis).",
+                                            className="mb-0",
+                                        ),
+                                    ],
+                                    id="simple-toast",
+                                    header="Mpoxsonar Map...",
+                                    icon="primary",
+                                    dismissable=True,
+                                    is_open=False,
+                                    style={
+                                        "width": 600,
+                                    },
+                                ),
+                            ]
+                        )
+                    ),
                 ],
                 title="Map:",
             ),
-        ]
+        ],
+        style={"z-index": 1230},
     ),  # Accordion
 ]
 
