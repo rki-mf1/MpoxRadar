@@ -182,9 +182,6 @@ def match_controller(args):  # noqa: C901
         reference=args.reference,
     )
 
-    # Drop columns
-    output = output.drop(["AA_X_PROFILE", "NUC_N_PROFILE"], axis=1, errors="ignore")
-
     return output
 
 

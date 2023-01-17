@@ -7,6 +7,7 @@ from dash import callback
 from dash import dcc
 from dash import html
 from dash import Input
+from dash import no_update
 from dash import Output
 from dash import State
 import dash_bootstrap_components as dbc
@@ -185,9 +186,12 @@ def update_figure(
     else:
         msg = all_or_none
     print(msg)
-
+    selected_column = ["COUNTRY", "RELEASE_DATE", "AA_PROFILE", "REFERENCE_ACCESSION"]
     output_df = get_value_by_filter(ref_checklist, mut_checklist, seqtech_checklist)
-    output_df = calculate_coordinate(output_df)
+    output_df = calculate_coordinate(output_df, selected_column)
+    # sort DATE
+    output_df["RELEASE_DATE"] = pd.to_datetime(output_df["RELEASE_DATE"]).dt.date
+    output_df.sort_values(by="RELEASE_DATE", inplace=True)
     output_df = calculate_accumulator(output_df, "AA_PROFILE")
 
     fig = px.scatter_mapbox(
@@ -222,13 +226,12 @@ def update_figure(
     return alertmsg, fig
 
 
-def calculate_coordinate(ouput_df):
+def calculate_coordinate(ouput_df, selected_column):
     """
     TODO:
     1. improve performance of map
     """
     # concate the coordinate
-    selected_column = ["COUNTRY", "RELEASE_DATE", "AA_PROFILE", "REFERENCE_ACCESSION"]
     ouput_df = ouput_df[selected_column]
     result = pd.merge(ouput_df, coord_data, left_on="COUNTRY", right_on="name")
     result.drop(columns=["location_ID", "name"], inplace=True)
@@ -237,10 +240,6 @@ def calculate_coordinate(ouput_df):
     #    len(x.split(",")) for x in result["NUC_PROFILE"]
     # ]  # just count all mutation occur in each sample.
     # new_res = result.groupby(['COUNTRY', 'lon', 'lat', 'RELEASE_DATE'])['number'].sum().reset_index()
-
-    # sort DATE
-    result["RELEASE_DATE"] = pd.to_datetime(result["RELEASE_DATE"]).dt.date
-    result.sort_values(by="RELEASE_DATE", inplace=True)
     return result
 
 
@@ -373,6 +372,11 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
                 output = _tmp_output
             else:
                 df = _tmp_output
+                # Drop columns
+                if len(output) != 0:
+                    df = output.df(
+                        ["AA_X_PROFILE", "NUC_N_PROFILE"], axis=1, errors="ignore"
+                    )
                 # reorder column
                 if "AA_PROFILE" in df:
                     # shift column 'C' to first position
@@ -407,6 +411,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
 @callback(
     Output("mysonar-map", component_property="figure"),
     Output(component_id="alert-msg-map-div", component_property="style"),
+    Output("mpoxsonar-updated-noti", "is_open"),
     Input(component_id="my-output-df", component_property="data"),
     Input(component_id="my-output-df", component_property="columns"),
     running=[(Output("submit-button-state", "disabled"), True, False)],
@@ -436,43 +441,83 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
                 }
             ],
         )
-        return fig, hidden_state
+        return fig, hidden_state, False
 
     table_df = pd.DataFrame(rows, columns=[c["name"] for c in columns])
     selected_column = [
         "COUNTRY",
-        "COLLECTION_DATE",
-        "RELEASE_DATE",
         "AA_PROFILE",
         "REFERENCE_ACCESSION",
     ]
-    table_df = table_df[selected_column]
-    table_df = calculate_coordinate(table_df)
-    table_df = calculate_accumulator(table_df, "AA_PROFILE")
+    column_profile = "AA_PROFILE"
+    # table_df = table_df[selected_column]
+    table_df = calculate_coordinate(table_df, selected_column)
+    # table_df["Case"] = table_df.groupby(["COUNTRY","REFERENCE_ACCESSION","AA_PROFILE"])["AA_PROFILE"].transform("count")
+    # FIXME: Remove emtpy mutation profile, please disable this IF needed,
+    table_df.drop(table_df[table_df[column_profile] == "-"].index, inplace=True)
+    # convert to list of string.
+    table_df[column_profile] = (
+        table_df[column_profile]
+        .str.split(",")
+        .map(lambda elements: [e.strip() for e in elements])
+    )
+    # explode the column_profile
+    table_df = table_df.explode(column_profile)
+
+    # add a new column containing the groups counts
+    table_df["Case"] = table_df.groupby(["COUNTRY", column_profile])[
+        column_profile
+    ].transform("count")
+    # drop duplicate
+    table_df.drop_duplicates(
+        subset=[
+            "COUNTRY",
+            "REFERENCE_ACCESSION",
+            column_profile,
+            "country_ID",
+        ],
+        keep="last",
+        inplace=True,
+    )
+    # remove mutation case = 1
+    table_df = table_df[table_df["Case"] > 10]
+    # sort value
+    table_df = table_df.sort_values(by=["Case"], ascending=False)
+    # print(table_df)
+    table_df["new_name"] = table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+    table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(
         table_df,
         lat="lat",
         lon="lon",
         size="Case",
-        animation_frame="RELEASE_DATE",
-        animation_group="AA_PROFILE",
+        # animation_frame="RELEASE_DATE",
+        # animation_group="AA_PROFILE",
         size_max=14,
         height=800,
         zoom=1,
         hover_data={
             "lat": False,
             "lon": False,
-            "RELEASE_DATE": True,
+            "new_name": False,
+            "AA_PROFILE": True,
             "Case": True,
+            "REFERENCE_ACCESSION": True,
             "COUNTRY": True,
         },  # ["NUC_PROFILE", "COUNTRY", "RELEASE_DATE", "CaseNumber"],
         center=dict(lat=53, lon=9),
         mapbox_style="carto-positron",
-        color="AA_PROFILE",
+        color="new_name",
         color_discrete_sequence=color_schemes,
     )
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    return fig, hidden_state
+    # update legend
+
+    # print(table_df)
+    # newnames = table_df.set_index('AA_PROFILE').to_dict()['new_name']
+
+    # fig.for_each_trace(lambda t: t.update(name = newnames[t.name]))
+    return fig, hidden_state, True
 
 
 @callback(
@@ -501,3 +546,91 @@ def mutation_select_all_none(all_selected, options):
     all_or_none = []
     all_or_none = [option["value"] for option in options if all_selected]
     return all_or_none
+
+
+@callback(
+    Output("simple-toast", "is_open"),
+    [Input("simple-toast-toggle", "n_clicks")],
+)
+def open_toast(n):
+    if n == 0:
+        return no_update
+    return True
+
+
+"""
+
+@callback(
+    Output("mysonar-map", component_property="figure"),
+    Output(component_id="alert-msg-map-div", component_property="style"),
+    Input(component_id="my-output-df", component_property="data"),
+    Input(component_id="my-output-df", component_property="columns"),
+    running=[(Output("submit-button-state", "disabled"), True, False)],
+    # background=True,
+    # prevent_initial_call=True
+)
+def update_output_sonar_map(rows, columns):  # noqa: C901
+
+    Callback handle sonar ouput to map.
+
+    hidden_state = {"display": "none"}
+
+    if rows is None or len(rows) == 0:
+        print("empty data")
+        hidden_state = {"display": "block"}
+        fig = go.Figure()
+        fig.update_layout(
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+            annotations=[
+                {
+                    "text": "No matching data found",
+                    "xref": "paper",
+                    "yref": "paper",
+                    "showarrow": False,
+                    "font": {"size": 28},
+                }
+            ],
+        )
+        return fig, hidden_state
+
+    table_df = pd.DataFrame(rows, columns=[c["name"] for c in columns])
+    selected_column = [
+        "COUNTRY",
+        "COLLECTION_DATE",
+        "RELEASE_DATE",
+        # "AA_PROFILE",
+        "REFERENCE_ACCESSION",
+    ]
+    # table_df = table_df[selected_column]
+    table_df = calculate_coordinate(table_df, selected_column)
+    # table_df = calculate_accumulator(table_df, "AA_PROFILE")
+    table_df["Case"] = table_df.groupby(["COUNTRY"])["COUNTRY"].transform("count")
+
+    print(table_df)
+    fig = px.scatter_mapbox(
+        table_df,
+        lat="lat",
+        lon="lon",
+        size="Case",
+        # animation_frame="RELEASE_DATE",
+        # animation_group="AA_PROFILE",
+        size_max=14,
+        height=800,
+        zoom=1,
+        hover_data={
+            "lat": False,
+            "lon": False,
+            # "RELEASE_DATE": True,
+            # "Case": True,
+            "REFERENCE_ACCESSION": True,
+            "COUNTRY": True,
+        },  # ["NUC_PROFILE", "COUNTRY", "RELEASE_DATE", "CaseNumber"],
+        center=dict(lat=53, lon=9),
+        mapbox_style="carto-positron",
+        color=["COUNTRY","REFERENCE_ACCESSION"],
+        color_discrete_sequence=color_schemes,
+    )
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    return fig, hidden_state
+"""
