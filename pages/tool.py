@@ -227,8 +227,9 @@ def calculate_coordinate(ouput_df):
     TODO:
     1. improve performance of map
     """
-
     # concate the coordinate
+    selected_column = ["COUNTRY", "RELEASE_DATE", "AA_PROFILE", "REFERENCE_ACCESSION"]
+    ouput_df = ouput_df[selected_column]
     result = pd.merge(ouput_df, coord_data, left_on="COUNTRY", right_on="name")
     result.drop(columns=["location_ID", "name"], inplace=True)
 
