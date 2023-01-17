@@ -1,48 +1,12 @@
-import argparse
-import os
-
-from app_controller import get_freq_mutation
-from app_controller import match_controller
-from app_controller import sonarBasicsChild
-from dash import Dash
 from dash import dash_table
 from dash import dcc
 from dash import html
-from dash import Input
-from dash import Output
-from dash import State
 import dash_bootstrap_components as dbc
-from dotenv import load_dotenv
 
-from mpxsonar.sonar import parse_args
-
-load_dotenv()
-
-
-# TODO: 1. complie the command before submit to the sonar.
-# 2. Finish Tooltip and all other information.
-# 3. Fix the link (more detail.)
-# 4. Bug in query -> --HOST "Test" not working need to handle the "" or ''
-
-# stylesheet with the .dbc class
-dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css])
 custom_cmd_cards = html.Div(
     [
         dbc.Card(
             [
-                dbc.CardHeader(
-                    [
-                        html.H3(
-                            [
-                                "MPXSonar command!",
-                                dbc.Badge(
-                                    "Alpha-Test", className="ms-1", color="warning"
-                                ),
-                            ]
-                        )
-                    ]
-                ),
                 dbc.CardBody(
                     [
                         dbc.Row(
@@ -53,13 +17,13 @@ custom_cmd_cards = html.Div(
                                             [
                                                 dcc.Input(
                                                     id="my-input",
-                                                    value="match --count",
+                                                    value="match -r NC_063383.1 --COUNTRY USA",
                                                     type="text",
                                                     size="100",
                                                 ),
                                                 dbc.FormText(
-                                                    "type the sonar command here and press submit (no need to put sonar at the begining)",
-                                                    color="secondary",
+                                                    "Type the sonar command here and press submit (no need to put 'sonar' at the begining).",
+                                                    color="info",
                                                 ),
                                                 html.Br(),
                                                 dbc.Row(
@@ -76,9 +40,9 @@ custom_cmd_cards = html.Div(
                                         html.Div(
                                             [
                                                 dbc.Button(
+                                                    children=["Submit"],
                                                     id="submit-button-state",
                                                     n_clicks=0,
-                                                    children="Submit",
                                                     color="primary",
                                                     className="mb-2",
                                                 ),
@@ -92,20 +56,29 @@ custom_cmd_cards = html.Div(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Toast(
-                                            [
-                                                html.Div(id="my-command", children=""),
-                                                html.P(
-                                                    "-------",
-                                                    className="mb-0",
-                                                ),
-                                                html.P(
-                                                    "",
-                                                    className="mb-0",
-                                                ),
-                                            ],
-                                            header="Translate into Sonar command",
-                                            style={"marginTop": "15px"},
+                                        dbc.Spinner(
+                                            dbc.Toast(
+                                                [
+                                                    dbc.Row(
+                                                        html.Div(
+                                                            id="my-command", children=""
+                                                        )
+                                                    ),
+                                                    dbc.Row(
+                                                        html.P(
+                                                            "----  Argument check ----",
+                                                            className="mb-0",
+                                                        )
+                                                    ),
+                                                    dbc.Row(
+                                                        html.Div(
+                                                            id="command-valid-badge"
+                                                        )
+                                                    ),
+                                                ],
+                                                header="Translate into Sonar command",
+                                                style={"marginTop": "15px"},
+                                            ),
                                         ),
                                     ],
                                     width=3,
@@ -181,7 +154,7 @@ custom_cmd_cards = html.Div(
                                                         ),
                                                         dbc.Badge(
                                                             "list-prop",
-                                                            color="white",
+                                                            color="blue",
                                                             text_color="secondary",
                                                             className="border me-1",
                                                             id="cmd-7",
@@ -219,7 +192,7 @@ custom_cmd_cards = html.Div(
                                                             target="cmd-8",
                                                         ),
                                                         dbc.Tooltip(
-                                                            "Get sameple by name",
+                                                            "Get sample by name",
                                                             target="cmd-9",
                                                         ),
                                                     ],
@@ -231,8 +204,8 @@ custom_cmd_cards = html.Div(
                                                             "We are currently working to resolve bugs :)..Thank you for your understanding and patience while we work on solutions! "
                                                             "Please visit ",
                                                             html.A(
-                                                                "MPXSonar",
-                                                                href="https://github.com/rki-mf1/covsonar/tree/dev/cov2_mpire",
+                                                                "MpoxSonar",
+                                                                href="https://github.com/rki-mf1/MpoxSonar",
                                                             ),
                                                             " for more usage and detail.",
                                                         ]
@@ -249,106 +222,110 @@ custom_cmd_cards = html.Div(
                         ),  # end row
                     ]
                 ),  # end card body
-                dbc.Card(  # Output
-                    [
-                        html.H4("Output:"),
-                        html.Hr(),
-                        html.Div(id="my-output", children=""),
-                        html.Div(
-                            [
-                                dash_table.DataTable(
-                                    id="my-output-df",
-                                    page_current=0,
-                                    page_size=10,
-                                    style_data={
-                                        "whiteSpace": "normal",
-                                        "height": "auto",
-                                        # all three widths are needed
-                                        "minWidth": "300px",
-                                        "width": "300px",
-                                        "maxWidth": "300px",
-                                    },
-                                    style_table={"overflowX": "auto"},
-                                    export_format="csv",
-                                ),
-                            ]
-                        ),
-                    ],
-                    body=True,
-                    className="mx-1 my-1",
-                ),  # end of Output
             ],
             className="mb-3",
         ),
     ]
 )
 
-app.layout = dbc.Container(
+
+Output_mpxsonar = [
+    dbc.Row(html.H4("Output result from MpoxSonar command.")),
+    dbc.Row(()),
+    dbc.Accordion(
+        [
+            dbc.AccordionItem(
+                [
+                    dbc.Spinner(
+                        [
+                            html.Div(id="my-output", children=""),
+                            html.Div(
+                                [
+                                    dash_table.DataTable(
+                                        id="my-output-df",
+                                        page_current=0,
+                                        page_size=10,
+                                        style_data={
+                                            "whiteSpace": "normal",
+                                            "height": "auto",
+                                            "lineHeight": "15px",
+                                            # all three widths are needed
+                                            "minWidth": "50px",
+                                            "width": "400px",
+                                            "maxWidth": "750px",
+                                        },
+                                        fixed_rows={"headers": True},
+                                        style_cell={"fontSize": 12},
+                                        style_table={"overflowX": "auto"},
+                                        export_format="csv",
+                                        filter_action="native",
+                                    ),
+                                ],
+                                id="my-div-table",
+                            ),
+                            dbc.Badge(
+                                "Duration for query: 0 sec",
+                                color="white",
+                                text_color="muted",
+                                className="border me-1",
+                                id="exe_time-table",
+                            ),
+                        ],
+                        color="success",
+                        type="grow",
+                        spinner_style={"width": "3rem", "height": "3rem"},
+                    ),
+                ],
+                title="Result:",
+            ),
+            dbc.AccordionItem(
+                [
+                    dbc.Spinner(
+                        [
+                            dbc.Row(
+                                html.Div(
+                                    dbc.Alert(
+                                        "Note: the count and list-prop command cannot be used with map.",
+                                        color="warning",
+                                        id="alert-msg-map",
+                                    )
+                                ),
+                                id="alert-msg-map-div",
+                            ),
+                            dbc.Row(dbc.Col(dcc.Graph(id="mysonar-map"))),
+                        ],
+                        color="warning",
+                        type="grow",
+                        spinner_style={"width": "3rem", "height": "3rem"},
+                    ),
+                ],
+                title="Map:",
+            ),
+        ]
+    ),  # Accordion
+]
+
+query_card = dbc.Card(
     [
-        dbc.Row([]),
-        html.Hr(),
-        dbc.Row(
+        dbc.CardHeader(
             [
-                custom_cmd_cards,
-                html.Br(),
+                html.Div(
+                    [
+                        "Specialized searches with MpoxSonar command",
+                        # dbc.Badge(
+                        #     "Alpha-Test", className="ms-1", color="warning"
+                        # ),
+                    ]
+                )
             ]
         ),
-    ]
+        dbc.CardBody(
+            [
+                html.Div([]),
+                custom_cmd_cards,
+            ]
+        ),
+    ],
+    style={"width": "100%"},
+    className="relative mb-2",
 )
-
-
-@app.callback(
-    Output(component_id="my-command", component_property="children"),
-    Input(component_id="my-input", component_property="value"),
-)
-def update_output_div(input_value):
-    return f"sonar {input_value}"
-
-
-@app.callback(
-    Output(component_id="my-output", component_property="children"),
-    Output(component_id="my-output-df", component_property="data"),
-    Output(component_id="my-output-df", component_property="columns"),
-    Input("submit-button-state", "n_clicks"),
-    State("my-input", "value"),
-)
-def update_output_sonar(n_clicks, commands):
-    # calls backend
-    _list = commands.split()
-    print(_list)
-    # need to implement mini parser
-    data = None
-    columns = None
-    try:
-        args = parse_args(_list)
-        output = ""
-        if args.tool == "list-prop":
-            df = sonarBasicsChild.list_prop()
-            columns = [{"name": col, "id": col} for col in df.columns]
-            data = df.to_dict(orient="records")
-        elif args.tool == "match":
-            _tmp_output = match_controller(args)
-            if type(_tmp_output) == int:
-                output = _tmp_output
-            elif type(_tmp_output) == str:
-                output = _tmp_output
-            else:
-                df = _tmp_output
-                columns = [{"name": col, "id": col} for col in df.columns]
-                data = df.to_dict(orient="records")
-        elif args.tool == "dev":
-            get_freq_mutation(args)
-        else:
-            output = "This command is not available."
-
-    except argparse.ArgumentError as exc:
-        output = exc.message
-    except SystemExit:
-        output = "error: unrecognized arguments/commands"
-    return output, data, columns
-
-
-if __name__ == "__main__":
-    app.run_server(
-        debug=os.getenv("DEBUG"), host=os.getenv("SERVER"), port=os.getenv("PORT")
-    )

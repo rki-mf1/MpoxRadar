@@ -7,8 +7,8 @@ from textwrap import fill
 
 import pandas as pd
 
-from .config import DB_URL
-from .DBManager import DBManager
+from pages.config import DB_URL
+from pages.DBManager import DBManager
 from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
 from .libs.mpxsonar.src.mpxsonar.dbm import sonarDBManager
 
@@ -168,7 +168,7 @@ def match_controller(args):  # noqa: C901
                 )
             # reserved_props[pname] = getattr(args, pname)
     format = "count" if args.count else args.format
-    print(props)
+    # print(props)
     output = sonarBasicsChild.match(
         args.db,
         args.profile,
@@ -181,6 +181,10 @@ def match_controller(args):  # noqa: C901
         showNX=args.showNX,
         reference=args.reference,
     )
+
+    # Drop columns
+    output = output.drop(["AA_X_PROFILE", "NUC_N_PROFILE"], axis=1, errors="ignore")
+
     return output
 
 
@@ -225,20 +229,20 @@ def get_value_by_reference(checked_ref):
 
 def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
     output_df = pd.DataFrame()
-    
+
     if len(checked_ref) == 0:  # all hardcode for now TODO:
         checked_ref = ["NC_063383.1", "MT903344.1", "ON563414.3"]
 
     propdict = {}
     if seqtech_checklist:
         propdict["SEQ_TECH"] = seqtech_checklist
-    print("SEQ_TECH:" + str(propdict))
-    
+    # print("SEQ_TECH:" + str(propdict))
+
     mut_profiles = []
     if mut_checklist:
         mut_profiles.append(mut_checklist)
 
-    print(mut_profiles)
+    # print(mut_profiles)
 
     mut_profiles = []
     if mut_checklist:
@@ -269,3 +273,59 @@ def get_high_mutation():
             )
     # logging_radar.info(_dict)
     return _list
+
+
+# ----- descriptive summary part
+
+
+def get_all_unique_sample():
+    total = 0
+    with DBManager() as dbm:
+        total = dbm.count_all_samples()
+    return total
+
+
+def get_newlyadded_sample():
+    total = 0
+    with DBManager() as dbm:
+        total = dbm.count_lastAdded30D_sample()
+    return total
+
+
+def get_all_country():
+    total = 0
+    with DBManager() as dbm:
+        total = dbm.count_all_country()
+    return total
+
+
+def get_top3_country():
+    """
+    top 3 contries that have most samples
+    """
+    return_string = " "
+    with DBManager() as dbm:
+        list_dict = dbm.count_top3_country()
+    return_string = ", ".join(_dict["value_text"] for _dict in list_dict)
+    return return_string
+
+
+def count_unique_MutRef():
+    """
+    "Number of mutations", i.e., min and max of number of unique mutations
+    (compared to each reference genome).
+    """
+    return_string = (
+        "0 - 0 (cannot compute MIN/MAX, due to number of reference is less than 2)"
+    )
+    with DBManager() as dbm:
+        list_dict = dbm.count_unique_MutRef()
+    if len(list_dict) < 2:
+        return return_string
+    # it was already sorted.
+    # get first
+    first_dict = list_dict[0]
+    # get last
+    last_dict = list_dict[-1]
+    return_string = f"{last_dict['max_each_ref']} - {first_dict['max_each_ref']}"
+    return return_string

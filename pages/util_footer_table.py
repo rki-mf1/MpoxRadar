@@ -1,5 +1,5 @@
 from dash import html
-
+import dash_bootstrap_components as dbc
 
 row1 = html.Tr(
     [
@@ -85,3 +85,7 @@ row1 = html.Tr(
     ],
     style={"orderStyle": "none"},
 )
+
+table_body = [html.Tbody([row1])]
+
+footer_table = dbc.Table(table_body, bordered=True)
