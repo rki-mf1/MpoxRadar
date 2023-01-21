@@ -25,3 +25,4 @@ conda install pyarrow
 conda install dash-mantine-components
 conda install sqlalchemy
 conda install pymysql
+conda install snakeviz
