@@ -1,12 +1,15 @@
+from datetime import datetime
 import multiprocessing as mp
-import os
 from time import perf_counter
+from urllib.parse import urlparse
 
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import create_engine
 
-tables = ["propertyView"]
+from pages.config import DB_URL
+
+tables = ["propertyView", "variantView"]
 
 # pandas normally uses python strings, which have about 50 bytes overhead. that's catastrophic!
 stringType = "string[pyarrow]"
@@ -28,8 +31,31 @@ column_dtypes = {
         "value_zip": stringType,
         "value_varchar": stringType,
         "value_blob": stringType,  # actually "blobType"
-        "value_date": "datetime64",  # needed - value_date -> RELEASE_DATE
-    }
+        "value_date": stringType,  # needed - value_date -> RELEASE_DATE, dateime coversion introduces errors
+    },
+    "variantView": {
+        "sample.id": intType,  # needed
+        "sample.name": stringType,  # needed
+        "sample.seqhash": stringType,
+        "reference.id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
+        "reference.accession": stringType,
+        "reference.standard": stringType,
+        "molecule.id": intType,
+        "molecule.accession": stringType,
+        "molecule.standard": stringType,
+        "element.id": intType,
+        "element.accession": stringType,
+        "element.symbol": stringType,
+        "element.standard": stringType,
+        "element.type": stringType,
+        "variant.id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
+        "variant.ref": stringType,
+        "variant.start": stringType,
+        "variant.end": stringType,
+        "variant.alt": stringType,
+        "variant.label": stringType,
+        "variant.parent_id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
+    },
 }
 
 
@@ -40,31 +66,43 @@ needed_columns = {
         "sample.id",
         "sample.name",
         "property.name",
-        "value_integer",
         "value_text",
         "value_date",
-    ]
+    ],
+    "variantView": [
+        "sample.id",
+        "sample.name",
+        "reference.id",
+        "reference.accession",
+        "variant.id",
+        #  "variant.ref",
+        "variant.label",
+        #  "variant.parent_id"
+        "element.type",
+    ],
 }
 
 
-def get_database_connection(database_name):
+def get_database_connection():
     # DB configuration
-    user = os.environ.get("MYSQL_USER", "root")
-    ip = os.environ.get("MYSQL_HOST", "localhost")
-    pw = os.environ.get("MYSQL_PW", "secret")
-    return create_engine(f"mysql+pymysql://{user}:{pw}@{ip}/{database_name}")
+    parsed_db_url = urlparse(DB_URL)
+    user = parsed_db_url.username
+    ip = parsed_db_url.hostname
+    pw = parsed_db_url.password
+    # port = parsed_db_url.port
+    db_database = parsed_db_url.path.replace("/", "")
+    return create_engine(f"mysql+pymysql://{user}:{pw}@{ip}/{db_database}")
 
 
 class DataFrameLoader:
-    def __init__(self, db_name, table):
-        self.db_name = db_name
+    def __init__(self):
         self.tables = tables
         self.needed_columns = needed_columns
         self.column_dtypes = column_dtypes
 
-    def load_db_from_sql(self, db_name, table_name):
+    def load_db_from_sql(self, table_name):
         start = perf_counter()
-        db_connection = get_database_connection(db_name)
+        db_connection = get_database_connection()
         df_dict = {}
         try:
             # we cannot use read_sql_table because it doesn't allow difining dtypes
@@ -98,7 +136,7 @@ class DataFrameLoader:
         except sqlalchemy.exc.ProgrammingError:
             print(f"table {table_name} not in database.")
             df = pd.DataFrame()
-        print(f"Loading time {table_name}: {(perf_counter()-start)} sec.")
+        print(f"Loading time {table_name}: {(perf_counter()-start):.3f} sec.")
         if not df.empty:
             df_dict[table_name] = df
             return df_dict
@@ -107,7 +145,7 @@ class DataFrameLoader:
         pool = mp.Pool(mp.cpu_count())
         dict_list = pool.starmap(
             self.load_db_from_sql,
-            [(self.db_name, table_name) for table_name in self.tables],
+            [[table] for table in self.tables],
         )
         pool.close()
         pool.terminate()
@@ -119,7 +157,37 @@ class DataFrameLoader:
         return df_dict
 
 
-def load_all_sql_files(db_name):
-    loader = DataFrameLoader(db_name, tables)
+def create_property_view(df, dummy_date="2021-12-31"):
+    df = (
+        df.set_index(
+            ["sample.id", "sample.name", "property.name", "value_date"], drop=True
+        )
+        .unstack("property.name")
+        .reset_index()
+    )
+    sub_df = df[["sample.id", "sample.name", "value_date"]]
+    sub_df.columns = ["sample.id", "sample.name", "value_date"]
+    df = pd.concat([sub_df, df["value_text"]], axis=1).reindex()
+    df = df.drop(columns=["COLLECTION_DATE"], axis=1)
+    df = df.rename(columns={"value_date": "COLLECTION_DATE"})
+    df["COLLECTION_DATE"] = df[["COLLECTION_DATE"]].fillna(dummy_date)
+    df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
+        lambda d: datetime.strptime(d, "%Y-%m-%d").date()
+    )
+    return df
+
+
+def create_variant_view(df):
+    df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
+    df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
+    # df = df[df['element.type']=='cds'].reset_index(drop=True)
+    return df
+
+
+def load_all_sql_files():
+    loader = DataFrameLoader()
     df_dict = loader.load_from_sql_db()
+    # TODO query for variantView tooo long. Add sample_id alignment table? (seqhash joining is very expensive), molecule_id == reference_id ?
+    df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
+    df_dict["variantView"] = create_variant_view(df_dict["variantView"])
     return df_dict

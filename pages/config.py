@@ -2,6 +2,9 @@ import logging
 import os
 
 from dotenv import load_dotenv
+import pandas as pd
+import plotly.express as px
+
 
 load_dotenv()
 
@@ -31,3 +34,19 @@ def get_module_logger(mod_name):
 logging_radar = get_module_logger("MPXRADAR")
 
 # STRING
+
+# This is the JULE part ---------------------------
+
+# load all data once
+location_coordinates = pd.read_csv("data/location_coordinates.csv")
+
+
+# 56 colors
+
+color_schemes = (
+    px.colors.cyclical.Twilight
+    + px.colors.cyclical.IceFire
+    + px.colors.cyclical.Phase
+    + px.colors.cyclical.Edge
+)
+# END: ---------------------------

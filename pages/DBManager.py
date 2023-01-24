@@ -228,3 +228,14 @@ class DBManager(object):
         self.cursor.execute(sql)
         _rows = self.cursor.fetchall()
         return _rows
+
+    def get_reference_gene(self, ref_accession):
+        sql = (
+            "SELECT`reference.accession`, `element.type`, `element.symbol`, `element.description`,"
+            " `element.start`, `element.end`, `element.strand`, `element.sequence` "
+            "From referenceView "
+            f"WHERE `element.type` = 'cds' AND `reference.accession` = '{ref_accession}';"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
