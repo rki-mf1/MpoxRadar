@@ -35,8 +35,6 @@ logging_radar = get_module_logger("MPXRADAR")
 
 # STRING
 
-# This is the JULE part ---------------------------
-
 # load all data once
 location_coordinates = pd.read_csv("data/location_coordinates.csv")
 
@@ -49,4 +47,3 @@ color_schemes = (
     + px.colors.cyclical.Phase
     + px.colors.cyclical.Edge
 )
-# END: ---------------------------
