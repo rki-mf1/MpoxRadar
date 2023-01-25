@@ -1,11 +1,12 @@
-from datetime import datetime
 import multiprocessing as mp
+from datetime import datetime
 from time import perf_counter
 from urllib.parse import urlparse
-
 import pandas as pd
+import numpy as np
 import sqlalchemy
 from sqlalchemy import create_engine
+from tabulate import tabulate
 
 from pages.config import DB_URL
 
@@ -27,7 +28,8 @@ column_dtypes = {
         "value_integer": stringType,  # needed - value_integer -> LENGTH
         # ^^^^^^^^^^^ this one is often NULL !!!! so I set it to stringType instead of intType
         "value_float": "float32",
-        "value_text": stringType,  # needed - value_text -> COLLECTION_DATE, RELEASE_DATE, ISOLATE, SEQ_TECH, COUNTRY, GEO_LOCATION, HOST
+        "value_text": stringType,
+        # needed - value_text -> COLLECTION_DATE, RELEASE_DATE, ISOLATE, SEQ_TECH, COUNTRY, GEO_LOCATION, HOST
         "value_zip": stringType,
         "value_varchar": stringType,
         "value_blob": stringType,  # actually "blobType"
@@ -54,13 +56,10 @@ column_dtypes = {
         "variant.end": stringType,
         "variant.alt": stringType,
         "variant.label": stringType,
-        "variant.parent_id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
-    },
+        "variant.parent_id": stringType  # Cannot convert non-finite values (NA or inf) to integer
+    }
 }
 
-
-### get the mpox-map-data in the same structure as the cov-map-data
-### in order to plot mpox-data in covradar-app!!
 needed_columns = {
     "propertyView": [
         "sample.id",
@@ -78,7 +77,7 @@ needed_columns = {
         #  "variant.ref",
         "variant.label",
         #  "variant.parent_id"
-        "element.type",
+        "element.type"
     ],
 }
 
@@ -89,7 +88,7 @@ def get_database_connection():
     user = parsed_db_url.username
     ip = parsed_db_url.hostname
     pw = parsed_db_url.password
-    # port = parsed_db_url.port
+    port = parsed_db_url.port
     db_database = parsed_db_url.path.replace("/", "")
     return create_engine(f"mysql+pymysql://{user}:{pw}@{ip}/{db_database}")
 
@@ -114,7 +113,7 @@ class DataFrameLoader:
                 types = {
                     column: self.column_dtypes[table_name][column] for column in columns
                 }
-                ### a '.' in the column names implies ``-quoting the column name for a mariadb-query
+                # a '.' in the column names implies ``-quoting the column name for a mariadb-query
                 quoted_column_names = []
                 for column in columns:
                     if "." in column:
@@ -136,7 +135,7 @@ class DataFrameLoader:
         except sqlalchemy.exc.ProgrammingError:
             print(f"table {table_name} not in database.")
             df = pd.DataFrame()
-        print(f"Loading time {table_name}: {(perf_counter()-start):.3f} sec.")
+        print(f"Loading time {table_name}: {(perf_counter() - start)} sec.")
         if not df.empty:
             df_dict[table_name] = df
             return df_dict
@@ -158,28 +157,28 @@ class DataFrameLoader:
 
 
 def create_property_view(df, dummy_date="2021-12-31"):
-    df = (
-        df.set_index(
-            ["sample.id", "sample.name", "property.name", "value_date"], drop=True
-        )
-        .unstack("property.name")
-        .reset_index()
-    )
-    sub_df = df[["sample.id", "sample.name", "value_date"]]
-    sub_df.columns = ["sample.id", "sample.name", "value_date"]
-    df = pd.concat([sub_df, df["value_text"]], axis=1).reindex()
-    df = df.drop(columns=["COLLECTION_DATE"], axis=1)
-    df = df.rename(columns={"value_date": "COLLECTION_DATE"})
-    df["COLLECTION_DATE"] = df[["COLLECTION_DATE"]].fillna(dummy_date)
-    df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
-        lambda d: datetime.strptime(d, "%Y-%m-%d").date()
-    )
+    #  start = perf_counter()
+    df['value_text'] = df.apply(lambda row: row["value_date"] if row["property.name"] in
+                                                                 ['COLLECTION_DATE', 'RELEASE_DATE'] else row[
+        "value_text"], axis=1)
+    df = df.drop(columns=["value_date"], axis=1)
+    c = ['sample.id', 'sample.name']
+    df = df.set_index(['property.name'] + c).unstack('property.name')
+    df = df.value_text.rename_axis([None], axis=1).reset_index()
+    df['COLLECTION_DATE'] = df[['COLLECTION_DATE']].fillna(dummy_date)
+    df['COLLECTION_DATE'] = df['COLLECTION_DATE'].apply(lambda d: datetime.strptime(d, "%Y-%m-%d").date())
+    df['SEQ_TECH'] = df['SEQ_TECH'].replace([np.nan, ""], 'undefined')
+    #  print(f"time pre-processing PropertyView final: {(perf_counter()-start)} sec.")
+    #  print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
     return df
 
 
 def create_variant_view(df):
-    df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
-    df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
+    #  start = perf_counter()
+    df['reference.id'] = df['reference.id'].astype(float).astype("Int64")
+    df['variant.id'] = df['variant.id'].astype(float).astype("Int64")
+    # print(f"time pre-processing VariantView: {(perf_counter()-start)} sec.")
+    # print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
     # df = df[df['element.type']=='cds'].reset_index(drop=True)
     return df
 
@@ -187,7 +186,7 @@ def create_variant_view(df):
 def load_all_sql_files():
     loader = DataFrameLoader()
     df_dict = loader.load_from_sql_db()
-    # TODO query for variantView tooo long. Add sample_id alignment table? (seqhash joining is very expensive), molecule_id == reference_id ?
+    # TODO query for variantView tooo long.
     df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
     df_dict["variantView"] = create_variant_view(df_dict["variantView"])
     return df_dict

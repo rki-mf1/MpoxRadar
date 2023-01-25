@@ -1,57 +1,63 @@
 """
-
-
 import pandas as pd
 import dash
-from dash import callback
 from dash.exceptions import PreventUpdate
-from dash import html
-from dash import Input
-from dash import Output
-from dash import State
+from dash import html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
+from tabulate import tabulate
 
-from pages.checklist_filter import get_html_elem_reference_radioitems, get_html_elem_checklist_aa_mutations, \
-    get_html_elem_method_radioitems, get_html_elem_checklist_seq_tech, get_html_interval, get_all_references, \
-    get_all_frequency_sorted_seqtech
-from pages.checklist_filter import get_frequency_sorted_mutation_by_filters, get_frequency_sorted_seq_techs_by_filters
 from data import load_all_sql_files
-from pages.html_data_explorer import create_worldMap_explorer, create_table_explorer
-from pages.utils_worldMap_filter import WorldMap, DateSlider, TableFilter
+from pages.utils_worldMap_explorer import WorldMap, DateSlider, TableFilter
+from pages.utils_explorer_filter import get_all_references, get_all_frequency_sorted_seqtech, \
+    get_all_frequency_sorted_countries_by_filters, get_all_frequency_sorted_countries, \
+    get_all_frequency_sorted_mutation, get_frequency_sorted_mutation_by_filters, \
+    get_frequency_sorted_seq_techs_by_filters
+from pages.html_data_explorer import create_worldMap_explorer, create_table_explorer, \
+    get_html_elem_reference_radioitems, get_html_elem_dropdown_aa_mutations, \
+    get_html_elem_method_radioitems, get_html_elem_checklist_seq_tech, get_html_interval, \
+    get_html_elem_dropdown_countries
 
-# dash.register_page(__name__, path="/DataExplorer")
+
+dash.register_page(__name__, path="/DataExplorer")
 
 # load all data once
 location_coordinates = pd.read_csv("data/location_coordinates.csv")
 df_dict = load_all_sql_files()
 world_map = WorldMap(df_dict["propertyView"], df_dict["variantView"], location_coordinates)
 date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
-df_mut = df_dict['variantView'][df_dict['variantView']['element.type'] == 'cds']
+df_aa_mut = df_dict['variantView'][df_dict['variantView']['element.type'] == 'cds']
 table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
-reference_options = get_all_references(df_dict['variantView'])
-seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
+all_reference_options = get_all_references(df_dict['variantView'])
+all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
+all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
+all_mutation_options = get_all_frequency_sorted_mutation(world_map.df_all_dates_all_voc, 2)
 
 layout = html.Div(
     [
-        html.Div(id="alertmsg"),
         html.Div([
             html.Div(
                 [
                     dbc.Row(
                         [
                             dbc.Col(
-                                [get_html_elem_reference_radioitems(reference_options)], width=2
+                                [get_html_elem_reference_radioitems(all_reference_options)], width=2
                             ),
                             dbc.Col(
-                                [get_html_elem_checklist_aa_mutations(df_dict["variantView"], reference_id=2)], width=2
+                                [get_html_elem_checklist_seq_tech(all_seq_tech_options)], width=2
                             ),
                             dbc.Col(
-                                [get_html_elem_checklist_seq_tech(seq_tech_options)], width=2
+                                [get_html_elem_dropdown_countries(all_country_options)], width=2
                             ),
-
                             dbc.Col(
                                 [get_html_elem_method_radioitems(),
                                  get_html_interval()], width=2
+                            ),
+                        ]
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options)], width=12
                             ),
                         ]
                     ),
@@ -64,90 +70,91 @@ layout = html.Div(
 )
 
 
-# @callback(
-#     Output("seq_tech_dropdown", "value"),
-#     [Input("seqtech_all-or-none", "value")],
-#     [State("seq_tech_dropdown", "options")],
-# )
-# def seqtech_select_all_none(all_selected, options):
-#     all_or_none = [option for option in options if all_selected]
-#     return all_or_none
-
-# refill filters depending on selected filter
 @callback(
     [
         Output("mutation_dropdown", "options"),
         Output("mutation_dropdown", "value"),
         Output("seq_tech_dropdown", "options"),
         Output("seq_tech_dropdown", "value"),
-        # Output("reference_radio", "options"),
-        # Output("reference_radio", "value"),
+        Output("country_dropdown", "options"),
+        Output("country_dropdown", "value"),
+        Output('max_nb_txt', 'children'),
+        Output('select_x_frequent_mut', 'max')
     ],
     [
         Input("reference_radio", "value"),
         Input("seq_tech_dropdown", "value"),
-        Input("mutation_dropdown", "value"),
-        Input("select_all_mut", "value"),
-        Input("select_all_seq_tech", "value")
+        Input("country_dropdown", "value"),
+        Input("select_x_frequent_mut", "value"),
+        Input("select_all_seq_tech", "value"),
+        Input("select_all_countries", "value")
     ],
     [
         State("mutation_dropdown", "options"),
+        State("mutation_dropdown", "value"),
         State("seq_tech_dropdown", "options"),
-   #     State("reference_radio", "options")
+        State("country_dropdown", "options"),
+        State("select_x_frequent_mut", "value")
     ], prevent_initial_call=False,
 )
-def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, mut_value, select_all_mut, select_all_tech,
-                                         mut_options, tech_options):
-
-    # different filters depending on each other (exception reference genome, do not change)
-
-
+def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country_value, select_x_mut, select_all_tech,
+                                         select_all_countries, mut_options, mut_value, tech_options, country_options,
+                                         freq_nb):
+    ""
+    filter changing depending on each other
+     reference --> seqtech & country & gene & mut
+     country --> mut & seqtech
+     seqtech -->  mut & country
+     gene --> mut & seqtech & country
+     mut --> no callback
+    ""
+    print(dash.ctx.triggered_id)
+    df_mut_ref_select = df_aa_mut[(df_aa_mut['reference.id'] == reference_value)]
     if dash.ctx.triggered_id == "select_all_seq_tech":
         if len(select_all_tech) == 1:
-            seqtech_value = [i['value'] for i in seq_tech_options]
+            seqtech_value = [i['value'] for i in all_seq_tech_options if not i['disabled']]
         elif len(select_all_tech) == 0:
             seqtech_value = []
 
-    if dash.ctx.triggered_id == "select_all_mut":
-        if len(select_all_mut) == 1:
-            mut_value = [i['value'] for i in mut_options]
-        elif len(select_all_mut) == 0:
-            mut_value = []
+    # TODO now return top x mut without checking for mutations with same number
+    if dash.ctx.triggered_id == "select_x_frequent_mut":
+        mut_value = [i['value'] for i in mut_options[0: select_x_mut]]
+
+    if dash.ctx.triggered_id == "select_all_countries":
+        if len(select_all_countries) == 1:
+            country_value = [i['value'] for i in country_options if not i['disabled']]
+        elif len(select_all_countries) == 0:
+            country_value = []
 
     # mutation_option
-    if dash.ctx.triggered_id in ["reference_radio", "seq_tech_dropdown", "select_all_seq_tech"]:
-        df_seq_tech = df_dict['propertyView'][df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)]
-        df_mut_ref_select = df_mut[(df_mut['reference.id'] == reference_value)]
+    if dash.ctx.triggered_id in ["reference_radio", "seq_tech_dropdown", "country_dropdown",
+                                 "select_all_seq_tech", "select_all_countries"]:
+        df_seq_tech = df_dict['propertyView'][(df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)) &
+                                              (df_dict['propertyView']["COUNTRY"].isin(country_value))]
         mut_options = get_frequency_sorted_mutation_by_filters(df_mut_ref_select, df_seq_tech)
-        print('mut_option: ', len(mut_options))
-        if len(mut_options) > 20:
-            mut_value = [mut_dict['value'] for mut_dict in mut_options[0:20] if mut_dict['value'] in mut_value]
+        if dash.ctx.triggered_id == "reference_radio" or len(mut_value) == 0:
+            mut_value = [m['value'] for m in mut_options][0:freq_nb]
         else:
-            mut_value = [mut_dict['value'] for mut_dict in mut_options if mut_dict['value'] in mut_value]
-        print('mut_value: ', len(mut_value))
-    # seq tech
-    if dash.ctx.triggered_id in ["reference_radio", "mutation_dropdown", "select_all_mut"]:
-        df_mut_ref_mut_select = df_mut[
-            (df_mut["variant.label"].isin(mut_value) &
-             (df_mut['reference.id'] == reference_value))
-        ]
-        tech_options = get_frequency_sorted_seq_techs_by_filters(df_mut_ref_mut_select, df_dict['propertyView'])
-        seqtech_value = [seq_tech_dict['value'] for seq_tech_dict in tech_options if seq_tech_dict['value'] in
-                         seqtech_value]
+            mut_value = [mut for mut in mut_value if mut in [m['value'] for m in mut_options]]
 
-    # # reference
-    # if dash.ctx.triggered_id in ["seq_tech_dropdown", "mutation_dropdown", "select_all_mut"]:
-    #     df_seq_tech = df_dict['propertyView'][df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)]
-    #     df_mut_mut_select = df_mut[df_mut["variant.label"].isin(mut_value)]
-    #     ref_options = get_reference_options_by_filters(df_mut_mut_select, df_seq_tech, reference_options)
-    #     reference_options_values = [ref_dict['value'] for ref_dict in ref_options]
-    #     try:
-    #         reference_value = reference_value if reference_value in reference_options_values else \
-    #             reference_options_values[0]
-    #     except IndexError:
-    #         reference_value = 2
+    # seq tech disable options
+    if dash.ctx.triggered_id in ["reference_radio"]:
+        tech_options = get_frequency_sorted_seq_techs_by_filters(df_mut_ref_select,  df_dict['propertyView'],
+                                                                 tech_options)
+        seqtech_value = [tech for tech in seqtech_value if tech in
+                         [t['value'] for t in tech_options if not t['disabled']]]
 
-    return mut_options, mut_value, tech_options, seqtech_value
+    # countries disable options
+    if dash.ctx.triggered_id in ["reference_radio", "seq_tech_dropdown", "select_all_seq_tech"]:
+        sample_id_set = set(df_mut_ref_select['sample.id'])
+        df_prop = df_dict['propertyView'][(df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)) &
+                                          (df_dict['propertyView']["sample.id"].isin(sample_id_set))]
+        country_options = get_all_frequency_sorted_countries_by_filters(df_prop, country_options)
+        country_value = [o['value'] for o in country_options if not o['disabled']]
+
+    text = f"Select x most frequent sequences. Maximum number of non-unique mutations: {len(mut_options)}",
+
+    return mut_options, mut_value, tech_options, seqtech_value, country_options, country_value, text, len(mut_options)
 
 
 # update map by change of filters or moving slider
@@ -159,31 +166,26 @@ def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, mut_val
         Input("method_radio", "value"),
         Input("seq_tech_dropdown", "value"),
         Input("selected_interval", "value"),
-        Input('date_slider', 'value')
+        Input('date_slider', 'value'),
+        Input("country_dropdown", "value")
     ],
     [
-        State('world_map_explorer', 'figure'),
+        State('world_map_explorer', 'relayoutData'),
     ], prevent_initial_call=True,
 )
-def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list, interval, dates, map_json):
+def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list, interval, dates, countries, layout):
     print("trigger new map")
     date_list = date_slider.get_all_dates_in_interval(dates, interval)
-    if map_json:
-        if "zoom" in map_json['layout']['mapbox']:
-            zoom = map_json['layout']['mapbox']['zoom']
-        else:
-            zoom = None
-        center = map_json['layout']['mapbox']['center']
-    else:
-        zoom, center = None, None
-    # map mutations, reference_id, seq_tech_list, method, dates, mode='absolute frequencies', nth=0
-    fig = world_map.get_world_map(mutation_list, reference_id, seqtech_list, method, date_list, zoom, center)
+    fig = world_map.get_world_map(mutation_list, reference_id, seqtech_list, method, date_list, countries)
+    # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
+    # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
+    # TODO sometimes not working
+    if layout:
+        fig.update_layout(layout)
     print("fig returned")
     return fig
 
 
-# slider interval updated during drag (drag_value)
-# slider interval updated by play-button and Interval
 @callback(
     Output('date_slider', 'value'),
     [
@@ -196,11 +198,11 @@ def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list,
     ], prevent_initial_call=True,
 )
 def update_slider_interval(drag_value, interval, n_intervals, slider_value):
-
-    # slider moved by user drag, changed location of slider with drag_value
-    # OR
-    # slider moved by auto_stepper (activated by play-button)
-
+    ""
+    slider moved by user drag, changed location of slider with drag_value
+    OR
+    slider moved by auto_stepper (activated by play-button)
+    ""
     if interval is None:
         interval = 0
     # if interval changed or slider moved:
@@ -250,14 +252,14 @@ def update_slider_interval(drag_value, interval, n_intervals, slider_value):
     ], prevent_initial_call=True,
 )
 def stepper_control(n_clicks, n_intervals, interval, button_icon):
-
-    # stop and start auto-stepper (disabled value), returns play or stop icon for button
-    # interval: increment the counter n_intervals every interval milliseconds.
-    # disabled (boolean; optional): If True, the counter will no longer update.
-    # n_intervals (number; default 0): Number of times the interval has passed.
-    # max_intervals (number; default -1): Number of times the interval will be fired. If -1, then the interval has no limit
-    # (the default) and if 0 then the interval stops running.
-
+    ""
+    stop and start auto-stepper (disabled value), returns play or stop icon for button
+    interval: increment the counter n_intervals every interval milliseconds.
+    disabled (boolean; optional): If True, the counter will no longer update.
+    n_intervals (number; default 0): Number of times the interval has passed.
+    max_intervals (number; default -1): Number of times the interval will be fired. If -1, then the interval has no limit
+    (the default) and if 0 then the interval stops running.
+    ""
     if interval is None:
         interval = 0
     steps = len(date_slider.date_list) - interval
@@ -295,11 +297,6 @@ def stepper_control(n_clicks, n_intervals, interval, button_icon):
     ], prevent_initial_call=True,
 )
 def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list, dates, interval):
-    # get click data {'points': [{'curveNumber': 19, 'pointNumber': 3, 'pointIndex': 3, 'lon': 10.451526,
-    # 'lat': 51.165691, 'hovertext': 'Germany', 'marker.size': 30,
-    # 'bbox': {'x0': 877.5110333644036, 'x1': 919.9374402355966, 'y0': 243.83076680322816, 'y1': 286.257173674421},
-    # 'customdata': ['V125G', 167, 'Germany', 51.165691, 10.451526, 30]}]}
-    # print(f"start plot: {datetime.now()}")
     try:
         location_name = click_data['points'][0]['hovertext']
     except TypeError:
@@ -328,17 +325,9 @@ def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list,
         Input('date_slider', 'value'),
         Input('selected_interval', 'value'),
         Input("results_per_location", 'clickData'),
-        #   Input('yaxis_type', 'value'),
     ], prevent_initial_call=True,
 )
 def update_lower_plot(click_data_map, mutations, reference_id, seqtech_list, dates, interval, clickDataBoxPlot):
-    # get click data {'points': [{'curveNumber': 19, 'pointNumber': 3, 'pointIndex': 3, 'lon': 10.451526,
-    # 'lat': 51.165691, 'hovertext': 'Germany', 'marker.size': 30,
-    # 'bbox': {'x0': 877.5110333644036, 'x1': 919.9374402355966, 'y0': 243.83076680322816, 'y1': 286.257173674421},
-    # 'customdata': ['V125G', 167, 'Germany', 51.165691, 10.451526, 30]}]}
-    # click_data['points'][0]['customdata'] = ['V125G', 167, 'Germany', 51.165691, 10.451526, 30]
-    # = [mut, nb_seq, location_name, location_ID, lat, lon, size
-    # print(f"start plot: {datetime.now()}")
     if dash.ctx.triggered_id == "results_per_location":
         mutations = [clickDataBoxPlot['points'][0]['label']]
     try:
@@ -362,11 +351,13 @@ def update_lower_plot(click_data_map, mutations, reference_id, seqtech_list, dat
         Input("reference_radio", "value"),
         Input("seq_tech_dropdown", "value"),
         Input("selected_interval", "value"),
-        Input('date_slider', 'value')
+        Input('date_slider', 'value'),
+        Input("country_dropdown", "value")
     ], prevent_initial_call=True,
 )
-def update_table_filter(mutation_list, reference_id, seqtech_list, interval, dates):
+def update_table_filter(mutation_list, reference_id, seqtech_list, interval, dates, countries):
     date_list = date_slider.get_all_dates_in_interval(dates, interval)
     table_df = table_filter.get_filtered_table(mutation_list, seqtech_list, reference_id, date_list)
     return table_df.to_dict('records'), [{"name": i, "id": i} for i in table_df.columns]
+
 """
