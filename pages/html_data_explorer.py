@@ -211,6 +211,33 @@ def get_html_elem_dropdown_aa_mutations(mutation_options):
     )
     return checklist_aa_mutations
 
+
+def get_html_elem_dropdown_genes(gene_options):
+    checklist_aa_mutations = dbc.Card(
+        dbc.CardBody(
+            [
+                dbc.Label("Gene: "),
+                html.Br(),
+                dcc.Dropdown(
+                    options=gene_options,
+                    value=[c['value'] for c in gene_options],
+                    id="gene_dropdown",
+                    maxHeight=100,
+                    optionHeight=50,
+                    multi=True,
+                    searchable=True,
+                    style={"overflow-y": "auto",
+                           'maxHeight': 120},
+                ),
+                html.Br(),
+                dcc.Checklist(id='select_all_genes',
+                              options=[{'label': 'Select All', 'value': 1}], value=[1]),
+            ],
+        )
+    )
+    return checklist_aa_mutations
+
+
 # TODO design dropdown
 def get_html_elem_dropdown_countries(countries):
     checklist_aa_mutations = dbc.Card(

@@ -25,3 +25,12 @@ def get_colour_map_gene(reference):
     )
     # df.to_csv("text.tsv", sep="\t")
     return df
+
+
+def get_gene_colour_map(df, reference_id):
+    df = df[df['reference.id'] == reference_id]
+    df["color_hex"] = df.apply(
+        lambda row: "#{:02x}{:02x}{:02x}".format(*getRGBfromI(row["element.start"])),
+        axis=1,
+    )
+    return df

@@ -15,11 +15,11 @@ from pages.utils_worldMap_explorer import WorldMap, DateSlider, TableFilter
 from pages.utils_explorer_filter import get_all_references, get_all_frequency_sorted_seqtech, \
     get_all_frequency_sorted_countries_by_filters, get_all_frequency_sorted_countries, \
     get_all_frequency_sorted_mutation, get_frequency_sorted_mutation_by_filters, \
-    get_frequency_sorted_seq_techs_by_filters
+    get_frequency_sorted_seq_techs_by_filters, get_all_genes_per_reference, get_mutation_by_genes
 from pages.html_data_explorer import create_worldMap_explorer, create_table_explorer, \
     get_html_elem_reference_radioitems, get_html_elem_dropdown_aa_mutations, \
     get_html_elem_method_radioitems, get_html_elem_checklist_seq_tech, get_html_interval, \
-    get_html_elem_dropdown_countries
+    get_html_elem_dropdown_countries, get_html_elem_dropdown_genes
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.util_tool_mpoxsonar import Output_mpxsonar
@@ -40,6 +40,7 @@ all_reference_options = get_all_references(df_dict['variantView'])
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
 all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
 all_mutation_options = get_all_frequency_sorted_mutation(world_map.df_all_dates_all_voc, 2)
+all_gene_options = get_all_genes_per_reference(df_dict["referenceView"], 2)
 
 dash.register_page(__name__, path="/Tool")
 
@@ -53,6 +54,9 @@ tab_explored_tool = html.Div(
                         [
                             dbc.Col(
                                 [get_html_elem_reference_radioitems(all_reference_options)], width=2
+                            ),
+                            dbc.Col(
+                                [get_html_elem_dropdown_genes(all_gene_options)], width=2
                             ),
                             dbc.Col(
                                 [get_html_elem_checklist_seq_tech(all_seq_tech_options)], width=2
@@ -504,6 +508,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     [
         Output("mutation_dropdown", "options"),
         Output("mutation_dropdown", "value"),
+        Output("gene_dropdown", "options"),
+        Output("gene_dropdown", "value"),
         Output("seq_tech_dropdown", "options"),
         Output("seq_tech_dropdown", "value"),
         Output("country_dropdown", "options"),
@@ -513,13 +519,16 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     ],
     [
         Input("reference_radio", "value"),
+        Input("gene_dropdown", "value"),
         Input("seq_tech_dropdown", "value"),
         Input("country_dropdown", "value"),
         Input("select_x_frequent_mut", "value"),
+        Input("select_all_genes", "value"),
         Input("select_all_seq_tech", "value"),
         Input("select_all_countries", "value")
     ],
     [
+        State("gene_dropdown", "options"),
         State("mutation_dropdown", "options"),
         State("mutation_dropdown", "value"),
         State("seq_tech_dropdown", "options"),
@@ -527,19 +536,25 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         State("select_x_frequent_mut", "value")
     ], prevent_initial_call=False,
 )
-def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country_value, select_x_mut, select_all_tech,
-                                         select_all_countries, mut_options, mut_value, tech_options, country_options,
-                                         freq_nb):
+def frequency_sorted_mutation_by_filters(reference_value, gene_value, seqtech_value, country_value, select_x_mut,
+                                         select_all_tech, select_all_genes, select_all_countries, gene_options,
+                                         mut_options, mut_value, tech_options, country_options, freq_nb):
     """
     filter changing depending on each other
      reference --> seqtech & country & gene & mut
-     country --> mut & seqtech
+     country --> mut
      seqtech -->  mut & country
-     gene --> mut & seqtech & country
+     gene --> mut
      mut --> no callback
     """
     print(dash.ctx.triggered_id)
     df_mut_ref_select = df_aa_mut[(df_aa_mut['reference.id'] == reference_value)]
+    if dash.ctx.triggered_id == "select_all_genes":
+        if len(select_all_genes) == 1:
+            gene_value = [i['value'] for i in get_all_genes_per_reference(df_dict["referenceView"], reference_value)]
+        elif len(select_all_genes) == 0:
+            gene_value = []
+
     if dash.ctx.triggered_id == "select_all_seq_tech":
         if len(select_all_tech) == 1:
             seqtech_value = [i['value'] for i in all_seq_tech_options if not i['disabled']]
@@ -556,9 +571,15 @@ def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country
         elif len(select_all_countries) == 0:
             country_value = []
 
+    # gene_options
+    if dash.ctx.triggered_id in ["reference_radio"]:
+        gene_options = get_all_genes_per_reference(df_dict["referenceView"], reference_value)
+        gene_value = [i['value'] for i in gene_options]
+
     # mutation_option
     if dash.ctx.triggered_id in ["reference_radio", "seq_tech_dropdown", "country_dropdown",
-                                 "select_all_seq_tech", "select_all_countries"]:
+                                 "select_all_seq_tech", "select_all_countries", "gene_dropdown",
+                                 "select_all_genes"]:
         df_seq_tech = df_dict['propertyView'][(df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)) &
                                               (df_dict['propertyView']["COUNTRY"].isin(country_value))]
         mut_options = get_frequency_sorted_mutation_by_filters(df_mut_ref_select, df_seq_tech)
@@ -566,6 +587,12 @@ def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country
             mut_value = [m['value'] for m in mut_options][0:freq_nb]
         else:
             mut_value = [mut for mut in mut_value if mut in [m['value'] for m in mut_options]]
+
+        if dash.ctx.triggered_id in ["gene_dropdown", "select_all_genes"]:
+            gene_df = df_dict['referenceView'][df_dict['referenceView']["element.symbol"].isin(gene_value)][
+                ["element.symbol", 'aa_start', "aa_end"]]
+            mut_options = get_mutation_by_genes(gene_df, mut_options)
+            mut_value = [i['value'] for i in mut_options if i['value'] in mut_value]
 
     # seq tech disable options
     if dash.ctx.triggered_id in ["reference_radio"]:
@@ -582,9 +609,10 @@ def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country
         country_options = get_all_frequency_sorted_countries_by_filters(df_prop, country_options)
         country_value = [o['value'] for o in country_options if not o['disabled']]
 
-    text = f"Select x most frequent sequences. Maximum number of non-unique mutations: {len(mut_options)}",
+    text = f"Select x most frequent sequences. Maximum number of non-unique mutations with chosen filter options: {len(mut_options)}",
 
-    return mut_options, mut_value, tech_options, seqtech_value, country_options, country_value, text, len(mut_options)
+    return mut_options, mut_value, gene_options, gene_value, tech_options, seqtech_value, country_options, \
+           country_value, text, len(mut_options)
 
 
 # update map by change of filters or moving slider

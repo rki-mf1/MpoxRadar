@@ -10,7 +10,7 @@ from tabulate import tabulate
 
 from pages.config import DB_URL
 
-tables = ["propertyView", "variantView"]
+tables = ["propertyView", "variantView", "referenceView"]
 
 # pandas normally uses python strings, which have about 50 bytes overhead. that's catastrophic!
 stringType = "string[pyarrow]"
@@ -57,6 +57,35 @@ column_dtypes = {
         "variant.alt": stringType,
         "variant.label": stringType,
         "variant.parent_id": stringType  # Cannot convert non-finite values (NA or inf) to integer
+    },
+    "referenceView": {
+        "reference.id": intType,  # needed
+        "reference.accession": stringType,
+        "reference.description": stringType,
+        "reference.organism": stringType,
+        "reference.standard": intType,
+        "translation.id": intType,
+        "molecule.id": intType,
+        "molecule.type": stringType,
+        "molecule.accession": stringType,
+        "molecule.symbol": stringType,
+        "molecule.description": stringType,
+        "molecule.length": intType,
+        "molecule.segment": intType,
+        "molecule.standard": intType,
+        "element.id": intType,
+        "element.type": stringType,  # needed
+        "element.accession": stringType,
+        "element.symbol": stringType,  # needed
+        "element.description": stringType,
+        "element.start": intType,  # needed
+        "element.end": intType,
+        "element.strand": intType,
+        "element.sequence": stringType,
+        "elempart.start ": intType,
+        "elempart.end ": intType,
+        "elempart.strand ": intType,
+        "elempart.segment ": intType,
     }
 }
 
@@ -79,6 +108,13 @@ needed_columns = {
         #  "variant.parent_id"
         "element.type"
     ],
+    "referenceView": [
+        "reference.id",
+        "element.type",
+        "element.symbol",
+        "element.start",
+        "element.end"
+    ]
 }
 
 
@@ -159,8 +195,7 @@ class DataFrameLoader:
 def create_property_view(df, dummy_date="2021-12-31"):
     #  start = perf_counter()
     df['value_text'] = df.apply(lambda row: row["value_date"] if row["property.name"] in
-                                                                 ['COLLECTION_DATE', 'RELEASE_DATE'] else row[
-        "value_text"], axis=1)
+                                ['COLLECTION_DATE', 'RELEASE_DATE'] else row["value_text"], axis=1)
     df = df.drop(columns=["value_date"], axis=1)
     c = ['sample.id', 'sample.name']
     df = df.set_index(['property.name'] + c).unstack('property.name')
@@ -183,10 +218,31 @@ def create_variant_view(df):
     return df
 
 
+# TODO correct? now very very error prone, e.g. overlapping genes, duplicate entries, defnitly wrong (all mut in first 3 genes)
+def create_reference_view(df):
+    df = df[(df["element.type"] == "cds")]
+    grouped_df = df.groupby(["reference.id"])
+    aa_start = []
+    aa_end = []
+    for name, group in grouped_df:
+        aa_start_pos=1
+        for start, end in zip(group['element.start'], group["element.end"]):
+            aa_end_pos = int((end-start)/3) + aa_start_pos - 1
+            aa_start.append(aa_start_pos)
+            aa_end.append(aa_end_pos)
+            aa_start_pos = aa_end_pos + 1
+    df["aa_start"] = aa_start
+    df["aa_end"] = aa_end
+    print(f"refview.")
+    print(print(tabulate(df[df["reference.id"]==2][0:20], headers='keys', tablefmt='psql')))
+    return df
+
+
 def load_all_sql_files():
     loader = DataFrameLoader()
     df_dict = loader.load_from_sql_db()
     # TODO query for variantView tooo long.
     df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
     df_dict["variantView"] = create_variant_view(df_dict["variantView"])
+    df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
     return df_dict
