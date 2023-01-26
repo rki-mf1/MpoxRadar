@@ -38,15 +38,18 @@ class TableFilter(object):
                                              'reference.accession', 'reference.id', 'element.type', "variant.label"]]
         #        print(tabulate(self.table_df[0:10], headers='keys', tablefmt='psql'))
 
-    def _get_filtered_samples(self, mutation_list, seq_tech_list, reference_id, dates):
+    def _get_filtered_samples(self, mutation_list, seq_tech_list, reference_id, dates, gene_list, countries):
         samples = self.table_df[
             self.table_df["COLLECTION_DATE"].isin(dates) &
             self.table_df['variant.label'].isin(mutation_list) &
             (self.table_df['reference.id'] == reference_id) &
-            self.table_df['SEQ_TECH'].isin(seq_tech_list)]['sample.id']
+            self.table_df['SEQ_TECH'].isin(seq_tech_list) &
+            self.table_df["COUNTRY"].isin(countries)]['sample.id']
         return samples.tolist()
 
-    def get_filtered_table(self, mutation_list=None, seq_tech_list=None, reference_id=2, dates=None):
+    # TODO no filtering for mutations/genes possible
+    def get_filtered_table(self, mutation_list=None, seq_tech_list=None, reference_id=2, dates=None, gene_list=None,
+                           countries=None):
 
         if mutation_list is None:
             mutation_list = []
@@ -54,7 +57,12 @@ class TableFilter(object):
             seq_tech_list = []
         if dates is None:
             dates = []
-        samples = self._get_filtered_samples(mutation_list, seq_tech_list, reference_id, dates)
+        if gene_list is None:
+            gene_list = []
+        if countries is None:
+            countries = []
+
+        samples = self._get_filtered_samples(mutation_list, seq_tech_list, reference_id, dates, gene_list, countries)
         df = self.table_df[self.table_df['sample.id'].isin(samples)]
         if not df.empty:
             df = df.groupby(['sample.id', 'sample.name', 'COLLECTION_DATE', 'RELEASE_DATE', 'ISOLATE', 'LENGTH',

@@ -44,7 +44,7 @@ def get_all_genes_per_reference(referenceView, reference_id):
     gene_dict = [{'label': gene, 'value': gene,} for gene in gene_list]
     return gene_dict
 
-
+# TODO remove once appearing mutations here?
 def get_frequency_sorted_mutation_by_filters(df_mut_ref_select, df_seq_tech):
     df_merge = pd.merge(df_mut_ref_select, df_seq_tech,
                         how="inner", on="sample.id")[['sample.id', 'variant.label']]
@@ -75,19 +75,3 @@ def get_frequency_sorted_seq_techs_by_filters(df_mut_ref_select, propertyView, t
     sorted_seq_tech_dict.extend([{'label': seqtech, 'value': seqtech, 'disabled': True} for seqtech in not_in_list])
     return sorted_seq_tech_dict
 
-
-def get_all_valid_aa_positions(gene_df):
-    valid_aa_pos = []
-    for start, end in zip(gene_df['aa_start'], gene_df["aa_end"]):
-        valid_aa_pos.extend(list(range(start, end+1)))
-    return valid_aa_pos
-
-
-def get_mutation_by_genes(gene_df, mut_options):
-    valid_aa_pos = get_all_valid_aa_positions(gene_df)
-    allowed_mutations = []
-    for mut in [mut_dict['value'] for mut_dict in mut_options]:
-        if int(re.findall(r'\d+', mut)[0]) in valid_aa_pos:
-            allowed_mutations.append(mut)
-    new_mut_options = [{'label': mut, 'value': mut} for mut in allowed_mutations]
-    return new_mut_options

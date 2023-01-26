@@ -47,15 +47,15 @@ column_dtypes = {
         "molecule.standard": stringType,
         "element.id": intType,
         "element.accession": stringType,
-        "element.symbol": stringType,
+        "element.symbol": stringType,  # needed = Gene Name
         "element.standard": stringType,
-        "element.type": stringType,
+        "element.type": stringType,  # cds (=AA mutations) or source (=Nt mutations)
         "variant.id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
         "variant.ref": stringType,
         "variant.start": stringType,
         "variant.end": stringType,
         "variant.alt": stringType,
-        "variant.label": stringType,
+        "variant.label": stringType,  # needed mutation name
         "variant.parent_id": stringType  # Cannot convert non-finite values (NA or inf) to integer
     },
     "referenceView": {
@@ -76,10 +76,10 @@ column_dtypes = {
         "element.id": intType,
         "element.type": stringType,  # needed
         "element.accession": stringType,
-        "element.symbol": stringType,  # needed
+        "element.symbol": stringType,  # needed gene name
         "element.description": stringType,
-        "element.start": intType,  # needed
-        "element.end": intType,
+        "element.start": intType,  # needed = start gene name
+        "element.end": intType,  # end gene cds
         "element.strand": intType,
         "element.sequence": stringType,
         "elempart.start ": intType,
@@ -106,7 +106,8 @@ needed_columns = {
         #  "variant.ref",
         "variant.label",
         #  "variant.parent_id"
-        "element.type"
+        "element.type",
+        "element.symbol"
     ],
     "referenceView": [
         "reference.id",
@@ -218,23 +219,12 @@ def create_variant_view(df):
     return df
 
 
-# TODO correct? now very very error prone, e.g. overlapping genes, duplicate entries, defnitly wrong (all mut in first 3 genes)
 def create_reference_view(df):
+    """
+    reference.id, element.type, element.symbol, element.start, element.end
+    """
     df = df[(df["element.type"] == "cds")]
-    grouped_df = df.groupby(["reference.id"])
-    aa_start = []
-    aa_end = []
-    for name, group in grouped_df:
-        aa_start_pos=1
-        for start, end in zip(group['element.start'], group["element.end"]):
-            aa_end_pos = int((end-start)/3) + aa_start_pos - 1
-            aa_start.append(aa_start_pos)
-            aa_end.append(aa_end_pos)
-            aa_start_pos = aa_end_pos + 1
-    df["aa_start"] = aa_start
-    df["aa_end"] = aa_end
-    print(f"refview.")
-    print(print(tabulate(df[df["reference.id"]==2][0:20], headers='keys', tablefmt='psql')))
+    print(tabulate(df[df["reference.id"] == 8][-30:], headers='keys', tablefmt='psql'))
     return df
 
 
