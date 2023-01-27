@@ -116,7 +116,6 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
          seqtech changes mut & country filter; is changed by ref
          country changes mut filter; is changed by ref and country (keep prior country selection)
         """
-        print(dash.ctx.triggered_id )
         if dash.ctx.triggered_id == "select_all_seq_tech_0":
             if len(select_all_tech) == 1:
                 seqtech_value = [i['value'] for i in all_seq_tech_options if not i['disabled']]
@@ -139,7 +138,6 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
                                               (df_dict['propertyView']["sample.id"].isin(sample_id_set))]
             country_options = get_all_frequency_sorted_countries_by_filters(df_prop, country_options)
             country_value = [c['value'] for c in country_options if not c['disabled'] and c['value'] in country_value]
-        print(country_value)
 
         return tech_options, seqtech_value, country_options, country_value
 
@@ -154,16 +152,18 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
             Input("seq_tech_dropdown_0", "value"),
             Input("selected_interval", "value"),
             Input('date_slider', 'value'),
-            Input("country_dropdown_0", "value")
+            Input("country_dropdown_0", "value"),
+            Input("gene_dropdown_0", "value"),
         ],
         [
             State('world_map_explorer', 'relayoutData'),
         ], prevent_initial_call=True,
         )
-    def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list, interval, dates, countries, layout):
+    def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list, interval, dates, countries, genes,
+                                  layout):
         print("trigger new map")
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        fig = world_map.get_world_map(mutation_list, reference_id, seqtech_list, method, date_list, countries)
+        fig = world_map.get_world_map(mutation_list, reference_id, seqtech_list, method, date_list, countries,genes)
         # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
         # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
         # TODO sometimes not working
@@ -280,10 +280,11 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
             Input("seq_tech_dropdown_0", "value"),
             Input('date_slider', 'value'),
             Input('selected_interval', 'value'),
+            Input("gene_dropdown_0", "value"),
             #   Input('yaxis_type', 'value')
         ], prevent_initial_call=True,
         )
-    def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list, dates, interval):
+    def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list, dates, interval, genes):
         try:
             location_name = click_data['points'][0]['hovertext']
         except TypeError:
@@ -294,10 +295,10 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
         title_text = location_name
         # 1. plot
         if method == 'Increase':
-            fig = world_map.get_slope_bar_plot(date_list, mutations, reference_id, seqtech_list, location_name)
+            fig = world_map.get_slope_bar_plot(date_list, mutations, reference_id, seqtech_list, location_name, genes)
             plot_header = "Slope mutations"
         elif method == 'Frequency':
-            fig = world_map.get_frequency_bar_chart(mutations, reference_id, seqtech_list, date_list, location_name)
+            fig = world_map.get_frequency_bar_chart(mutations, reference_id, seqtech_list, date_list, location_name, genes)
             plot_header = "Number Sequences"
         return fig, title_text, plot_header
 
@@ -312,9 +313,10 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
             Input('date_slider', 'value'),
             Input('selected_interval', 'value'),
             Input("results_per_location", 'clickData'),
+            Input("gene_dropdown_0", "value"),
         ], prevent_initial_call=True,
         )
-    def update_lower_plot(click_data_map, mutations, reference_id, seqtech_list, dates, interval, clickDataBoxPlot):
+    def update_lower_plot(click_data_map, mutations, reference_id, seqtech_list, dates, interval, clickDataBoxPlot, genes):
         if dash.ctx.triggered_id == "results_per_location":
             mutations = [clickDataBoxPlot['points'][0]['label']]
         try:
@@ -323,7 +325,7 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
             location_name = "Germany"
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         fig_develop = world_map.get_frequency_development_scatter_plot(mutations, reference_id, seqtech_list, date_list,
-                                                                       location_name)
+                                                                       location_name, genes)
         return fig_develop
 
 

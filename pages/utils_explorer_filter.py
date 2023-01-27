@@ -41,7 +41,7 @@ def get_all_frequency_sorted_countries(propertyView):
 
 def get_all_genes_per_reference(variantView, reference_id, color_dict):
     df = variantView[(variantView['reference.id'] == reference_id) &
-                     (variantView['element.type'] == "cds") ]
+                     (variantView['element.type'] == "cds")]
     gene_list = list(df["element.symbol"].unique())
     gene_dict = [{'label': html.Span(gene, style={'color': color_dict[gene]}), 'value': gene} for gene in gene_list]
     return gene_dict

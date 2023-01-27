@@ -57,20 +57,20 @@ tab_explored_tool = html.Div(
                     dbc.Row(
                         [
                             dbc.Col(
-                                [get_html_elem_reference_radioitems(all_reference_options)], width=2
+                                [get_html_elem_reference_radioitems(all_reference_options)],
                             ),
                             dbc.Col(
-                                [get_html_elem_dropdown_genes(all_gene_options)], width=2
+                                [get_html_elem_dropdown_genes(all_gene_options)],
                             ),
                             dbc.Col(
-                                [get_html_elem_checklist_seq_tech(all_seq_tech_options)], width=2
+                                [get_html_elem_checklist_seq_tech(all_seq_tech_options)],
                             ),
                             dbc.Col(
-                                [get_html_elem_dropdown_countries(all_country_options)], width=2
+                                [get_html_elem_dropdown_countries(all_country_options)],
                             ),
                             dbc.Col(
                                 [get_html_elem_method_radioitems(),
-                                 get_html_interval()], width=2
+                                 get_html_interval()],
                             ),
                         ]
                     ),
