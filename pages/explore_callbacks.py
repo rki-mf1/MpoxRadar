@@ -11,7 +11,7 @@ from pages.utils_explorer_filter import get_all_frequency_sorted_countries_by_fi
 
 
 # This is the EXPLORE TOOL PART
-def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, table_filter, all_seq_tech_options):
+def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, table_filter, all_seq_tech_options, color_dict):
 
     @callback(
         [
@@ -52,7 +52,7 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
                 (df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)) &
                 (df_dict['propertyView']["COUNTRY"].isin(country_value))]
             variantView_cds_ref_gene = variantView_cds_ref[variantView_cds_ref["element.symbol"].isin(gene_value)]
-            mut_options = get_frequency_sorted_mutation_by_filters(variantView_cds_ref_gene, propertyView_seq_country)
+            mut_options = get_frequency_sorted_mutation_by_filters(variantView_cds_ref_gene, propertyView_seq_country, color_dict)
             if select_x_mut > len(mut_options):
                 select_x_mut = len(mut_options)
             mut_value = [i['value'] for i in mut_options][0:select_x_mut]
@@ -81,11 +81,11 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
         """
         if dash.ctx.triggered_id == "select_all_genes_0":
             if len(select_all_genes) == 1:
-                gene_value = [i['value'] for i in get_all_genes_per_reference(df_dict["referenceView"], reference_value)]
+                gene_value = [i['value'] for i in get_all_genes_per_reference(df_dict["referenceView"], reference_value, color_dict)]
             elif len(select_all_genes) == 0:
                 gene_value = []
         if dash.ctx.triggered_id in ["reference_radio_0"]:
-            gene_options = get_all_genes_per_reference(df_dict["referenceView"], reference_value)
+            gene_options = get_all_genes_per_reference(df_dict["referenceView"], reference_value, color_dict)
             gene_value = [i['value'] for i in gene_options]
 
         return gene_options, gene_value

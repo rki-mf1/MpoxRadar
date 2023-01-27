@@ -44,8 +44,8 @@ table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
 all_reference_options = get_all_references(df_dict['variantView'])
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
 all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
-all_mutation_options = get_all_frequency_sorted_mutation(world_map.df_all_dates_all_voc, 2)
-all_gene_options = get_all_genes_per_reference(df_dict["referenceView"], 2)
+all_mutation_options = get_all_frequency_sorted_mutation(world_map.df_all_dates_all_voc, 2, world_map.color_dict)
+all_gene_options = get_all_genes_per_reference(df_dict["variantView"], 2, world_map.color_dict)
 
 dash.register_page(__name__, path="/Tool")
 
@@ -565,7 +565,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 """
 
 # This is the EXPLORE TOOL PART
-get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, table_filter, all_seq_tech_options)
+get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, table_filter, all_seq_tech_options,
+                      world_map.color_dict)
 
 # COMPARE PART
-get_compare_callbacks(df_dict, variantView_cds)
+get_compare_callbacks(df_dict, variantView_cds, world_map.color_dict)

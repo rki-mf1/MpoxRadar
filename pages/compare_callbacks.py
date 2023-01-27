@@ -7,7 +7,7 @@ from pages.utils_explorer_filter import  get_frequency_sorted_mutation_by_filter
 
 
 # This is the EXPLORE TOOL PART
-def get_compare_callbacks(df_dict, variantView_cds):
+def get_compare_callbacks(df_dict, variantView_cds, color_dict):
     @callback(
         [
             Output("mutation_dropdown_1", "options"),
@@ -50,7 +50,7 @@ def get_compare_callbacks(df_dict, variantView_cds):
             (df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value_1)) &
             (df_dict['propertyView']["COUNTRY"].isin(country_value_1))]
         variantView_cds_ref_gene_1 = variantView_cds_ref_1[variantView_cds_ref_1["element.symbol"].isin(gene_value_1)]
-        mut_options_1 = get_frequency_sorted_mutation_by_filters(variantView_cds_ref_gene_1, propertyView_seq_country_1)
+        mut_options_1 = get_frequency_sorted_mutation_by_filters(variantView_cds_ref_gene_1, propertyView_seq_country_1, color_dict)
         mut_value_1 = [i['value'] for i in mut_options_1]
 
         variantView_cds_ref_2 = variantView_cds[(variantView_cds['reference.id'] == reference_value_2)]
@@ -58,7 +58,7 @@ def get_compare_callbacks(df_dict, variantView_cds):
             (df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value_2)) &
             (df_dict['propertyView']["COUNTRY"].isin(country_value_2))]
         variantView_cds_ref_gene_2 = variantView_cds_ref_2[variantView_cds_ref_2["element.symbol"].isin(gene_value_2)]
-        mut_options_2 = get_frequency_sorted_mutation_by_filters(variantView_cds_ref_gene_2, propertyView_seq_country_2)
+        mut_options_2 = get_frequency_sorted_mutation_by_filters(variantView_cds_ref_gene_2, propertyView_seq_country_2, color_dict)
         mut_value_2 = [i['value'] for i in mut_options_2]
 
         unique_mutations_value_1 = list(set(mut_value_1).difference(set(mut_value_2)))
@@ -148,7 +148,7 @@ def get_compare_callbacks(df_dict, variantView_cds):
             elif len(select_all_seq_techs) == 0:
                 seq_tech_value = []
         else:
-            gene_options = get_all_genes_per_reference(df_dict['referenceView'], reference_value)
+            gene_options = get_all_genes_per_reference(df_dict['variantView'], reference_value, color_dict)
             gene_value = [g['value'] for g in gene_options]
 
             country_options = get_all_frequency_sorted_countries(df_dict['propertyView'])
@@ -205,7 +205,7 @@ def get_compare_callbacks(df_dict, variantView_cds):
             elif len(select_all_seq_techs) == 0:
                 seq_tech_value = []
         else:
-            gene_options = get_all_genes_per_reference(df_dict['referenceView'], reference_value)
+            gene_options = get_all_genes_per_reference(df_dict['variantView'], reference_value, color_dict)
             gene_value = [g['value'] for g in gene_options]
 
             country_options = get_all_frequency_sorted_countries(df_dict['propertyView'])
