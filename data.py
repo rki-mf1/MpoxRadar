@@ -210,12 +210,8 @@ def create_property_view(df, dummy_date="2021-12-31"):
 
 
 def create_variant_view(df):
-    #  start = perf_counter()
     df['reference.id'] = df['reference.id'].astype(float).astype("Int64")
     df['variant.id'] = df['variant.id'].astype(float).astype("Int64")
-    # print(f"time pre-processing VariantView: {(perf_counter()-start)} sec.")
-    # print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
-    # df = df[df['element.type']=='cds'].reset_index(drop=True)
     return df
 
 
@@ -224,7 +220,6 @@ def create_reference_view(df):
     reference.id, element.type, element.symbol, element.start, element.end
     """
     df = df[(df["element.type"] == "cds")]
-    print(tabulate(df[df["reference.id"] == 8][-30:], headers='keys', tablefmt='psql'))
     return df
 
 

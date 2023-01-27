@@ -23,7 +23,7 @@ from pages.html_data_explorer import create_worldMap_explorer, \
     get_html_elem_checklist_seq_tech, \
     get_html_interval, \
     get_html_elem_dropdown_countries, \
-    get_html_elem_dropdown_genes
+    get_html_elem_dropdown_genes, create_table_compare
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.util_tool_mpoxsonar import Output_mpxsonar
@@ -32,6 +32,7 @@ from pages.util_tool_summary import descriptive_summary_panel
 from .app_controller import get_freq_mutation
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
+from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 
@@ -88,6 +89,62 @@ tab_explored_tool = html.Div(
     ]
 )
 
+tab_compare_tool = html.Div(
+    [
+        html.Div([
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [get_html_elem_reference_radioitems(all_reference_options, radio_id=1),
+                                 get_html_elem_dropdown_genes(all_gene_options, g_id=1),
+                                 get_html_elem_checklist_seq_tech(all_seq_tech_options, s_id=1),
+                                 get_html_elem_dropdown_countries(all_country_options, c_id=1),
+                                 ]
+                            ),
+                            dbc.Col(
+                                [get_html_elem_reference_radioitems(all_reference_options, radio_id=2),
+                                 get_html_elem_dropdown_genes(all_gene_options, g_id=2),
+                                 get_html_elem_checklist_seq_tech(all_seq_tech_options, s_id=2),
+                                 get_html_elem_dropdown_countries(all_country_options, c_id=2),
+                                 ]
+                            ),
+                        ]),
+                    html.Br(),
+                    dbc.Row(
+                        [dbc.Button('Compare', id='compare_button', size="lg", className="me-1", color="primary", n_clicks=0)]),
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options,
+                                                                     title="AA Mutations unique for left selection",
+                                                                     aa_id=1), ]
+                            ),
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options,
+                                                                     title="AA Mutations unique for right selection",
+                                                                     aa_id=2), ]
+                            ),
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options,
+                                                                     title="AA Mutations in both selections",
+                                                                     aa_id=3)], )
+                        ]
+                    ),
+
+                    dbc.Row(
+                        [create_table_compare(title="unique for left selection", table_id=1),
+                         create_table_compare(title="unique for right selection", table_id=2),
+                         create_table_compare(title="in both selection", table_id=3)]
+                    ),
+                ]
+            ),
+        ]
+        ),
+    ], id="compare_elem"),
+
 tab_advanced_tool = html.Div(
     [
         dbc.Row(
@@ -121,6 +178,7 @@ layout = html.Div(
                             [
                                 dbc.Tab(tab_explored_tool, label="Explore Tool"),
                                 dbc.Tab(tab_advanced_tool, label="Advanced Tool"),
+                                dbc.Tab(tab_compare_tool, label="Compare Tool"),
                             ]
                         ),  # end tabs
                     ]
@@ -506,7 +564,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     return fig, hidden_state
 """
 
-
 # This is the EXPLORE TOOL PART
 get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, table_filter, all_seq_tech_options)
 
+# COMPARE PART
+get_compare_callbacks(df_dict, variantView_cds)

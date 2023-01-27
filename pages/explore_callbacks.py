@@ -15,25 +15,24 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
 
     @callback(
         [
-            Output("mutation_dropdown", "options"),
-            Output("mutation_dropdown", "value"),
-            Output('max_nb_txt', 'children'),
-            Output('select_x_frequent_mut', 'max'),
-            Output("select_x_frequent_mut", "value"),
+            Output("mutation_dropdown_0", "options"),
+            Output("mutation_dropdown_0", "value"),
+            Output('max_nb_txt_0', 'children'),
+            Output('select_x_frequent_mut_0', 'max'),
+            Output("select_x_frequent_mut_0", "value"),
         ],
         [
-            Input("reference_radio", "value"),
-            Input("gene_dropdown", "value"),
-            Input("select_all_genes", "value"),
-            Input("seq_tech_dropdown", "value"),
-            Input("country_dropdown", "value"),
-            Input("select_x_frequent_mut", "value"),
+            Input("reference_radio_0", "value"),
+            Input("gene_dropdown_0", "value"),
+            Input("seq_tech_dropdown_0", "value"),
+            Input("country_dropdown_0", "value"),
+            Input("select_x_frequent_mut_0", "value"),
         ],
         [
-            State("mutation_dropdown", "options"),
+            State("mutation_dropdown_0", "options"),
         ], prevent_initial_call=False,
         )
-    def actualize_mutation_filter(reference_value, gene_value, select_all_genes, seqtech_value, country_value, select_x_mut,
+    def actualize_mutation_filter(reference_value, gene_value, seqtech_value, country_value, select_x_mut,
                                   mut_options):
         """
         filter changing depending on each other
@@ -44,7 +43,7 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
          mut --> no callback
         """
         # TODO now return top x mut without checking for mutations with same number
-        if dash.ctx.triggered_id == "select_x_frequent_mut":
+        if dash.ctx.triggered_id == "select_x_frequent_mut_0":
             mut_value = [i['value'] for i in mut_options[0: select_x_mut]]
 
         else:
@@ -64,28 +63,28 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
 
     @callback(
         [
-            Output("gene_dropdown", "options"),
-            Output("gene_dropdown", "value"),
+            Output("gene_dropdown_0", "options"),
+            Output("gene_dropdown_0", "value"),
         ],
         [
-            Input("reference_radio", "value"),
-            Input("gene_dropdown", "value"),
-            Input("select_all_genes", "value"),
+            Input("reference_radio_0", "value"),
+            Input("gene_dropdown_0", "value"),
+            Input("select_all_genes_0", "value"),
         ],
         [
-            State("gene_dropdown", "options"),
+            State("gene_dropdown_0", "options"),
         ], prevent_initial_call=False,
         )
     def actualize_gene_filters(reference_value, gene_value, select_all_genes, gene_options):
         """
          gene --> mut
         """
-        if dash.ctx.triggered_id == "select_all_genes":
+        if dash.ctx.triggered_id == "select_all_genes_0":
             if len(select_all_genes) == 1:
                 gene_value = [i['value'] for i in get_all_genes_per_reference(df_dict["referenceView"], reference_value)]
             elif len(select_all_genes) == 0:
                 gene_value = []
-        if dash.ctx.triggered_id in ["reference_radio"]:
+        if dash.ctx.triggered_id in ["reference_radio_0"]:
             gene_options = get_all_genes_per_reference(df_dict["referenceView"], reference_value)
             gene_value = [i['value'] for i in gene_options]
 
@@ -94,36 +93,36 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
 
     @callback(
         [
-            Output("seq_tech_dropdown", "options"),
-            Output("seq_tech_dropdown", "value"),
-            Output("country_dropdown", "options"),
-            Output("country_dropdown", "value"),
+            Output("seq_tech_dropdown_0", "options"),
+            Output("seq_tech_dropdown_0", "value"),
+            Output("country_dropdown_0", "options"),
+            Output("country_dropdown_0", 'value'),
         ],
         [
-            Input("reference_radio", "value"),
-            Input("seq_tech_dropdown", "value"),
-            Input("country_dropdown", "value"),
-            Input("select_all_seq_tech", "value"),
-            Input("select_all_countries", "value")
+            Input("reference_radio_0", "value"),
+            Input("seq_tech_dropdown_0", "value"),
+            Input("country_dropdown_0", "value"),
+            Input("select_all_seq_tech_0", "value"),
+            Input("select_all_countries_0", "value")
         ],
         [
-            State("seq_tech_dropdown", "options"),
-            State("seq_tech_dropdown", "value"),
-            State("country_dropdown", "options"),
+            State("seq_tech_dropdown_0", "options"),
+            State("country_dropdown_0", "options"),
         ], prevent_initial_call=False,
         )
     def actualize_seqtech_and_country_filters(reference_value, seqtech_value, country_value, select_all_tech,
-                                              select_all_countries, tech_options, tech_value, country_options):
+                                              select_all_countries, tech_options, country_options):
         """
          seqtech changes mut & country filter; is changed by ref
          country changes mut filter; is changed by ref and country (keep prior country selection)
         """
-        if dash.ctx.triggered_id == "select_all_seq_tech":
+        print(dash.ctx.triggered_id )
+        if dash.ctx.triggered_id == "select_all_seq_tech_0":
             if len(select_all_tech) == 1:
                 seqtech_value = [i['value'] for i in all_seq_tech_options if not i['disabled']]
             elif len(select_all_tech) == 0:
                 seqtech_value = []
-        elif dash.ctx.triggered_id == "select_all_countries":
+        elif dash.ctx.triggered_id == "select_all_countries_0":
             if len(select_all_countries) == 1:
                 country_value = [i['value'] for i in country_options if not i['disabled']]
             elif len(select_all_countries) == 0:
@@ -140,21 +139,22 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
                                               (df_dict['propertyView']["sample.id"].isin(sample_id_set))]
             country_options = get_all_frequency_sorted_countries_by_filters(df_prop, country_options)
             country_value = [c['value'] for c in country_options if not c['disabled'] and c['value'] in country_value]
+        print(country_value)
 
         return tech_options, seqtech_value, country_options, country_value
 
 
-        # update map by change of filters or moving slider
+    # update map by change of filters or moving slider
     @callback(
         Output("world_map_explorer", "figure"),
         [
-            Input("mutation_dropdown", "value"),
-            Input("reference_radio", "value"),
+            Input("mutation_dropdown_0", "value"),
+            Input("reference_radio_0", "value"),
             Input("method_radio", "value"),
-            Input("seq_tech_dropdown", "value"),
+            Input("seq_tech_dropdown_0", "value"),
             Input("selected_interval", "value"),
             Input('date_slider', 'value'),
-            Input("country_dropdown", "value")
+            Input("country_dropdown_0", "value")
         ],
         [
             State('world_map_explorer', 'relayoutData'),
@@ -274,10 +274,10 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
         ],
         [
             Input('world_map_explorer', 'clickData'),
-            Input('mutation_dropdown', 'value'),
+            Input('mutation_dropdown_0', 'value'),
             Input('method_radio', 'value'),
-            Input('reference_radio', 'value'),
-            Input("seq_tech_dropdown", "value"),
+            Input('reference_radio_0', 'value'),
+            Input("seq_tech_dropdown_0", "value"),
             Input('date_slider', 'value'),
             Input('selected_interval', 'value'),
             #   Input('yaxis_type', 'value')
@@ -306,9 +306,9 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
         Output('mutation_development', 'figure'),
         [
             Input('world_map_explorer', 'clickData'),
-            Input('mutation_dropdown', 'value'),
-            Input('reference_radio', 'value'),
-            Input("seq_tech_dropdown", "value"),
+            Input('mutation_dropdown_0', 'value'),
+            Input('reference_radio_0', 'value'),
+            Input("seq_tech_dropdown_0", "value"),
             Input('date_slider', 'value'),
             Input('selected_interval', 'value'),
             Input("results_per_location", 'clickData'),
@@ -334,13 +334,13 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
             Output(component_id="table_explorer", component_property="columns")
         ],
         [
-            Input("mutation_dropdown", "value"),
-            Input("reference_radio", "value"),
-            Input("gene_dropdown", "value"),
-            Input("seq_tech_dropdown", "value"),
+            Input("mutation_dropdown_0", "value"),
+            Input("reference_radio_0", "value"),
+            Input("gene_dropdown_0", "value"),
+            Input("seq_tech_dropdown_0", "value"),
             Input("selected_interval", "value"),
             Input('date_slider', 'value'),
-            Input("country_dropdown", "value")
+            Input("country_dropdown_0", "value")
         ], prevent_initial_call=True,
         )
     def update_table_filter(mutation_list, reference_id, gene_list, seqtech_list, interval, dates, countries):

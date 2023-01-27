@@ -1,3 +1,4 @@
+import pandas as pd
 from dash import dash_table, html, dcc
 import dash_bootstrap_components as dbc
 
@@ -134,6 +135,49 @@ def create_table_explorer(tableFilter):
     return Output_table_standard
 
 
+def create_table_compare(title, table_id):
+    df = pd.DataFrame()
+    Output_table_standard = dbc.Card(  # Output
+        [
+            html.H3(title),
+            dbc.Accordion(
+                [
+                    dbc.AccordionItem(
+                        [
+                            html.Div(id=f"compare-table-output_{table_id}", children=""),
+                            html.Div(
+                                [
+                                    dash_table.DataTable(
+                                        data=df.to_dict('records'),
+                                        columns=[{"name": i, "id": i} for i in df.columns],
+                                        id=f"table_compare_{table_id}",
+                                        page_current=0,
+                                        page_size=20,
+                                        style_data={
+                                            "whiteSpace": "normal",
+                                            "height": "auto",
+                                            # all three widths are needed
+                                            "minWidth": "300px",
+                                            "width": "300px",
+                                            "maxWidth": "300px",
+                                        },
+                                        style_table={"overflowX": "auto"},
+                                        export_format="csv",
+                                    ),
+                                ]
+                            ),
+                        ],
+                        title="Click to hide/show output:",
+                    ),
+                ]
+            ),
+        ],
+        body=True,
+        className="mx-1 my-1",
+    )
+    return Output_table_standard
+
+
 def get_html_interval(interval=50):
     interval_card = dbc.Card(
         dbc.CardBody(
@@ -152,7 +196,7 @@ def get_html_interval(interval=50):
     return interval_card
 
 
-def get_html_elem_reference_radioitems(reference_options):
+def get_html_elem_reference_radioitems(reference_options, radio_id=0):
     checklist_reference = dbc.Card(
         dbc.CardBody(
             [
@@ -160,7 +204,7 @@ def get_html_elem_reference_radioitems(reference_options):
                 dbc.RadioItems(
                     options=reference_options,
                     value=2,
-                    id="reference_radio",
+                    id=f"reference_radio_{radio_id}",
                 ),
                 dbc.FormText(
                     "Only one reference allowed.",
@@ -174,17 +218,17 @@ def get_html_elem_reference_radioitems(reference_options):
 
 # TODO : max for input field?
 # TODO design dropdown
-def get_html_elem_dropdown_aa_mutations(mutation_options):
+def get_html_elem_dropdown_aa_mutations(mutation_options, title="AA mutations: ", aa_id=0):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
             [
-                dbc.Label("AA mutations: "),
+                dbc.Label(title),
                 html.Br(),
                 dcc.Dropdown(
                     options=mutation_options,
                     value=[mut_dict['value'] for mut_dict in
                            mutation_options[0:20]],
-                    id="mutation_dropdown",
+                    id=f"mutation_dropdown_{aa_id}",
                     maxHeight=300,
                     optionHeight=50,
                     multi=True,
@@ -195,10 +239,10 @@ def get_html_elem_dropdown_aa_mutations(mutation_options):
                 html.Br(),
                 dbc.Label(f"Select x most frequent sequences. Maximum number of non-unique mutations: "
                           f"{len(mutation_options)}",
-                          id='max_nb_txt'),
+                          id=f'max_nb_txt_{aa_id}'),
                 html.Br(),
                 dcc.Input(
-                    id="select_x_frequent_mut",
+                    id=f"select_x_frequent_mut_{aa_id}",
                     type="number",
                     placeholder=20,
                     value=20,
@@ -212,7 +256,7 @@ def get_html_elem_dropdown_aa_mutations(mutation_options):
     return checklist_aa_mutations
 
 
-def get_html_elem_dropdown_genes(gene_options):
+def get_html_elem_dropdown_genes(gene_options, g_id=0):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
             [
@@ -221,7 +265,7 @@ def get_html_elem_dropdown_genes(gene_options):
                 dcc.Dropdown(
                     options=gene_options,
                     value=[c['value'] for c in gene_options],
-                    id="gene_dropdown",
+                    id=f"gene_dropdown_{g_id}",
                     maxHeight=100,
                     optionHeight=50,
                     multi=True,
@@ -230,7 +274,7 @@ def get_html_elem_dropdown_genes(gene_options):
                            'maxHeight': 120},
                 ),
                 html.Br(),
-                dcc.Checklist(id='select_all_genes',
+                dcc.Checklist(id=f'select_all_genes_{g_id}',
                               options=[{'label': 'Select All', 'value': 1}], value=[1]),
             ],
         )
@@ -239,7 +283,7 @@ def get_html_elem_dropdown_genes(gene_options):
 
 
 # TODO design dropdown
-def get_html_elem_dropdown_countries(countries):
+def get_html_elem_dropdown_countries(countries, c_id=0):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
             [
@@ -248,7 +292,7 @@ def get_html_elem_dropdown_countries(countries):
                 dcc.Dropdown(
                     options=countries,
                     value=[c['value'] for c in countries],
-                    id="country_dropdown",
+                    id=f"country_dropdown_{c_id}",
                     maxHeight=100,
                     optionHeight=50,
                     multi=True,
@@ -257,7 +301,7 @@ def get_html_elem_dropdown_countries(countries):
                            'maxHeight': 120},
                 ),
                 html.Br(),
-                dcc.Checklist(id='select_all_countries',
+                dcc.Checklist(id=f'select_all_countries_{c_id}',
                               options=[{'label': 'Select All', 'value': 1}], value=[1]),
             ],
         )
@@ -284,7 +328,7 @@ def get_html_elem_method_radioitems():
     return checklist_methode
 
 
-def get_html_elem_checklist_seq_tech(seq_tech_options):
+def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
     checklist_seq_tech = dbc.Card(
         dbc.CardBody(
             [
@@ -292,7 +336,7 @@ def get_html_elem_checklist_seq_tech(seq_tech_options):
                 dbc.Checklist(
                     options=seq_tech_options,
                     value=[tech_dict['value'] for tech_dict in seq_tech_options],
-                    id="seq_tech_dropdown",
+                    id=f"seq_tech_dropdown_{s_id}",
                     labelStyle={"display": "block"},
                     style={
                         "maxHeight": 120,
@@ -300,7 +344,7 @@ def get_html_elem_checklist_seq_tech(seq_tech_options):
                     },
                 ),
                 html.Br(),
-                dcc.Checklist(id='select_all_seq_tech',
+                dcc.Checklist(id=f'select_all_seq_tech_{s_id}',
                               options=[{'label': 'Select All', 'value': 1}], value=[1]),
             ],
         )
