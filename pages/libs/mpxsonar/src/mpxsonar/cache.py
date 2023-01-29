@@ -12,7 +12,6 @@ import pprint
 import re
 import shutil
 import sys
-from tempfile import mkdtemp
 import traceback
 
 from mpire import WorkerPool
@@ -20,8 +19,8 @@ import pandas as pd
 from tqdm import tqdm
 
 from .align import sonarAligner
+from .config import TMP_CACHE
 from .dbm import sonarDBManager
-from .utils import check_seq_compact
 from .utils import harmonize
 from .utils import hash
 from .utils import open_file
@@ -98,11 +97,7 @@ class sonarCache:
         )
         self._molregex = re.compile(r"\[molecule=([^\[\]=]+)\]")
 
-        self.basedir = (
-            os.path.abspath(mkdtemp(prefix=".sonarCache_"))
-            if not outdir
-            else os.path.abspath(outdir)
-        )
+        self.basedir = TMP_CACHE if not outdir else os.path.abspath(outdir)
 
         if not os.path.exists(self.basedir):
             os.makedirs(self.basedir)
@@ -537,14 +532,15 @@ class sonarCache:
         with sonarDBManager(self.db, debug=self.debug) as dbm:
             for fname in fnames:
                 for data in self.iter_fasta(fname):
-                    # print(data)
+                    # EDIT: we currently lock the filtering part. print(data)
                     # check sequence lenght
-                    if not check_seq_compact(
-                        self.get_refseq(data["refmol"]), data["sequence"]
-                    ):
-                        failed_list.append((data["name"], len(data["sequence"])))
-                        # log fail samples
-                        continue
+                    # if not check_seq_compact(
+                    #    self.get_refseq(data["refmol"]), data["sequence"]
+                    # ):
+                    #    failed_list.append((data["name"], len(data["sequence"])))
+                    # log fail samples
+                    #    continue
+
                     # check sample
                     data["sampleid"], seqhash = dbm.get_sample_data(data["name"])
                     data["sourceid"] = dbm.get_source(data["refmolid"])["id"]
@@ -717,7 +713,7 @@ class sonarCache:
         # print(output_paranoid, qryfile, reffile, sample_name)
 
         if not os.path.exists(output_paranoid):
-            aligner = sonarAligner(outdir=self.basedir)
+            aligner = sonarAligner(cache_outdir=self.basedir)
 
             qry, ref = aligner.align(qryfile, reffile)
             with open(output_paranoid, "w+") as handle:
@@ -940,7 +936,7 @@ class sonarCache:
                 handle.write(">ref\n" + orig_seq)
             output_paranoid = f"{sample_name}.withref.{ref_name}.fail-paranoid.fna"
             if not os.path.exists(output_paranoid):
-                aligner = sonarAligner(outdir=self.basedir)
+                aligner = sonarAligner(cache_outdir=self.basedir)
 
                 qry, ref = aligner.align(qryfile, reffile)
                 with open(output_paranoid, "w+") as handle:
