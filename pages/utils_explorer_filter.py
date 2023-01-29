@@ -1,3 +1,4 @@
+from dash import html
 import pandas as pd
 
 
@@ -20,16 +21,28 @@ def get_all_frequency_sorted_seqtech(propertyView):
     return sorted_seqtech_dict
 
 
-def get_all_frequency_sorted_mutation(df_worldMap, reference_id):
+def get_all_frequency_sorted_mutation(df_worldMap, reference_id, color_dict):
     df = df_worldMap[(df_worldMap["reference.id"] == int(reference_id))][
-        ["variant.label", "number_sequences"]
+        ["variant.label", "element.symbol", "number_sequences"]
     ]
-    df_grouped_by_mutation = df.groupby(["variant.label"]).sum().reset_index()
+    df_grouped_by_mutation = (
+        df.groupby(["variant.label", "element.symbol"]).sum().reset_index()
+    )
     df_grouped_by_mutation = df_grouped_by_mutation.sort_values(
         ["number_sequences"], ascending=False
     )
-    sorted_mutations = df_grouped_by_mutation["variant.label"].tolist()
-    sorted_mutations_dict = [{"label": mut, "value": mut} for mut in sorted_mutations]
+    sorted_mutations_dict = [
+        {
+            "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),
+            "value": gene_mut[1],
+        }
+        for gene_mut in list(
+            zip(
+                df_grouped_by_mutation["element.symbol"],
+                df_grouped_by_mutation["variant.label"],
+            )
+        )
+    ]
     return sorted_mutations_dict
 
 
@@ -61,18 +74,44 @@ def get_all_frequency_sorted_countries(propertyView):
     return sorted_country_dict
 
 
-def get_frequency_sorted_mutation_by_filters(df_mut_ref_select, df_seq_tech):
+def get_all_genes_per_reference(variantView, reference_id, color_dict):
+    df = variantView[
+        (variantView["reference.id"] == reference_id)
+        & (variantView["element.type"] == "cds")
+    ]
+    gene_list = list(df["element.symbol"].unique())
+    gene_dict = [
+        {"label": html.Span(gene, style={"color": color_dict[gene]}), "value": gene}
+        for gene in gene_list
+    ]
+    return gene_dict
+
+
+# TODO remove once appearing mutations here?
+def get_frequency_sorted_mutation_by_filters(
+    df_mut_ref_select, df_seq_tech, color_dict
+):
     df_merge = pd.merge(df_mut_ref_select, df_seq_tech, how="inner", on="sample.id")[
-        ["sample.id", "variant.label"]
+        ["sample.id", "variant.label", "element.symbol"]
     ]
     df_grouped_by_mutation = (
-        df_merge.groupby(["variant.label"])
+        df_merge.groupby(["variant.label", "element.symbol"])
         .count()
         .reset_index()
         .sort_values(["sample.id"], ascending=False)
     )
-    sorted_mutations = df_grouped_by_mutation["variant.label"].tolist()
-    sorted_mutations_dict = [{"label": mut, "value": mut} for mut in sorted_mutations]
+    sorted_mutations_dict = [
+        {
+            "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),
+            "value": gene_mut[1],
+        }
+        for gene_mut in list(
+            zip(
+                df_grouped_by_mutation["element.symbol"],
+                df_grouped_by_mutation["variant.label"],
+            )
+        )
+    ]
     return sorted_mutations_dict
 
 

@@ -1,16 +1,16 @@
-import multiprocessing as mp
 from datetime import datetime
+import multiprocessing as mp
 from time import perf_counter
 from urllib.parse import urlparse
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import sqlalchemy
 from sqlalchemy import create_engine
-from tabulate import tabulate
 
 from pages.config import DB_URL
 
-tables = ["propertyView", "variantView"]
+tables = ["propertyView", "variantView", "referenceView"]
 
 # pandas normally uses python strings, which have about 50 bytes overhead. that's catastrophic!
 stringType = "string[pyarrow]"
@@ -47,17 +47,46 @@ column_dtypes = {
         "molecule.standard": stringType,
         "element.id": intType,
         "element.accession": stringType,
-        "element.symbol": stringType,
+        "element.symbol": stringType,  # needed = Gene Name
         "element.standard": stringType,
-        "element.type": stringType,
+        "element.type": stringType,  # cds (=AA mutations) or source (=Nt mutations)
         "variant.id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
         "variant.ref": stringType,
         "variant.start": stringType,
         "variant.end": stringType,
         "variant.alt": stringType,
-        "variant.label": stringType,
-        "variant.parent_id": stringType  # Cannot convert non-finite values (NA or inf) to integer
-    }
+        "variant.label": stringType,  # needed mutation name
+        "variant.parent_id": stringType,  # Cannot convert non-finite values (NA or inf) to integer
+    },
+    "referenceView": {
+        "reference.id": intType,  # needed
+        "reference.accession": stringType,
+        "reference.description": stringType,
+        "reference.organism": stringType,
+        "reference.standard": intType,
+        "translation.id": intType,
+        "molecule.id": intType,
+        "molecule.type": stringType,
+        "molecule.accession": stringType,
+        "molecule.symbol": stringType,
+        "molecule.description": stringType,
+        "molecule.length": intType,
+        "molecule.segment": intType,
+        "molecule.standard": intType,
+        "element.id": intType,
+        "element.type": stringType,  # needed
+        "element.accession": stringType,
+        "element.symbol": stringType,  # needed gene name
+        "element.description": stringType,
+        "element.start": intType,  # needed = start gene name
+        "element.end": intType,  # end gene cds
+        "element.strand": intType,
+        "element.sequence": stringType,
+        "elempart.start ": intType,
+        "elempart.end ": intType,
+        "elempart.strand ": intType,
+        "elempart.segment ": intType,
+    },
 }
 
 needed_columns = {
@@ -77,7 +106,15 @@ needed_columns = {
         #  "variant.ref",
         "variant.label",
         #  "variant.parent_id"
-        "element.type"
+        "element.type",
+        "element.symbol",
+    ],
+    "referenceView": [
+        "reference.id",
+        "element.type",
+        "element.symbol",
+        "element.start",
+        "element.end",
     ],
 }
 
@@ -88,7 +125,7 @@ def get_database_connection():
     user = parsed_db_url.username
     ip = parsed_db_url.hostname
     pw = parsed_db_url.password
-    port = parsed_db_url.port
+    # port = parsed_db_url.port
     db_database = parsed_db_url.path.replace("/", "")
     return create_engine(f"mysql+pymysql://{user}:{pw}@{ip}/{db_database}")
 
@@ -158,28 +195,37 @@ class DataFrameLoader:
 
 def create_property_view(df, dummy_date="2021-12-31"):
     #  start = perf_counter()
-    df['value_text'] = df.apply(lambda row: row["value_date"] if row["property.name"] in
-                                                                 ['COLLECTION_DATE', 'RELEASE_DATE'] else row[
-        "value_text"], axis=1)
+    df["value_text"] = df.apply(
+        lambda row: row["value_date"]
+        if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE"]
+        else row["value_text"],
+        axis=1,
+    )
     df = df.drop(columns=["value_date"], axis=1)
-    c = ['sample.id', 'sample.name']
-    df = df.set_index(['property.name'] + c).unstack('property.name')
+    c = ["sample.id", "sample.name"]
+    df = df.set_index(["property.name"] + c).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
-    df['COLLECTION_DATE'] = df[['COLLECTION_DATE']].fillna(dummy_date)
-    df['COLLECTION_DATE'] = df['COLLECTION_DATE'].apply(lambda d: datetime.strptime(d, "%Y-%m-%d").date())
-    df['SEQ_TECH'] = df['SEQ_TECH'].replace([np.nan, ""], 'undefined')
+    df["COLLECTION_DATE"] = df[["COLLECTION_DATE"]].fillna(dummy_date)
+    df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
+        lambda d: datetime.strptime(d, "%Y-%m-%d").date()
+    )
+    df["SEQ_TECH"] = df["SEQ_TECH"].replace([np.nan, ""], "undefined")
     #  print(f"time pre-processing PropertyView final: {(perf_counter()-start)} sec.")
     #  print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
     return df
 
 
 def create_variant_view(df):
-    #  start = perf_counter()
-    df['reference.id'] = df['reference.id'].astype(float).astype("Int64")
-    df['variant.id'] = df['variant.id'].astype(float).astype("Int64")
-    # print(f"time pre-processing VariantView: {(perf_counter()-start)} sec.")
-    # print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
-    # df = df[df['element.type']=='cds'].reset_index(drop=True)
+    df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
+    df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
+    return df
+
+
+def create_reference_view(df):
+    """
+    reference.id, element.type, element.symbol, element.start, element.end
+    """
+    df = df[(df["element.type"] == "cds")]
     return df
 
 
@@ -189,4 +235,5 @@ def load_all_sql_files():
     # TODO query for variantView tooo long.
     df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
     df_dict["variantView"] = create_variant_view(df_dict["variantView"])
+    df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
     return df_dict

@@ -74,17 +74,27 @@ class TableFilter(object):
         ]
         #        print(tabulate(self.table_df[0:10], headers='keys', tablefmt='psql'))
 
-    def _get_filtered_samples(self, mutation_list, seq_tech_list, reference_id, dates):
+    def _get_filtered_samples(
+        self, mutation_list, seq_tech_list, reference_id, dates, gene_list, countries
+    ):
         samples = self.table_df[
             self.table_df["COLLECTION_DATE"].isin(dates)
             & self.table_df["variant.label"].isin(mutation_list)
             & (self.table_df["reference.id"] == reference_id)
             & self.table_df["SEQ_TECH"].isin(seq_tech_list)
+            & self.table_df["COUNTRY"].isin(countries)
         ]["sample.id"]
         return samples.tolist()
 
+    # TODO no filtering for mutations/genes possible
     def get_filtered_table(
-        self, mutation_list=None, seq_tech_list=None, reference_id=2, dates=None
+        self,
+        mutation_list=None,
+        seq_tech_list=None,
+        reference_id=2,
+        dates=None,
+        gene_list=None,
+        countries=None,
     ):
 
         if mutation_list is None:
@@ -93,8 +103,13 @@ class TableFilter(object):
             seq_tech_list = []
         if dates is None:
             dates = []
+        if gene_list is None:
+            gene_list = []
+        if countries is None:
+            countries = []
+
         samples = self._get_filtered_samples(
-            mutation_list, seq_tech_list, reference_id, dates
+            mutation_list, seq_tech_list, reference_id, dates, gene_list, countries
         )
         df = self.table_df[self.table_df["sample.id"].isin(samples)]
         if not df.empty:
@@ -190,7 +205,7 @@ class DfsAndDetailPlot(object):
         # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         self.mutations_of_concern = self.get_mutations_of_concern(variantView)
         self.mutations = copy.deepcopy(self.mutations_of_concern)
-        self.color_dict = self.get_color_dict()
+
         dates = propertyView["COLLECTION_DATE"]
         self.min_date = min(dates)
         self.max_date = max(dates)
@@ -198,6 +213,7 @@ class DfsAndDetailPlot(object):
             ["name", "ISO_Code", "lat", "lon"]
         ].rename(columns={"name": "COUNTRY"})
         self.df_all_dates_all_voc = self._get_full_df(propertyView, variantView)
+        self.color_dict = self.get_color_dict(variantView)
         # print(tabulate(self.df_all_dates_all_voc[0:10], headers='keys', tablefmt='psql'))
 
     def _get_full_df(self, propertyView, variantView):
@@ -208,7 +224,7 @@ class DfsAndDetailPlot(object):
         # 1. join metadata
         df = variantView[variantView["element.type"] == "cds"].reset_index(drop=True)
         df_all_dates_all_voc = pd.merge(
-            df[["sample.id", "variant.label", "reference.id"]],
+            df[["sample.id", "variant.label", "reference.id", "element.symbol"]],
             propertyView[["sample.id", "COUNTRY", "COLLECTION_DATE", "SEQ_TECH"]],
             how="left",
             on="sample.id",
@@ -220,6 +236,7 @@ class DfsAndDetailPlot(object):
                 "variant.label",
                 "reference.id",
                 "SEQ_TECH",
+                "element.symbol",
             ]
         ]
 
@@ -232,6 +249,7 @@ class DfsAndDetailPlot(object):
                     "variant.label",
                     "reference.id",
                     "SEQ_TECH",
+                    "element.symbol",
                 ],
                 dropna=False,
             )["sample.id"]
@@ -260,6 +278,7 @@ class DfsAndDetailPlot(object):
         df_all_dates_all_voc = self._remove_x_appearing_variants(
             df_all_dates_all_voc, nb=1
         )
+
         return df_all_dates_all_voc[
             [
                 "COUNTRY",
@@ -269,6 +288,7 @@ class DfsAndDetailPlot(object):
                 "sample_id_list",
                 "variant.label",
                 "number_sequences",
+                "element.symbol",
             ]
         ]
 
@@ -289,7 +309,7 @@ class DfsAndDetailPlot(object):
         else:
             return len(seq_set)
 
-    def get_color_dict(self):
+    def get_color_dict(self, variantView):
         """
         defined color by mutation
         color scheme contains 24 different colors, if #mutations>24 use second color scheme with 24 colors
@@ -297,17 +317,18 @@ class DfsAndDetailPlot(object):
         wildtype= green, no_mutation (no sequence meets the user selected mutations, dates, location) = grey
         """
         color_dict = {}
-        color_schemes = [px.colors.qualitative.Light24, px.colors.qualitative.Dark24]
-        mutations = [
-            var[1:-1] if "`" in var else var for var in self.mutations_of_concern
+        color_schemes = [
+            px.colors.qualitative.Light24[1:],
+            px.colors.qualitative.Dark24[1:],
         ]
-        for i, mutation in enumerate(mutations):
-            j = i % 48
-            if j < 24:
-                color_dict[mutation] = color_schemes[0][j]
-            elif j > 23 and j < 48:
-                color_dict[mutation] = color_schemes[1][j - 24]
-        color_dict["no_mutation"] = "grey"
+        for ref, group_df in variantView.groupby("reference.id"):
+            for i, (gene, gene_df) in enumerate(group_df.groupby("element.symbol")):
+                j = i % 46
+                if j < 23:
+                    color_dict[gene] = color_schemes[0][j]
+                elif 22 < j < 46:
+                    color_dict[gene] = color_schemes[1][j - 23]
+        color_dict["no_gene"] = "grey"
         return color_dict
 
     def get_mutations_of_concern(self, variantView):
@@ -334,7 +355,7 @@ class DfsAndDetailPlot(object):
         return df
 
     def get_df_for_frequency_bar(
-        self, mutations, dates, reference_id, seqtech_list, location_name
+        self, mutations, dates, reference_id, seqtech_list, genes, location_name
     ):
         mutations = [var[1:-1] if "`" in var else var for var in mutations]
         df = (
@@ -346,15 +367,17 @@ class DfsAndDetailPlot(object):
                     "SEQ_TECH",
                     "reference.id",
                     "number_sequences",
+                    "element.symbol",
                 ]
             ][
                 self.df_all_dates_all_voc["COUNTRY"].isin([location_name])
                 & self.df_all_dates_all_voc["COLLECTION_DATE"].isin(dates)
                 & self.df_all_dates_all_voc["variant.label"].isin(mutations)
                 & self.df_all_dates_all_voc["SEQ_TECH"].isin(seqtech_list)
+                & self.df_all_dates_all_voc["element.symbol"].isin(genes)
                 & (self.df_all_dates_all_voc["reference.id"] == reference_id)
             ]
-            .groupby(["COUNTRY", "variant.label"])
+            .groupby(["COUNTRY", "variant.label", "element.symbol"])
             .sum()
             .reset_index()
         )
@@ -375,7 +398,7 @@ class DfsAndDetailPlot(object):
         return df
 
     def get_increase_df_for_map(
-        self, dates, mutations, reference_id, seq_tech_list, countries
+        self, dates, mutations, reference_id, seq_tech_list, countries, genes
     ):
         """
         shows change in frequency of the different virus mutations, calculate lin regression with scipy.stats module and
@@ -390,6 +413,7 @@ class DfsAndDetailPlot(object):
                 & self.df_all_dates_all_voc["SEQ_TECH"].isin(seq_tech_list)
                 & self.df_all_dates_all_voc["COUNTRY"].isin(countries)
                 & (self.df_all_dates_all_voc["reference.id"] == reference_id)
+                & self.df_all_dates_all_voc["element.symbol"].isin(genes)
             ]
             .groupby(["COUNTRY", "COLLECTION_DATE"])
             .sum()
@@ -410,7 +434,7 @@ class DfsAndDetailPlot(object):
         return df
 
     def get_increase_df_for_plot(
-        self, dates, mutations, reference_id, seq_tech_list, location_name
+        self, dates, mutations, reference_id, seq_tech_list, genes, location_name
     ):
         """
         shows change in frequency of the different virus mutations, calculate lin regression with scipy.stats module and
@@ -424,14 +448,15 @@ class DfsAndDetailPlot(object):
                 self.df_all_dates_all_voc["COLLECTION_DATE"].isin(dates)
                 & self.df_all_dates_all_voc["variant.label"].isin(mutations)
                 & self.df_all_dates_all_voc["SEQ_TECH"].isin(seq_tech_list)
+                & self.df_all_dates_all_voc["element.symbol"].isin(genes)
                 & (self.df_all_dates_all_voc["reference.id"] == reference_id)
                 & (self.df_all_dates_all_voc["COUNTRY"] == location_name)
             ]
-            .groupby(["COUNTRY", "variant.label", "COLLECTION_DATE"])
+            .groupby(["COUNTRY", "variant.label", "element.symbol", "COLLECTION_DATE"])
             .sum()
             .reset_index()
         )
-        df = df.groupby(["COUNTRY", "variant.label"]).agg(
+        df = df.groupby(["COUNTRY", "variant.label", "element.symbol"]).agg(
             {
                 "number_sequences": lambda x: list(x),
                 "COLLECTION_DATE": lambda x: list(x),
@@ -443,6 +468,7 @@ class DfsAndDetailPlot(object):
                 columns=[
                     "number_sequences",
                     "variant.label",
+                    "element.symbol",
                     "COLLECTION_DATE",
                     "slope",
                 ],
@@ -452,7 +478,7 @@ class DfsAndDetailPlot(object):
         return df
 
     def get_df_for_scatter_plot(
-        self, mutations, dates, reference_id, seqtech_list, location_name
+        self, mutations, dates, reference_id, seqtech_list, location_name, genes
     ):
         mutations = [var[1:-1] if "`" in var else var for var in mutations]
         df = self.df_all_dates_all_voc[
@@ -460,9 +486,18 @@ class DfsAndDetailPlot(object):
             & self.df_all_dates_all_voc["COLLECTION_DATE"].isin(dates)
             & self.df_all_dates_all_voc["variant.label"].isin(mutations)
             & self.df_all_dates_all_voc["SEQ_TECH"].isin(seqtech_list)
+            & self.df_all_dates_all_voc["element.symbol"].isin(genes)
             & (self.df_all_dates_all_voc["reference.id"] == reference_id)
         ].reset_index(drop=True)
-        return df[["COUNTRY", "COLLECTION_DATE", "variant.label", "number_sequences"]]
+        return df[
+            [
+                "COUNTRY",
+                "COLLECTION_DATE",
+                "variant.label",
+                "number_sequences",
+                "element.symbol",
+            ]
+        ]
 
     def drop_rows_by_value(self, df, value, column):
         index_rows = df[df[column] == value].index
@@ -489,7 +524,7 @@ class DfsAndDetailPlot(object):
             df,
             y="number_sequences",
             x="variant.label",
-            color="variant.label",
+            color="element.symbol",
             orientation="v",
             hover_name="variant.label",
             hover_data={"variant.label": True, "number_sequences": True},
@@ -508,18 +543,24 @@ class DfsAndDetailPlot(object):
 
     # plot methods
     def get_frequency_bar_chart(
-        self, mutations, reference_id, seqtech_list, dates, location_name
+        self, mutations, reference_id, seqtech_list, dates, location_name, genes
     ):
         """
         :return fig bar chart showing mutation information of last hovered plz
         """
         df = self.get_df_for_frequency_bar(
-            mutations, dates, reference_id, seqtech_list, location_name=location_name
+            mutations,
+            dates,
+            reference_id,
+            seqtech_list,
+            genes,
+            location_name=location_name,
         )
         df = self.drop_rows_by_value(df, 0, "number_sequences")
         if df.empty:
             df = pd.DataFrame(
-                data=[["no_mutation", 0]], columns=["variant.label", "number_sequences"]
+                data=[["no_mutation", "no_gene", 0]],
+                columns=["variant.label", "element.symbol", "number_sequences"],
             )
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
@@ -534,7 +575,7 @@ class DfsAndDetailPlot(object):
             df,
             y="slope",
             x="variant.label",
-            color="variant.label",
+            color="element.symbol",
             orientation="v",
             hover_name="variant.label",
             hover_data={"variant.label": False, "slope": True},
@@ -550,15 +591,21 @@ class DfsAndDetailPlot(object):
         return fig
 
     def get_slope_bar_plot(
-        self, dates, mutations, reference_id, seqtech_list, location_name
+        self, dates, mutations, reference_id, seqtech_list, location_name, genes
     ):
         df = self.get_increase_df_for_plot(
-            dates, mutations, reference_id, seqtech_list, location_name
+            dates, mutations, reference_id, seqtech_list, genes, location_name
         )
         df = self.drop_rows_by_value(df, 0, "slope")
         if df.empty:
-            columns = ["number_sequences", "COLLECTION_DATE", "slope", "variant.label"]
-            row = [[0, "", 0, "no_mutation"]]
+            columns = [
+                "number_sequences",
+                "COLLECTION_DATE",
+                "slope",
+                "variant.label",
+                "element.symbol",
+            ]
+            row = [[0, "", 0, "no_mutation", "no_gene"]]
             df = pd.concat([df, pd.DataFrame(row, columns=columns)])
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
@@ -573,14 +620,23 @@ class DfsAndDetailPlot(object):
             df,
             x="date_numbers",
             y="number_sequences",
-            color="variant.label",
+            color="element.symbol",
             trendline="ols",
+            symbol="variant.label",
             color_discrete_map=self.color_dict,
             labels={
                 "date_numbers": "COLLECTION_DATE",
                 "number_sequences": "# sequences",
             },
             height=300,
+            hover_data={
+                "COLLECTION_DATE": True,
+                "number_sequences": True,
+                "variant.label": True,
+                "COUNTRY": False,
+                "element.symbol": True,
+                "date_numbers": False,
+            },
         )
         fig.update_yaxes(
             type="linear" if axis_type == "linear" else "log",
@@ -594,7 +650,7 @@ class DfsAndDetailPlot(object):
             tickangle=-45,
         ),
         fig.update_layout(
-            legend_title_text="",
+            legend_title_text="Gene, Mutation",
             showlegend=True,
             margin={"l": 20, "b": 30, "r": 10, "t": 10},
             title_x=0.5,
@@ -609,6 +665,7 @@ class DfsAndDetailPlot(object):
         seqtech_list,
         dates,
         location_name,
+        genes,
         axis_type="lin",
     ):
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
@@ -621,7 +678,7 @@ class DfsAndDetailPlot(object):
             ]
 
         df = self.get_df_for_scatter_plot(
-            mutations, dates, reference_id, seqtech_list, location_name
+            mutations, dates, reference_id, seqtech_list, location_name, genes
         )
         # remove rows if VOC no seq in time-interval
         for var in mutations:
@@ -631,21 +688,23 @@ class DfsAndDetailPlot(object):
         # dummy dataframe for showing empty results
         if df.empty:
             df = pd.DataFrame(
-                data=[[location_name, dates[-1], "no_mutations", 0]],
+                data=[[location_name, dates[-1], "no_mutations", 0, "no_gene"]],
                 columns=[
                     "COUNTRY",
                     "COLLECTION_DATE",
                     "variant.label",
                     "number_sequences",
+                    "element.symbol",
                 ],
             )
         # date_numbers: assign date to number, numbers needed for calculation of trendline
         date_numbers = [(d - self.min_date).days for d in df["COLLECTION_DATE"]]
         df["date_numbers"] = date_numbers
-        dates = df["COLLECTION_DATE"].apply(lambda x: x.strftime("%Y-%m-%d"))
+
         tickvals_date, ticktext_date = self.calculate_ticks_from_dates(
             dates, date_numbers
         )
+        print(tickvals_date, ticktext_date)
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
         try:
@@ -664,7 +723,7 @@ class WorldMap(DfsAndDetailPlot):
         super(WorldMap, self).__init__(propertyView, variantView, location_coordinates)
 
     def get_world_map_df(
-        self, method, mutations, reference_id, seq_tech_list, dates, countries
+        self, method, mutations, reference_id, seq_tech_list, dates, countries, genes
     ):
         """
         :param method: 'Frequency' or 'Increase'
@@ -687,13 +746,14 @@ class WorldMap(DfsAndDetailPlot):
                 & self.df_all_dates_all_voc["variant.label"].isin(mutations)
                 & (self.df_all_dates_all_voc["reference.id"] == reference_id)
                 & self.df_all_dates_all_voc["COUNTRY"].isin(countries)
+                & self.df_all_dates_all_voc["element.symbol"].isin(genes)
             ]
             df = df.groupby(["COUNTRY", "reference.id"]).sum().reset_index()
             column_of_interest = "number_sequences"
         elif method == "Increase":
             #  df: date | mutations | number_sequences
             df = self.get_increase_df_for_map(
-                dates, mutations, reference_id, seq_tech_list, countries
+                dates, mutations, reference_id, seq_tech_list, countries, genes
             )
             # replace negative slope by 0 (cannot be shown)
             df["slope"] = df["slope"].fillna(0)
@@ -775,7 +835,7 @@ class WorldMap(DfsAndDetailPlot):
         return fig
 
     def get_world_map(
-        self, mutations, reference_id, seq_tech_list, method, dates, countries
+        self, mutations, reference_id, seq_tech_list, method, dates, countries, genes
     ):
         """
         :param mutations: list of str mutations (from dropdown left menu)
@@ -787,7 +847,7 @@ class WorldMap(DfsAndDetailPlot):
         :return fig: map with mutations per location
         """
         df, column_of_interest = self.get_world_map_df(
-            method, mutations, reference_id, seq_tech_list, dates, countries
+            method, mutations, reference_id, seq_tech_list, dates, countries, genes
         )
         # print(tabulate(df, headers='keys', tablefmt='psql'))
         if method == "Frequency":

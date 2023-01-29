@@ -233,7 +233,7 @@ class DBManager(object):
         sql = (
             "SELECT`reference.accession`, `element.type`, `element.symbol`, `element.description`,"
             " `element.start`, `element.end`, `element.strand`, `element.sequence` "
-            "From referenceView "
+            "FROM referenceView "
             f"WHERE `element.type` = 'cds' AND `reference.accession` = '{ref_accession}';"
         )
         self.cursor.execute(sql)
