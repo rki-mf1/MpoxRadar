@@ -24,10 +24,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
-REF_LIST = [
-    "NC_063383.1",
-    "ON563414.3",
-    "MT903344.1",
+IGNORE_LIST = [
+    "NC_063383.1",  # REF
+    "ON563414.3",  # REF
+    "MT903344.1",  # REF
+    "KJ136820.1",
+    "FV537351.1",
+    "FV537352.1",
+    "OX044338.1",
+    "OX009124.1",
 ]
 
 Entrez.api_key = os.getenv("NCBI_API_KEY", "")
@@ -38,7 +43,7 @@ Entrez.email = os.getenv("NCBI_EMAIL", "")  # Always tell NCBI who you are
 def download(save_path):  # noqa: C901
     # nucleotide nuccore
     DB = "nucleotide"
-    QUERY = "Monkeypox virus[Organism] AND complete[prop]"
+    QUERY = "Monkeypox virus[Organism]"  # AND complete[prop]
     BATCH_SIZE = 10
     # 1
     # retmax=1 just returns first result of possibly many.
@@ -161,7 +166,6 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
         if x.endswith(".GB"):
             # Prints only text file present in My Folder
             list_of_GB.append(os.path.join(save_download_path, x))
-    # TODO: remove reference genome from the list.
 
     # fasta & meta
     fasta_out_handler = open(os.path.join(save_final_path, "seq.fasta"), "w")
@@ -175,6 +179,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
         "RELEASE_DATE",
         "COLLECTION_DATE",
         "SEQ_TECH",
+        "GENOME_COMPLETENESS",
     ]
     meta_out_handler.write("\t".join(header) + "\n")  # Write the header line
     try:
@@ -182,7 +187,8 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
             logging.info("Load:" + _file)
             seq_GBrecords = list(SeqIO.parse(_file, "genbank"))
             for seq_record in seq_GBrecords:
-                if seq_record.id in REF_LIST:
+                # remove reference genome from the list.
+                if seq_record.id in IGNORE_LIST:
                     continue
 
                 _isolate = ""
@@ -191,6 +197,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                 _NCBI_release_date = ""
                 _collection_date = ""
                 _seq_tech = ""
+                _nuc_completeness = ""
                 # print("Dealing with GenBank record %s" % seq_record.id)
 
                 fasta_out_handler.write(
@@ -199,6 +206,11 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                 )
 
                 # assume all keys are exit.
+                if "partial" in seq_record.description:
+                    _nuc_completeness = "partial"
+                elif "complete" in seq_record.description:
+                    _nuc_completeness = "complete"
+
                 if "isolate" in seq_record.features[0].qualifiers:
                     _isolate = seq_record.features[0].qualifiers["isolate"][0]
                 if "country" in seq_record.features[0].qualifiers:
@@ -210,8 +222,10 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                     _collection_date = seq_record.features[0].qualifiers[
                         "collection_date"
                     ][0]
-                    # 1.) need to fix date Nov-2017 -> 2017-11-01, 09-Nov-2017 -> 2017-11-09
-                    # 1995 -> 1995-01-01 set default value with first day of
+                    # Step
+                    # 1.) Fix date;
+                    # * Nov-2017 -> 2017-11-01, 09-Nov-2017 -> 2017-11-09
+                    # * 1995 -> 1995-01-01 set default value with first day of
                     # the month and first month of the year
                     # 2.) Year needs to be present in the format.
 
@@ -238,7 +252,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
 
                 if "date" in seq_record.annotations:
                     _NCBI_release_date = seq_record.annotations["date"]
-                    # need to fix date 18-NOV-2022 -> 2022-11-18
+                    # Fix date; 18-NOV-2022 -> 2022-11-18
                     d = dateparser.parse(
                         _NCBI_release_date,
                         settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": "YMD"},
@@ -246,7 +260,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                     _NCBI_release_date = d.strftime("%Y-%m-%d")
 
                 meta_out_handler.write(
-                    "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+                    "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
                     % (
                         seq_record.id,
                         _isolate,
@@ -256,6 +270,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                         _NCBI_release_date,
                         _collection_date,
                         _seq_tech,
+                        _nuc_completeness,
                     )
                 )
     except Exception:
@@ -318,16 +333,16 @@ def run(args):
 
     # 3
     logging.info("--- Convert GeneBank to fasta and meta file ---")
-    if not os.path.exists(os.path.join(SAVE_PATH, ".success")):
-        if generate_outputfiles(save_download_path, save_final_path):
+    # if not os.path.exists(os.path.join(SAVE_PATH, ".success")):
+    if generate_outputfiles(save_download_path, save_final_path):
 
-            logging.info("Processing completed")
-        else:
-            logging.error("Process stop before it is finished")
-            sys.exit("Please rerun it again later.")
+        logging.info("Processing completed")
+    else:
+        logging.error("Process stop before it is finished")
+        sys.exit("Please rerun it again later.")
 
-        with open(os.path.join(SAVE_PATH, ".success"), "w+") as f:
-            f.write("done")
+    with open(os.path.join(SAVE_PATH, ".success"), "w+") as f:
+        f.write("done")
     logging.info("--- Done ---")
 
 
