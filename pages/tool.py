@@ -1,30 +1,44 @@
 import argparse
-import pandas as pd
 import shlex
 import time
+
 import dash
-import dash_bootstrap_components as dbc
+from dash import callback
+from dash import html
+from dash import Input
+from dash import no_update
+from dash import Output
+from dash import State
 from dash.exceptions import PreventUpdate
-from dash import html, Input, Output, State, callback, no_update
+import dash_bootstrap_components as dbc
+from data import load_all_sql_files
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from tabulate import tabulate
 
-from data import load_all_sql_files
-from pages.utils_worldMap_explorer import WorldMap, DateSlider, TableFilter
-from pages.utils_explorer_filter import get_all_references, get_all_frequency_sorted_seqtech, \
-    get_all_frequency_sorted_countries_by_filters, get_all_frequency_sorted_countries, \
-    get_all_frequency_sorted_mutation, get_frequency_sorted_mutation_by_filters, \
-    get_frequency_sorted_seq_techs_by_filters
-from pages.html_data_explorer import create_worldMap_explorer, create_table_explorer, \
-    get_html_elem_reference_radioitems, get_html_elem_dropdown_aa_mutations, \
-    get_html_elem_method_radioitems, get_html_elem_checklist_seq_tech, get_html_interval, \
-    get_html_elem_dropdown_countries
 from pages.config import color_schemes
 from pages.config import location_coordinates
+from pages.html_data_explorer import create_table_explorer
+from pages.html_data_explorer import create_worldMap_explorer
+from pages.html_data_explorer import get_html_elem_checklist_seq_tech
+from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations
+from pages.html_data_explorer import get_html_elem_dropdown_countries
+from pages.html_data_explorer import get_html_elem_method_radioitems
+from pages.html_data_explorer import get_html_elem_reference_radioitems
+from pages.html_data_explorer import get_html_interval
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
+from pages.utils_explorer_filter import get_all_frequency_sorted_countries
+from pages.utils_explorer_filter import get_all_frequency_sorted_countries_by_filters
+from pages.utils_explorer_filter import get_all_frequency_sorted_mutation
+from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
+from pages.utils_explorer_filter import get_all_references
+from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_filters
+from pages.utils_explorer_filter import get_frequency_sorted_seq_techs_by_filters
+from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import TableFilter
+from pages.utils_worldMap_explorer import WorldMap
 from .app_controller import get_freq_mutation
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
@@ -32,52 +46,82 @@ from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 
 
 df_dict = load_all_sql_files()
-world_map = WorldMap(df_dict["propertyView"], df_dict["variantView"], location_coordinates)
+world_map = WorldMap(
+    df_dict["propertyView"], df_dict["variantView"], location_coordinates
+)
 date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
-df_aa_mut = df_dict['variantView'][df_dict['variantView']['element.type'] == 'cds']
+df_aa_mut = df_dict["variantView"][df_dict["variantView"]["element.type"] == "cds"]
 table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
-all_reference_options = get_all_references(df_dict['variantView'])
+all_reference_options = get_all_references(df_dict["variantView"])
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
 all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
-all_mutation_options = get_all_frequency_sorted_mutation(world_map.df_all_dates_all_voc, 2)
+all_mutation_options = get_all_frequency_sorted_mutation(
+    world_map.df_all_dates_all_voc, 2
+)
 
 dash.register_page(__name__, path="/Tool")
 
 
 tab_explored_tool = html.Div(
     [
-        html.Div([
-            html.Div(
-                [
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                [get_html_elem_reference_radioitems(all_reference_options)], width=2
-                            ),
-                            dbc.Col(
-                                [get_html_elem_checklist_seq_tech(all_seq_tech_options)], width=2
-                            ),
-                            dbc.Col(
-                                [get_html_elem_dropdown_countries(all_country_options)], width=2
-                            ),
-                            dbc.Col(
-                                [get_html_elem_method_radioitems(),
-                                 get_html_interval()], width=2
-                            ),
-                        ]
-                    ),
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                [get_html_elem_dropdown_aa_mutations(all_mutation_options)], width=12
-                            ),
-                        ]
-                    ),
-                ]
-            ),
-            html.Div(create_worldMap_explorer(date_slider)),
-            html.Div(create_table_explorer(table_filter)),
-        ], id="div_elem_standard"),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        get_html_elem_reference_radioitems(
+                                            all_reference_options
+                                        )
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_elem_checklist_seq_tech(
+                                            all_seq_tech_options
+                                        )
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_elem_dropdown_countries(
+                                            all_country_options
+                                        )
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_elem_method_radioitems(),
+                                        get_html_interval(),
+                                    ],
+                                    width=2,
+                                ),
+                            ]
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        get_html_elem_dropdown_aa_mutations(
+                                            all_mutation_options
+                                        )
+                                    ],
+                                    width=12,
+                                ),
+                            ]
+                        ),
+                    ]
+                ),
+                html.Div(create_worldMap_explorer(date_slider)),
+                html.Div(create_table_explorer(table_filter)),
+            ],
+            id="div_elem_standard",
+        ),
     ]
 )
 
@@ -127,7 +171,7 @@ layout = html.Div(
 
 def calculate_coordinate(ouput_df, selected_column):
     """
-        TODO:     1. improve performance of map
+    TODO:     1. improve performance of map
     """
     # concate the coordinate
     ouput_df = ouput_df[selected_column]
@@ -311,7 +355,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
 )
 def update_output_sonar_map(rows, columns):  # noqa: C901
 
-   # Callback handle sonar ouput to map.
+    # Callback handle sonar ouput to map.
 
     hidden_state = {"display": "none"}
 
@@ -423,6 +467,7 @@ def open_toast(n):
         return no_update
     return True
 
+
 """
 @callback(
     Output("mysonar-map", component_property="figure"),
@@ -500,6 +545,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 """
 # This is the EXPLORE TOOL PART
 
+
 @callback(
     [
         Output("mutation_dropdown", "options"),
@@ -508,8 +554,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         Output("seq_tech_dropdown", "value"),
         Output("country_dropdown", "options"),
         Output("country_dropdown", "value"),
-        Output('max_nb_txt', 'children'),
-        Output('select_x_frequent_mut', 'max')
+        Output("max_nb_txt", "children"),
+        Output("select_x_frequent_mut", "max"),
     ],
     [
         Input("reference_radio", "value"),
@@ -517,19 +563,30 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         Input("country_dropdown", "value"),
         Input("select_x_frequent_mut", "value"),
         Input("select_all_seq_tech", "value"),
-        Input("select_all_countries", "value")
+        Input("select_all_countries", "value"),
     ],
     [
         State("mutation_dropdown", "options"),
         State("mutation_dropdown", "value"),
         State("seq_tech_dropdown", "options"),
         State("country_dropdown", "options"),
-        State("select_x_frequent_mut", "value")
-    ], prevent_initial_call=False,
+        State("select_x_frequent_mut", "value"),
+    ],
+    prevent_initial_call=False,
 )
-def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country_value, select_x_mut, select_all_tech,
-                                         select_all_countries, mut_options, mut_value, tech_options, country_options,
-                                         freq_nb):
+def frequency_sorted_mutation_by_filters(  # noqa: C901
+    reference_value,
+    seqtech_value,
+    country_value,
+    select_x_mut,
+    select_all_tech,
+    select_all_countries,
+    mut_options,
+    mut_value,
+    tech_options,
+    country_options,
+    freq_nb,
+):
     """
     filter changing depending on each other
      reference --> seqtech & country & gene & mut
@@ -539,52 +596,88 @@ def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country
      mut --> no callback
     """
     print(dash.ctx.triggered_id)
-    df_mut_ref_select = df_aa_mut[(df_aa_mut['reference.id'] == reference_value)]
+    df_mut_ref_select = df_aa_mut[(df_aa_mut["reference.id"] == reference_value)]
     if dash.ctx.triggered_id == "select_all_seq_tech":
         if len(select_all_tech) == 1:
-            seqtech_value = [i['value'] for i in all_seq_tech_options if not i['disabled']]
+            seqtech_value = [
+                i["value"] for i in all_seq_tech_options if not i["disabled"]
+            ]
         elif len(select_all_tech) == 0:
             seqtech_value = []
 
     # TODO now return top x mut without checking for mutations with same number
     if dash.ctx.triggered_id == "select_x_frequent_mut":
-        mut_value = [i['value'] for i in mut_options[0: select_x_mut]]
+        mut_value = [i["value"] for i in mut_options[0:select_x_mut]]
 
     if dash.ctx.triggered_id == "select_all_countries":
         if len(select_all_countries) == 1:
-            country_value = [i['value'] for i in country_options if not i['disabled']]
+            country_value = [i["value"] for i in country_options if not i["disabled"]]
         elif len(select_all_countries) == 0:
             country_value = []
 
     # mutation_option
-    if dash.ctx.triggered_id in ["reference_radio", "seq_tech_dropdown", "country_dropdown",
-                                 "select_all_seq_tech", "select_all_countries"]:
-        df_seq_tech = df_dict['propertyView'][(df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)) &
-                                              (df_dict['propertyView']["COUNTRY"].isin(country_value))]
-        mut_options = get_frequency_sorted_mutation_by_filters(df_mut_ref_select, df_seq_tech)
+    if dash.ctx.triggered_id in [
+        "reference_radio",
+        "seq_tech_dropdown",
+        "country_dropdown",
+        "select_all_seq_tech",
+        "select_all_countries",
+    ]:
+        df_seq_tech = df_dict["propertyView"][
+            (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value))
+            & (df_dict["propertyView"]["COUNTRY"].isin(country_value))
+        ]
+        mut_options = get_frequency_sorted_mutation_by_filters(
+            df_mut_ref_select, df_seq_tech
+        )
         if dash.ctx.triggered_id == "reference_radio" or len(mut_value) == 0:
-            mut_value = [m['value'] for m in mut_options][0:freq_nb]
+            mut_value = [m["value"] for m in mut_options][0:freq_nb]
         else:
-            mut_value = [mut for mut in mut_value if mut in [m['value'] for m in mut_options]]
+            mut_value = [
+                mut for mut in mut_value if mut in [m["value"] for m in mut_options]
+            ]
 
     # seq tech disable options
     if dash.ctx.triggered_id in ["reference_radio"]:
-        tech_options = get_frequency_sorted_seq_techs_by_filters(df_mut_ref_select,  df_dict['propertyView'],
-                                                                 tech_options)
-        seqtech_value = [tech for tech in seqtech_value if tech in
-                         [t['value'] for t in tech_options if not t['disabled']]]
+        tech_options = get_frequency_sorted_seq_techs_by_filters(
+            df_mut_ref_select, df_dict["propertyView"], tech_options
+        )
+        seqtech_value = [
+            tech
+            for tech in seqtech_value
+            if tech in [t["value"] for t in tech_options if not t["disabled"]]
+        ]
 
     # countries disable options
-    if dash.ctx.triggered_id in ["reference_radio", "seq_tech_dropdown", "select_all_seq_tech"]:
-        sample_id_set = set(df_mut_ref_select['sample.id'])
-        df_prop = df_dict['propertyView'][(df_dict['propertyView']["SEQ_TECH"].isin(seqtech_value)) &
-                                          (df_dict['propertyView']["sample.id"].isin(sample_id_set))]
-        country_options = get_all_frequency_sorted_countries_by_filters(df_prop, country_options)
-        country_value = [o['value'] for o in country_options if not o['disabled']]
+    if dash.ctx.triggered_id in [
+        "reference_radio",
+        "seq_tech_dropdown",
+        "select_all_seq_tech",
+    ]:
+        sample_id_set = set(df_mut_ref_select["sample.id"])
+        df_prop = df_dict["propertyView"][
+            (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value))
+            & (df_dict["propertyView"]["sample.id"].isin(sample_id_set))
+        ]
+        country_options = get_all_frequency_sorted_countries_by_filters(
+            df_prop, country_options
+        )
+        country_value = [o["value"] for o in country_options if not o["disabled"]]
 
-    text = f"Select x most frequent sequences. Maximum number of non-unique mutations: {len(mut_options)}",
+    text = (
+        f"Select x most frequent sequences. Maximum number of non-unique mutations: {len(mut_options)}",
+    )
 
-    return mut_options, mut_value, tech_options, seqtech_value, country_options, country_value, text, len(mut_options)
+    return (
+        mut_options,
+        mut_value,
+        tech_options,
+        seqtech_value,
+        country_options,
+        country_value,
+        text,
+        len(mut_options),
+    )
 
 
 # update map by change of filters or moving slider
@@ -596,17 +689,29 @@ def frequency_sorted_mutation_by_filters(reference_value, seqtech_value, country
         Input("method_radio", "value"),
         Input("seq_tech_dropdown", "value"),
         Input("selected_interval", "value"),
-        Input('date_slider', 'value'),
-        Input("country_dropdown", "value")
+        Input("date_slider", "value"),
+        Input("country_dropdown", "value"),
     ],
     [
-        State('world_map_explorer', 'relayoutData'),
-    ], prevent_initial_call=True,
+        State("world_map_explorer", "relayoutData"),
+    ],
+    prevent_initial_call=True,
 )
-def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list, interval, dates, countries, layout):
+def update_world_map_explorer(
+    mutation_list,
+    reference_id,
+    method,
+    seqtech_list,
+    interval,
+    dates,
+    countries,
+    layout,
+):
     print("trigger new map")
     date_list = date_slider.get_all_dates_in_interval(dates, interval)
-    fig = world_map.get_world_map(mutation_list, reference_id, seqtech_list, method, date_list, countries)
+    fig = world_map.get_world_map(
+        mutation_list, reference_id, seqtech_list, method, date_list, countries
+    )
     # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
     # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
     # TODO sometimes not working
@@ -617,15 +722,16 @@ def update_world_map_explorer(mutation_list, reference_id, method, seqtech_list,
 
 
 @callback(
-    Output('date_slider', 'value'),
+    Output("date_slider", "value"),
     [
-        Input('date_slider', 'drag_value'),
-        Input('selected_interval', 'value'),
-        Input('auto_stepper', "n_intervals"),
+        Input("date_slider", "drag_value"),
+        Input("selected_interval", "value"),
+        Input("auto_stepper", "n_intervals"),
     ],
     [
-        State('date_slider', 'value'),
-    ], prevent_initial_call=True,
+        State("date_slider", "value"),
+    ],
+    prevent_initial_call=True,
 )
 def update_slider_interval(drag_value, interval, n_intervals, slider_value):
     """
@@ -641,16 +747,24 @@ def update_slider_interval(drag_value, interval, n_intervals, slider_value):
             return slider_value
         if len(drag_value) == 2:
             second_date = drag_value[-1]
-            if DateSlider.get_date_x_days_before(DateSlider.unix_to_date(second_date), interval) > date_slider.min_date:
-                new_first_date = DateSlider.unix_time_millis(DateSlider.get_date_x_days_before
-                                                             (DateSlider.unix_to_date(second_date), interval))
+            if (
+                DateSlider.get_date_x_days_before(
+                    DateSlider.unix_to_date(second_date), interval
+                )
+                > date_slider.min_date
+            ):
+                new_first_date = DateSlider.unix_time_millis(
+                    DateSlider.get_date_x_days_before(
+                        DateSlider.unix_to_date(second_date), interval
+                    )
+                )
             else:
                 new_first_date = DateSlider.unix_time_millis(date_slider.min_date)
             return [new_first_date, second_date]
         else:
             return slider_value
     # if play button starts auto_stepper
-    if dash.ctx.triggered_id == 'auto_stepper':
+    if dash.ctx.triggered_id == "auto_stepper":
         if n_intervals == 0:
             # raise PreventUpdate
             return slider_value
@@ -660,26 +774,27 @@ def update_slider_interval(drag_value, interval, n_intervals, slider_value):
             first_date = DateSlider.unix_time_millis(date_slider.date_list[-interval])
             second_date = DateSlider.unix_time_millis(date_slider.date_list[-1])
         else:
-            first_date = DateSlider.unix_time_millis(date_slider.date_list[n_intervals - 1])
+            first_date = DateSlider.unix_time_millis(
+                date_slider.date_list[n_intervals - 1]
+            )
             second_date = DateSlider.unix_time_millis(
-                date_slider.date_list[n_intervals + interval - 1])  # first_date + interval*86400
+                date_slider.date_list[n_intervals + interval - 1]
+            )  # first_date + interval*86400
         return [first_date, second_date]
 
 
 @callback(
     [
-        Output('auto_stepper', 'max_intervals'),
-        Output('auto_stepper', 'disabled'),
-        Output('play_button', 'className'),
+        Output("auto_stepper", "max_intervals"),
+        Output("auto_stepper", "disabled"),
+        Output("play_button", "className"),
     ],
     [
-        Input('play_button', 'n_clicks'),
-        Input('auto_stepper', 'n_intervals'),
+        Input("play_button", "n_clicks"),
+        Input("auto_stepper", "n_intervals"),
     ],
-    [
-        State('selected_interval', 'value'),
-        State('play_button', 'className')
-    ], prevent_initial_call=True,
+    [State("selected_interval", "value"), State("play_button", "className")],
+    prevent_initial_call=True,
 )
 def stepper_control(n_clicks, n_intervals, interval, button_icon):
     """
@@ -694,9 +809,9 @@ def stepper_control(n_clicks, n_intervals, interval, button_icon):
         interval = 0
     steps = len(date_slider.date_list) - interval
     # stop stepper
-    if dash.ctx.triggered_id == 'play_button':
+    if dash.ctx.triggered_id == "play_button":
         # start stepper
-        if button_icon == 'fa-solid fa-circle-play fa-lg':
+        if button_icon == "fa-solid fa-circle-play fa-lg":
             return steps, False, "fa-solid fa-circle-stop fa-lg"
         # pause stepper
         elif button_icon == "fa-solid fa-circle-stop fa-lg":
@@ -711,24 +826,27 @@ def stepper_control(n_clicks, n_intervals, interval, button_icon):
 # update plots
 @callback(
     [
-        Output('results_per_location', 'figure'),
-        Output('chosen_location', 'children'),
-        Output('header_upper_plot', 'children')
+        Output("results_per_location", "figure"),
+        Output("chosen_location", "children"),
+        Output("header_upper_plot", "children"),
     ],
     [
-        Input('world_map_explorer', 'clickData'),
-        Input('mutation_dropdown', 'value'),
-        Input('method_radio', 'value'),
-        Input('reference_radio', 'value'),
+        Input("world_map_explorer", "clickData"),
+        Input("mutation_dropdown", "value"),
+        Input("method_radio", "value"),
+        Input("reference_radio", "value"),
         Input("seq_tech_dropdown", "value"),
-        Input('date_slider', 'value'),
-        Input('selected_interval', 'value'),
+        Input("date_slider", "value"),
+        Input("selected_interval", "value"),
         #   Input('yaxis_type', 'value')
-    ], prevent_initial_call=True,
+    ],
+    prevent_initial_call=True,
 )
-def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list, dates, interval):
+def update_upper_plot(
+    click_data, mutations, method, reference_id, seqtech_list, dates, interval
+):
     try:
-        location_name = click_data['points'][0]['hovertext']
+        location_name = click_data["points"][0]["hovertext"]
     except TypeError:
         location_name = "Germany"
     # date from slider
@@ -736,37 +854,51 @@ def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list,
     # title text
     title_text = location_name
     # 1. plot
-    if method == 'Increase':
-        fig = world_map.get_slope_bar_plot(date_list, mutations, reference_id, seqtech_list, location_name)
+    if method == "Increase":
+        fig = world_map.get_slope_bar_plot(
+            date_list, mutations, reference_id, seqtech_list, location_name
+        )
         plot_header = "Slope mutations"
-    elif method == 'Frequency':
-        fig = world_map.get_frequency_bar_chart(mutations, reference_id, seqtech_list, date_list, location_name)
+    elif method == "Frequency":
+        fig = world_map.get_frequency_bar_chart(
+            mutations, reference_id, seqtech_list, date_list, location_name
+        )
         plot_header = "Number Sequences"
     return fig, title_text, plot_header
 
 
 @callback(
-    Output('mutation_development', 'figure'),
+    Output("mutation_development", "figure"),
     [
-        Input('world_map_explorer', 'clickData'),
-        Input('mutation_dropdown', 'value'),
-        Input('reference_radio', 'value'),
+        Input("world_map_explorer", "clickData"),
+        Input("mutation_dropdown", "value"),
+        Input("reference_radio", "value"),
         Input("seq_tech_dropdown", "value"),
-        Input('date_slider', 'value'),
-        Input('selected_interval', 'value'),
-        Input("results_per_location", 'clickData'),
-    ], prevent_initial_call=True,
+        Input("date_slider", "value"),
+        Input("selected_interval", "value"),
+        Input("results_per_location", "clickData"),
+    ],
+    prevent_initial_call=True,
 )
-def update_lower_plot(click_data_map, mutations, reference_id, seqtech_list, dates, interval, clickDataBoxPlot):
+def update_lower_plot(
+    click_data_map,
+    mutations,
+    reference_id,
+    seqtech_list,
+    dates,
+    interval,
+    clickDataBoxPlot,
+):
     if dash.ctx.triggered_id == "results_per_location":
-        mutations = [clickDataBoxPlot['points'][0]['label']]
+        mutations = [clickDataBoxPlot["points"][0]["label"]]
     try:
-        location_name = click_data_map['points'][0]['hovertext']
+        location_name = click_data_map["points"][0]["hovertext"]
     except TypeError:
         location_name = "Germany"
     date_list = date_slider.get_all_dates_in_interval(dates, interval)
-    fig_develop = world_map.get_frequency_development_scatter_plot(mutations, reference_id, seqtech_list, date_list,
-                                                                   location_name)
+    fig_develop = world_map.get_frequency_development_scatter_plot(
+        mutations, reference_id, seqtech_list, date_list, location_name
+    )
     return fig_develop
 
 
@@ -774,18 +906,23 @@ def update_lower_plot(click_data_map, mutations, reference_id, seqtech_list, dat
 @callback(
     [
         Output(component_id="table_explorer", component_property="data"),
-        Output(component_id="table_explorer", component_property="columns")
+        Output(component_id="table_explorer", component_property="columns"),
     ],
     [
         Input("mutation_dropdown", "value"),
         Input("reference_radio", "value"),
         Input("seq_tech_dropdown", "value"),
         Input("selected_interval", "value"),
-        Input('date_slider', 'value'),
-        Input("country_dropdown", "value")
-    ], prevent_initial_call=True,
+        Input("date_slider", "value"),
+        Input("country_dropdown", "value"),
+    ],
+    prevent_initial_call=True,
 )
-def update_table_filter(mutation_list, reference_id, seqtech_list, interval, dates, countries):
+def update_table_filter(
+    mutation_list, reference_id, seqtech_list, interval, dates, countries
+):
     date_list = date_slider.get_all_dates_in_interval(dates, interval)
-    table_df = table_filter.get_filtered_table(mutation_list, seqtech_list, reference_id, date_list)
-    return table_df.to_dict('records'), [{"name": i, "id": i} for i in table_df.columns]
+    table_df = table_filter.get_filtered_table(
+        mutation_list, seqtech_list, reference_id, date_list
+    )
+    return table_df.to_dict("records"), [{"name": i, "id": i} for i in table_df.columns]
