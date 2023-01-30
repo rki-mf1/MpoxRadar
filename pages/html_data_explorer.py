@@ -14,11 +14,16 @@ def create_worldMap_explorer(date_slider):
 
     world_map_with_slider = html.Div(
         [
+            dbc.Row(html.H2("Output", style={"textAlign": "center"})),
             dbc.FormText(
                 "Only once occurring mutations removed from map and plots.",
                 color="primary",
             ),
-            dcc.Graph(animate=False, id="world_map_explorer"),
+            dbc.Spinner(
+                dcc.Graph(animate=False, id="world_map_explorer"),
+                color="primary",
+                type="grow",
+            ),
             html.Div(
                 [
                     dbc.Row(
@@ -84,13 +89,21 @@ def create_worldMap_explorer(date_slider):
                 html.Div(
                     [
                         html.H6(id="header_upper_plot"),
-                        dcc.Graph(id="results_per_location"),
+                        dbc.Spinner(
+                            dcc.Graph(id="results_per_location"),
+                            color="primary",
+                            type="grow",
+                        ),
                     ]
                 ),
                 html.Div(
                     [
                         html.H6("Mutation Development", id="header_lower_plot"),
-                        dcc.Graph(id="mutation_development"),
+                        dbc.Spinner(
+                            dcc.Graph(id="mutation_development"),
+                            color="primary",
+                            type="grow",
+                        ),
                     ]
                 ),
             ]
@@ -259,18 +272,22 @@ def get_html_elem_dropdown_genes(gene_options, g_id=0):
             [
                 dbc.Label("Gene: "),
                 html.Br(),
-                dcc.Dropdown(
-                    options=gene_options,
-                    value=[c["value"] for c in gene_options],
-                    id=f"gene_dropdown_{g_id}",
-                    maxHeight=300,  # just height of dropdown not choose option field
-                    optionHeight=35,  # height options in dropdown, not chosen options
-                    multi=True,
-                    searchable=True,
-                    style={
-                        "overflow-y": "auto",  # without not scrollable, just cut
-                        "maxHeight": 200,
-                    },  # height field
+                dbc.Spinner(
+                    dcc.Dropdown(
+                        options=gene_options,
+                        value=[c["value"] for c in gene_options],
+                        id=f"gene_dropdown_{g_id}",
+                        maxHeight=300,  # just height of dropdown not choose option field
+                        optionHeight=35,  # height options in dropdown, not chosen options
+                        multi=True,
+                        searchable=True,
+                        style={
+                            "overflow-y": "auto",  # without not scrollable, just cut
+                            "maxHeight": 200,
+                        },  # height field
+                    ),
+                    color="dark",
+                    type="grow",
                 ),
                 html.Br(),
                 dcc.Checklist(
@@ -289,15 +306,19 @@ def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
         dbc.CardBody(
             [
                 dbc.Label("Sequencing Technology: "),
-                dbc.Checklist(
-                    options=seq_tech_options,
-                    value=[tech_dict["value"] for tech_dict in seq_tech_options],
-                    id=f"seq_tech_dropdown_{s_id}",
-                    labelStyle={"display": "block"},
-                    style={
-                        "maxHeight": 200,
-                        "overflowY": "scroll",
-                    },
+                dbc.Spinner(
+                    dbc.Checklist(
+                        options=seq_tech_options,
+                        value=[tech_dict["value"] for tech_dict in seq_tech_options],
+                        id=f"seq_tech_dropdown_{s_id}",
+                        labelStyle={"display": "block"},
+                        style={
+                            "maxHeight": 200,
+                            "overflowY": "scroll",
+                        },
+                    ),
+                    color="primary",
+                    type="grow",
                 ),
                 html.Br(),
                 dcc.Checklist(
@@ -318,15 +339,19 @@ def get_html_elem_dropdown_countries(countries, c_id=0):
             [
                 dbc.Label("Country: "),
                 html.Br(),
-                dcc.Dropdown(
-                    options=countries,
-                    value=[c["value"] for c in countries],
-                    id=f"country_dropdown_{c_id}",
-                    maxHeight=200,
-                    optionHeight=35,
-                    multi=True,
-                    searchable=True,
-                    style={"overflow-y": "auto", "maxHeight": 200},
+                dbc.Spinner(
+                    dcc.Dropdown(
+                        options=countries,
+                        value=[c["value"] for c in countries],
+                        id=f"country_dropdown_{c_id}",
+                        maxHeight=200,
+                        optionHeight=35,
+                        multi=True,
+                        searchable=True,
+                        style={"overflow-y": "auto", "maxHeight": 200},
+                    ),
+                    color="danger",
+                    type="grow",
                 ),
                 html.Br(),
                 dcc.Checklist(
@@ -388,15 +413,21 @@ def get_html_elem_dropdown_aa_mutations(
             [
                 dbc.Label(title),
                 html.Br(),
-                dcc.Dropdown(
-                    options=mutation_options,
-                    value=[mut_dict["value"] for mut_dict in mutation_options[0:20]],
-                    id=f"mutation_dropdown_{aa_id}",
-                    maxHeight=300,
-                    optionHeight=50,
-                    multi=True,
-                    searchable=True,
-                    style={"overflow-y": "auto", "maxHeight": 150},
+                dbc.Spinner(
+                    dcc.Dropdown(
+                        options=mutation_options,
+                        value=[
+                            mut_dict["value"] for mut_dict in mutation_options[0:20]
+                        ],
+                        id=f"mutation_dropdown_{aa_id}",
+                        maxHeight=300,
+                        optionHeight=50,
+                        multi=True,
+                        searchable=True,
+                        style={"overflow-y": "auto", "maxHeight": 300},
+                    ),
+                    color="danger",
+                    type="grow",
                 ),
                 html.Br(),
                 dbc.Label(

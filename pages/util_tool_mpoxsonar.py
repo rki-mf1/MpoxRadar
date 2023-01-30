@@ -40,9 +40,15 @@ custom_cmd_cards = html.Div(
                                         html.Div(
                                             [
                                                 dbc.Button(
-                                                    children=["Submit"],
+                                                    children=[
+                                                        html.I(
+                                                            className="bi bi-bullseye me-1"
+                                                        ),
+                                                        "Submit",
+                                                    ],
                                                     id="submit-button-state",
                                                     n_clicks=0,
+                                                    outline=True,
                                                     color="primary",
                                                     className="mb-2",
                                                 ),

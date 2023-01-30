@@ -173,7 +173,7 @@ class DataFrameLoader:
         except sqlalchemy.exc.ProgrammingError:
             print(f"table {table_name} not in database.")
             df = pd.DataFrame()
-        print(f"Loading time {table_name}: {(perf_counter() - start)} sec.")
+        print(f"Loading time {table_name}: {(perf_counter() - start):.4f} sec.")
         if not df.empty:
             df_dict[table_name] = df
             return df_dict

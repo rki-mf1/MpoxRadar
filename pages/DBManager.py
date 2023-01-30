@@ -187,7 +187,7 @@ class DBManager(object):
         sql = (
             "SELECT COUNT(DISTINCT value_text) AS count "
             "FROM sample2property "
-            "WHERE property_id = 12;"
+            "WHERE property_id = 12 AND value_text != '';"
         )
         self.cursor.execute(sql)
         number_of_rows = self.cursor.fetchone()["count"]

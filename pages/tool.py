@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 
 from pages.config import color_schemes
 from pages.config import location_coordinates
+from pages.config import logging_radar
 from pages.html_data_explorer import create_table_compare
 from pages.html_data_explorer import create_table_explorer
 from pages.html_data_explorer import create_worldMap_explorer
@@ -64,7 +65,7 @@ all_mutation_options = get_all_frequency_sorted_mutation(
 all_gene_options = get_all_genes_per_reference(
     df_dict["variantView"], 2, world_map.color_dict
 )
-
+logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 
 tab_explored_tool = html.Div(
@@ -73,6 +74,7 @@ tab_explored_tool = html.Div(
             [
                 html.Div(
                     [
+                        dbc.Row(html.H2("Filter Panel", style={"textAlign": "center"})),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -81,9 +83,11 @@ tab_explored_tool = html.Div(
                                             all_reference_options
                                         )
                                     ],
+                                    width=2,
                                 ),
                                 dbc.Col(
                                     [get_html_elem_dropdown_genes(all_gene_options)],
+                                    width=4,
                                 ),
                                 dbc.Col(
                                     [
@@ -91,6 +95,7 @@ tab_explored_tool = html.Div(
                                             all_seq_tech_options
                                         )
                                     ],
+                                    width=3,
                                 ),
                                 dbc.Col(
                                     [
@@ -98,12 +103,7 @@ tab_explored_tool = html.Div(
                                             all_country_options
                                         )
                                     ],
-                                ),
-                                dbc.Col(
-                                    [
-                                        get_html_elem_method_radioitems(),
-                                        get_html_interval(),
-                                    ],
+                                    width=3,
                                 ),
                             ]
                         ),
@@ -111,20 +111,35 @@ tab_explored_tool = html.Div(
                             [
                                 dbc.Col(
                                     [
+                                        get_html_elem_method_radioitems(),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_interval(),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
                                         get_html_elem_dropdown_aa_mutations(
                                             all_mutation_options
                                         )
                                     ],
-                                    width=12,
+                                    width=6,
                                 ),
-                            ]
+                            ],
+                            className="mt-2",
                         ),
-                    ]
+                    ],
                 ),
+                html.Hr(),
                 html.Div(create_worldMap_explorer(date_slider)),
                 html.Div(create_table_explorer(table_filter)),
             ],
             id="div_elem_standard",
+            className="mt-2",
         ),
     ]
 )
@@ -134,107 +149,150 @@ tab_compare_tool = (
         [
             html.Div(
                 [
-                    html.Div(
+                    dbc.Row(
                         [
-                            dbc.Row(
+                            dbc.Col(
                                 [
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_reference_radioitems(
-                                                all_reference_options, radio_id=1
-                                            ),
-                                            get_html_elem_dropdown_genes(
-                                                all_gene_options, g_id=1
-                                            ),
-                                            get_html_elem_checklist_seq_tech(
-                                                all_seq_tech_options, s_id=1
-                                            ),
-                                            get_html_elem_dropdown_countries(
-                                                all_country_options, c_id=1
-                                            ),
-                                            get_html_date_picker(d_id=1),
-                                        ]
+                                    dbc.Row(
+                                        html.H3(
+                                            "Left Filter", style={"textAlign": "center"}
+                                        )
                                     ),
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_reference_radioitems(
-                                                all_reference_options, radio_id=2
-                                            ),
-                                            get_html_elem_dropdown_genes(
-                                                all_gene_options, g_id=2
-                                            ),
-                                            get_html_elem_checklist_seq_tech(
-                                                all_seq_tech_options, s_id=2
-                                            ),
-                                            get_html_elem_dropdown_countries(
-                                                all_country_options, c_id=2
-                                            ),
-                                            get_html_date_picker(d_id=2),
-                                        ]
+                                    html.Div(
+                                        get_html_elem_reference_radioitems(
+                                            all_reference_options, radio_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_dropdown_genes(
+                                            all_gene_options, g_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_checklist_seq_tech(
+                                            all_seq_tech_options, s_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_dropdown_countries(
+                                            all_country_options, c_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_date_picker(d_id=1),
+                                        className="mt-1",
                                     ),
                                 ]
                             ),
-                            html.Br(),
-                            dbc.Row(
+                            html.Hr(className="vr"),
+                            dbc.Col(
                                 [
-                                    dbc.Button(
-                                        "Compare",
-                                        id="compare_button",
-                                        size="lg",
-                                        className="me-1",
-                                        color="primary",
-                                        n_clicks=0,
-                                    )
-                                ]
-                            ),
-                            html.Br(),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_dropdown_aa_mutations(
-                                                all_mutation_options,
-                                                title="AA Mutations unique for left selection",
-                                                aa_id=1,
-                                            ),
-                                        ]
+                                    dbc.Row(
+                                        html.H3(
+                                            "Right Filter",
+                                            style={"textAlign": "center"},
+                                        )
                                     ),
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_dropdown_aa_mutations(
-                                                all_mutation_options,
-                                                title="AA Mutations unique for right selection",
-                                                aa_id=2,
-                                            ),
-                                        ]
+                                    html.Div(
+                                        get_html_elem_reference_radioitems(
+                                            all_reference_options, radio_id=2
+                                        ),
+                                        className="mt-1",
                                     ),
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_dropdown_aa_mutations(
-                                                all_mutation_options,
-                                                title="AA Mutations in both selections",
-                                                aa_id=3,
-                                            )
-                                        ],
+                                    html.Div(
+                                        get_html_elem_dropdown_genes(
+                                            all_gene_options, g_id=2
+                                        ),
+                                        className="mt-1",
                                     ),
-                                ]
-                            ),
-                            dbc.Row(
-                                [
-                                    create_table_compare(
-                                        title="unique for left selection", table_id=1
+                                    html.Div(
+                                        get_html_elem_checklist_seq_tech(
+                                            all_seq_tech_options, s_id=2
+                                        ),
+                                        className="mt-1",
                                     ),
-                                    create_table_compare(
-                                        title="unique for right selection", table_id=2
+                                    html.Div(
+                                        get_html_elem_dropdown_countries(
+                                            all_country_options, c_id=2
+                                        ),
+                                        className="mt-1",
                                     ),
-                                    create_table_compare(
-                                        title="in both selection", table_id=3
+                                    html.Div(
+                                        get_html_date_picker(d_id=2),
+                                        className="mt-1",
                                     ),
                                 ]
                             ),
                         ]
                     ),
-                ]
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Button(
+                                [html.I(className="bi bi-terminal me-1"), "Compare"],
+                                id="compare_button",
+                                size="lg",
+                                className="me-1",
+                                color="primary",
+                                n_clicks=0,
+                            )
+                        ]
+                    ),
+                ],
+                className="mt-2",
+            ),
+            html.Hr(),
+            dbc.Row(html.H2("Output Section", style={"textAlign": "center"})),
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    get_html_elem_dropdown_aa_mutations(
+                                        all_mutation_options,
+                                        title="AA Mutations unique for left selection",
+                                        aa_id=1,
+                                    ),
+                                ]
+                            ),
+                            dbc.Col(
+                                [
+                                    get_html_elem_dropdown_aa_mutations(
+                                        all_mutation_options,
+                                        title="AA Mutations unique for right selection",
+                                        aa_id=2,
+                                    ),
+                                ]
+                            ),
+                            dbc.Col(
+                                [
+                                    get_html_elem_dropdown_aa_mutations(
+                                        all_mutation_options,
+                                        title="AA Mutations in both selections",
+                                        aa_id=3,
+                                    )
+                                ],
+                            ),
+                        ]
+                    ),
+                    dbc.Row(
+                        [
+                            create_table_compare(
+                                title="Unique for left selection", table_id=1
+                            ),
+                            create_table_compare(
+                                title="Unique for right selection", table_id=2
+                            ),
+                            create_table_compare(title="In both selection", table_id=3),
+                        ]
+                    ),
+                ],
+                className="mt-2",
             ),
         ],
         id="compare_elem",

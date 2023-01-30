@@ -9,7 +9,9 @@ from dash import html
 import dash_bootstrap_components as dbc
 import tomli
 
+from pages.config import DEBUG
 from pages.config import logging_radar
+from pages.config import SERVER
 from pages.util_footer_table import footer_table
 
 launch_uid = uuid4()
@@ -171,4 +173,4 @@ app.layout = dbc.Container(
 )
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host="0.0.0.0")
+    app.run_server(debug=DEBUG, host=SERVER)

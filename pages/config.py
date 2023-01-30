@@ -9,7 +9,8 @@ import plotly.express as px
 load_dotenv()
 
 # CONFIG
-
+SERVER = os.getenv("SERVER")
+DEBUG = os.getenv("DEBUG")
 DB_URL = os.getenv("DB_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL")
 
@@ -21,17 +22,20 @@ def get_module_logger(mod_name):
     datefmt="%Y-%m-%d %H:%M:%S",
     """
     logger = logging.getLogger(mod_name)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "MPXRadar:%(asctime)s %(levelname)-4s: %(message)s", "%Y-%m-%d %H:%M:%S"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(LOG_LEVEL)
+    if not logger.handlers:
+        # Prevent logging from propagating to the root logger
+        logger.propagate = 0
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            "MPXRadar:%(asctime)s %(levelname)-4s: %(message)s", "%Y-%m-%d %H:%M:%S"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(LOG_LEVEL)
     return logger
 
 
-logging_radar = get_module_logger("MPXRADAR")
+logging_radar = get_module_logger("MPXRadar")
 
 # STRING
 
