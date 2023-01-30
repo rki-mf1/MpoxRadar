@@ -4,7 +4,6 @@ import time
 import plotly.express as px
 from datetime import timedelta, date
 from scipy.stats import linregress
-import statsmodels
 import pandas as pd
 import math
 from plotly import graph_objects as go
@@ -31,26 +30,69 @@ class TableFilter(object):
         super(TableFilter, self).__init__()
         self.table_df = \
             pd.merge(
-                variantView_df[["variant.label", "sample.id", 'element.type', 'reference.accession', 'reference.id']],
-                propertyView_df[['sample.name', "sample.id", 'COLLECTION_DATE', 'RELEASE_DATE',
-                                 'ISOLATE', 'LENGTH', 'SEQ_TECH', 'COUNTRY', 'GEO_LOCATION', 'HOST']],
-                how="left", on="sample.id")[["sample.id", 'sample.name', 'COLLECTION_DATE', 'RELEASE_DATE',
-                                             'ISOLATE', 'LENGTH', 'SEQ_TECH', 'COUNTRY', 'GEO_LOCATION', 'HOST',
-                                             'reference.accession', 'reference.id', 'element.type', "variant.label"]]
+                variantView_df[
+                    [
+                        "variant.label",
+                        "sample.id",
+                        'element.type',
+                        'reference.accession',
+                        'reference.id'
+                    ]
+                ],
+                propertyView_df[
+                    [
+                        'sample.name',
+                        "sample.id",
+                        'COLLECTION_DATE',
+                        'RELEASE_DATE',
+                        'ISOLATE',
+                        'LENGTH',
+                        'SEQ_TECH',
+                        'COUNTRY',
+                        'GEO_LOCATION',
+                        'HOST'
+                    ]
+                ],
+                how="left",
+                on="sample.id")[
+                ["sample.id",
+                 'sample.name',
+                 'COLLECTION_DATE',
+                 'RELEASE_DATE',
+                 'ISOLATE',
+                 'LENGTH',
+                 'SEQ_TECH',
+                 'COUNTRY',
+                 'GEO_LOCATION',
+                 'HOST',
+                 'reference.accession',
+                 'reference.id',
+                 'element.type',
+                 "variant.label"
+                 ]
+            ]
         #        print(tabulate(self.table_df[0:10], headers='keys', tablefmt='psql'))
 
     def _get_filtered_samples(self, mutation_list, seq_tech_list, reference_id, dates, gene_list, countries):
         samples = self.table_df[
-            self.table_df["COLLECTION_DATE"].isin(dates) &
-            self.table_df['variant.label'].isin(mutation_list) &
-            (self.table_df['reference.id'] == reference_id) &
-            self.table_df['SEQ_TECH'].isin(seq_tech_list) &
-            self.table_df["COUNTRY"].isin(countries)]['sample.id']
+            self.table_df["COLLECTION_DATE"].isin(dates)
+            & self.table_df['variant.label'].isin(mutation_list)
+            & (self.table_df['reference.id'] == reference_id)
+            & self.table_df['SEQ_TECH'].isin(seq_tech_list)
+            & self.table_df["COUNTRY"].isin(countries)
+            ]['sample.id']
         return samples.tolist()
 
     # TODO no filtering for mutations/genes possible
-    def get_filtered_table(self, mutation_list=None, seq_tech_list=None, reference_id=2, dates=None, gene_list=None,
-                           countries=None):
+    def get_filtered_table(
+            self,
+            mutation_list=None,
+            seq_tech_list=None,
+            reference_id=2,
+            dates=None,
+            gene_list=None,
+            countries=None
+    ):
 
         if mutation_list is None:
             mutation_list = []
@@ -63,24 +105,81 @@ class TableFilter(object):
         if countries is None:
             countries = []
 
-        samples = self._get_filtered_samples(mutation_list, seq_tech_list, reference_id, dates, gene_list, countries)
+        samples = self._get_filtered_samples(
+            mutation_list, seq_tech_list, reference_id, dates, gene_list, countries
+        )
         df = self.table_df[self.table_df['sample.id'].isin(samples)]
         if not df.empty:
-            df = df.groupby(['sample.id', 'sample.name', 'COLLECTION_DATE', 'RELEASE_DATE', 'ISOLATE', 'LENGTH',
-                             'SEQ_TECH', 'COUNTRY', 'GEO_LOCATION', 'HOST', 'reference.accession', 'reference.id',
-                             'element.type'], dropna=False)['variant.label']. \
-                apply(lambda x: ','.join([str(y) for y in set(x)])).reset_index(name='labels')
-            c = ['sample.id', 'sample.name', 'COLLECTION_DATE', 'RELEASE_DATE', 'ISOLATE', 'LENGTH', 'SEQ_TECH',
-                 'COUNTRY', 'GEO_LOCATION', 'HOST', 'reference.accession', 'reference.id']
+            df = (
+                df.groupby(
+                    [
+                        'sample.id',
+                        'sample.name',
+                        'COLLECTION_DATE',
+                        'RELEASE_DATE',
+                        'ISOLATE',
+                        'LENGTH',
+                        'SEQ_TECH',
+                        'COUNTRY',
+                        'GEO_LOCATION',
+                        'HOST',
+                        'reference.accession',
+                        'reference.id',
+                        'element.type'],
+                    dropna=False,
+                )['variant.label']
+                    .apply(lambda x: ','.join([str(y) for y in set(x)]))
+                    .reset_index(name='labels')
+            )
+            c = [
+                'sample.id',
+                'sample.name',
+                'COLLECTION_DATE',
+                'RELEASE_DATE',
+                'ISOLATE',
+                'LENGTH',
+                'SEQ_TECH',
+                'COUNTRY',
+                'GEO_LOCATION',
+                'HOST',
+                'reference.accession',
+                'reference.id']
             df = df.set_index(['element.type'] + c).unstack('element.type')
             df = df.labels.rename_axis([None], axis=1).reset_index()
             df = df.rename(columns={"cds": "AA_PROFILE", "source": "NUC_PROFILE"})
-            df = df[["sample.name", "COLLECTION_DATE", "RELEASE_DATE", "ISOLATE", "LENGTH", "SEQ_TECH", "COUNTRY",
-                     "GEO_LOCATION", "HOST", "reference.accession", "NUC_PROFILE", "AA_PROFILE"]]
+            df = df[
+                [
+                    "sample.name",
+                    "COLLECTION_DATE",
+                    "RELEASE_DATE",
+                    "ISOLATE",
+                    "LENGTH",
+                    "SEQ_TECH",
+                    "COUNTRY",
+                    "GEO_LOCATION",
+                    "HOST",
+                    "reference.accession",
+                    "NUC_PROFILE",
+                    "AA_PROFILE"
+                ]
+            ]
         else:
-            df = pd.DataFrame([], columns=["sample.name", "COLLECTION_DATE", "RELEASE_DATE", "ISOLATE", "LENGTH",
-                                           "SEQ_TECH", "COUNTRY",
-                                           "GEO_LOCATION", "HOST", "reference.accession", "NUC_PROFILE", "AA_PROFILE"])
+            df = pd.DataFrame([],
+                              columns=[
+                                  "sample.name",
+                                  "COLLECTION_DATE",
+                                  "RELEASE_DATE",
+                                  "ISOLATE",
+                                  "LENGTH",
+                                  "SEQ_TECH",
+                                  "COUNTRY",
+                                  "GEO_LOCATION",
+                                  "HOST",
+                                  "reference.accession",
+                                  "NUC_PROFILE",
+                                  "AA_PROFILE"
+                              ]
+                              )
         return df
 
 
@@ -123,7 +222,8 @@ class DfsAndDetailPlot(object):
 
         # 4. location_ID, date, amino_acid --> concat all strain_ids into one comma separated string list and count
         df_all_dates_all_voc = df_all_dates_all_voc.groupby(["COUNTRY", "COLLECTION_DATE", "variant.label",
-                                                             'reference.id', "SEQ_TECH", "element.symbol"], dropna=False)["sample.id"] \
+                                                             'reference.id', "SEQ_TECH", "element.symbol"],
+                                                            dropna=False)["sample.id"] \
             .apply(lambda x: ','.join([str(y) for y in set(x)])).reset_index(name='sample_id_list')
         # 5. add sequence count
         df_all_dates_all_voc["number_sequences"] = df_all_dates_all_voc["sample_id_list"].apply(
@@ -264,7 +364,8 @@ class DfsAndDetailPlot(object):
         df = df.groupby(['COUNTRY', 'variant.label', "element.symbol"]).agg(
             {'number_sequences': lambda x: list(x), 'COLLECTION_DATE': lambda x: list(x)})
         if df.empty:
-            df = pd.DataFrame([], columns=["number_sequences", 'variant.label', "element.symbol", "COLLECTION_DATE", "slope"])
+            df = pd.DataFrame([], columns=["number_sequences", 'variant.label', "element.symbol", "COLLECTION_DATE",
+                                           "slope"])
         else:
             df = self.add_slope_column(df)
         return df
@@ -320,7 +421,8 @@ class DfsAndDetailPlot(object):
         df = self.get_df_for_frequency_bar(filtered_df)
         df = self.drop_rows_by_value(df, 0, "number_sequences")
         if df.empty:
-            df = pd.DataFrame(data=[['no_mutation', 'no_gene', 0]], columns=["variant.label", "element.symbol", "number_sequences"])
+            df = pd.DataFrame(data=[['no_mutation', 'no_gene', 0]],
+                              columns=["variant.label", "element.symbol", "number_sequences"])
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
         try:
@@ -372,7 +474,7 @@ class DfsAndDetailPlot(object):
                          labels={"date_numbers": "COLLECTION_DATE", "number_sequences": "# sequences"},
                          height=300,
                          hover_data={"COLLECTION_DATE": True, 'number_sequences': True, 'variant.label': True,
-                                     "COUNTRY": False,  'element.symbol': True, 'date_numbers': False})
+                                     "COUNTRY": False, 'element.symbol': True, 'date_numbers': False})
         fig.update_yaxes(type='linear' if axis_type == 'linear' else 'log',
                          )
         fig.update_xaxes(showgrid=False,
@@ -404,7 +506,8 @@ class DfsAndDetailPlot(object):
         # dummy dataframe for showing empty results
         if df.empty:
             df = pd.DataFrame(data=[[location_name, dates[-1], 'no_mutations', 0, 'no_gene']],
-                              columns=["COUNTRY", "COLLECTION_DATE", "variant.label", "number_sequences", "element.symbol"])
+                              columns=["COUNTRY", "COLLECTION_DATE", "variant.label", "number_sequences",
+                                       "element.symbol"])
         # date_numbers: assign date to number, numbers needed for calculation of trendline
         date_numbers = [(d - self.min_date).days for d in df["COLLECTION_DATE"]]
         df['date_numbers'] = date_numbers

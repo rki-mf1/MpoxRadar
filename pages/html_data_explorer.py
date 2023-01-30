@@ -15,36 +15,57 @@ def create_worldMap_explorer(date_slider):
             color="primary",
         ),
         dcc.Graph(animate=False, id="world_map_explorer"),
-        html.Div([
-            dbc.Row(
-                [
-                    dbc.Col(
-                        html.I(id='play_button', n_clicks=0, className='fa-solid fa-circle-play fa-lg')
-                        , width=1
-                    ),
-                    dbc.Col([
-                        dcc.Interval(id='auto_stepper',
-                                     # TODO this might cause the error: { message: "Circular Dependencies", html: "Error: Dependency Cycle Found: auto_stepper.n_intervals -> auto_stepper.disabled -> auto_stepper.n_intervals" }
-                                     interval=500,
-                                     # time between steps, this component will increment the counter n_intervals every interval milliseconds, 300 to fast for processing
-                                     n_intervals=0,  # Number of times the interval has passed.
-                                     max_intervals=0,
-                                     disabled=True),
-                        dcc.RangeSlider(id='date_slider',
-                                        updatemode='mouseup',
-                                        min=date_slider.unix_time_millis(date_slider.min_date),
-                                        max=date_slider.unix_time_millis(date_slider.max_date),
-                                        marks=date_slider.get_marks_date_range(),
-                                        step=86400,  # unix time one day
-                                        allowCross=False,
-                                        value=[date_slider.unix_time_millis(
-                                            date_slider.get_date_x_days_before(date_slider.max_date)),
-                                            date_slider.unix_time_millis(date_slider.max_date)],
-                                        ),
+        html.Div(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.I(
+                                id='play_button',
+                                n_clicks=0,
+                                className='fa-solid fa-circle-play fa-lg'
+                            ),
+                            width=1,
+                        ),
+                        dbc.Col(
+                            [
+                                dcc.Interval(
+                                    id='auto_stepper',
+                                    # TODO this might cause the error: { message: "Circular Dependencies", html: "Error: Dependency Cycle Found: auto_stepper.n_intervals -> auto_stepper.disabled -> auto_stepper.n_intervals" }
+                                    interval=500,
+                                    # time between steps, this component will increment the counter n_intervals every interval milliseconds, 300 to fast for processing
+                                    n_intervals=0,  # Number of times the interval has passed.
+                                    max_intervals=0,
+                                    disabled=True),
+                                dcc.RangeSlider(
+                                    id='date_slider',
+                                    updatemode='mouseup',
+                                    min=date_slider.unix_time_millis(
+                                        date_slider.min_date
+                                    ),
+                                    max=date_slider.unix_time_millis(
+                                        date_slider.max_date
+                                    ),
+                                    marks=date_slider.get_marks_date_range(),
+                                    step=86400,  # unix time one day
+                                    allowCross=False,
+                                    value=[
+                                        date_slider.unix_time_millis(
+                                            date_slider.get_date_x_days_before(
+                                                date_slider.max_date
+                                            )),
+                                        date_slider.unix_time_millis(
+                                            date_slider.max_date
+                                        )
+                                    ],
+                                ),
+                            ],
+                        ),
                     ],
-                    ),
-                ], justify="center"),
-        ], id="slider_box"
+                    justify="center"
+                ),
+            ],
+            id="slider_box"
         ),
     ],
     )
@@ -54,40 +75,64 @@ def create_worldMap_explorer(date_slider):
     ])
 
     map_charts = html.Div([
-        html.Div([
-            html.H6(id="header_upper_plot"),
-            dcc.Graph(id='results_per_location'),
-        ]),
-        html.Div([
-            html.H6("Mutation Development", id="header_lower_plot"),
-            dcc.Graph(id='mutation_development'),
-        ]),
-    ]),
+        html.Div(
+            [
+                html.H6(id="header_upper_plot"),
+                dcc.Graph(id='results_per_location'),
+            ]
+        ),
+        html.Div(
+            [
+                html.H6("Mutation Development", id="header_lower_plot"),
+                dcc.Graph(id='mutation_development'),
+            ]
+        ),
+    ]
+    ),
 
     map_slider_and_detail_plots = \
-        html.Div([
-            dbc.Card(
-                dbc.CardBody([
-                    html.Br(),
-                    dbc.Row([
-                        dbc.Col(world_map_with_slider, width=12, style={"height": "100%"}),
-                    ], align="center",
-                    ),
-                    html.Br(),
-                    dbc.Row([
-                        dbc.Col(map_chart_header, width=10, style={"height": "100%"})
-                    ], align="center",
-                    ),
-                    html.Br(),
-                    dbc.Row([
-                        #   dbc.Col(info_texts, width=2, style={"height":"100%"}),
-                        dbc.Col(map_charts, width=10, style={"height": "100%"}),
-                    ], align="center",
-                    ),
-                    html.Br(),
-                ],
-                ), )
-        ],
+        html.Div(
+            [
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.Br(),
+                            dbc.Row(
+                                [
+                                    dbc.Col(world_map_with_slider,
+                                            width=12,
+                                            style={"height": "100%"}
+                                            ),
+                                ],
+                                align="center",
+                            ),
+                            html.Br(),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        map_chart_header,
+                                        width=10,
+                                        style={"height": "100%"}
+                                    )
+                                ],
+                                align="center",
+                            ),
+                            html.Br(),
+                            dbc.Row(
+                                [
+                                    #   dbc.Col(info_texts, width=2, style={"height":"100%"}),
+                                    dbc.Col(
+                                        map_charts,
+                                        width=10,
+                                        style={"height": "100%"}
+                                    ),
+                                ],
+                                align="center",
+                            ),
+                            html.Br(),
+                        ],
+                    ), )
+            ],
             className="page",
             id="map_explorer"
         )
@@ -103,12 +148,17 @@ def create_table_explorer(tableFilter):
                 [
                     dbc.AccordionItem(
                         [
-                            html.Div(id="filter-table-output", children=""),
+                            html.Div(
+                                id="filter-table-output",
+                                children=""
+                            ),
                             html.Div(
                                 [
                                     dash_table.DataTable(
                                         data=df.to_dict('records'),
-                                        columns=[{"name": i, "id": i} for i in df.columns],
+                                        columns=[
+                                            {"name": i, "id": i} for i in df.columns
+                                        ],
                                         id="table_explorer",
                                         page_current=0,
                                         page_size=20,
@@ -120,7 +170,9 @@ def create_table_explorer(tableFilter):
                                             "width": "300px",
                                             "maxWidth": "300px",
                                         },
-                                        style_table={"overflowX": "auto"},
+                                        style_table={
+                                            "overflowX": "auto"
+                                        },
                                         export_format="csv",
                                     ),
                                 ]
@@ -151,7 +203,9 @@ def create_table_compare(title, table_id):
                                 [
                                     dash_table.DataTable(
                                         data=df.to_dict('records'),
-                                        columns=[{"name": i, "id": i} for i in df.columns],
+                                        columns=[
+                                            {"name": i, "id": i} for i in df.columns
+                                        ],
                                         id=f"table_compare_{table_id}",
                                         page_current=0,
                                         page_size=20,
@@ -214,12 +268,17 @@ def get_html_elem_dropdown_genes(gene_options, g_id=0):
                     optionHeight=35,  # height options in dropdown, not chosen options
                     multi=True,
                     searchable=True,
-                    style={"overflow-y": "auto",  # without not scrollable, just cut
-                           'maxHeight': 200},  # height field
+                    style={
+                        "overflow-y": "auto",  # without not scrollable, just cut
+                        'maxHeight': 200
+                    },  # height field
                 ),
                 html.Br(),
-                dcc.Checklist(id=f'select_all_genes_{g_id}',
-                              options=[{'label': 'Select All', 'value': 1}], value=[1]),
+                dcc.Checklist(
+                    id=f'select_all_genes_{g_id}',
+                    options=[{'label': 'Select All', 'value': 1}],
+                    value=[1]
+                ),
             ],
         )
     )
@@ -242,8 +301,10 @@ def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
                     },
                 ),
                 html.Br(),
-                dcc.Checklist(id=f'select_all_seq_tech_{s_id}',
-                              options=[{'label': 'Select All', 'value': 1}], value=[1]),
+                dcc.Checklist(
+                    id=f'select_all_seq_tech_{s_id}',
+                    options=[{'label': 'Select All', 'value': 1}], value=[1]
+                ),
             ],
         )
     )
@@ -269,8 +330,11 @@ def get_html_elem_dropdown_countries(countries, c_id=0):
                            'maxHeight': 200},
                 ),
                 html.Br(),
-                dcc.Checklist(id=f'select_all_countries_{c_id}',
-                              options=[{'label': 'Select All', 'value': 1}], value=[1]),
+                dcc.Checklist(
+                    id=f'select_all_countries_{c_id}',
+                    options=[{'label': 'Select All', 'value': 1}],
+                    value=[1]
+                ),
             ],
         )
     )
@@ -307,8 +371,9 @@ def get_html_interval(interval=30):
                     placeholder=interval,
                     value=interval,
                     className="input_field",
-                    min=1, )
-            ]
+                    min=1,
+                ),
+            ],
         )
     )
     return interval_card
@@ -324,20 +389,23 @@ def get_html_elem_dropdown_aa_mutations(mutation_options, title="AA mutations: "
                 html.Br(),
                 dcc.Dropdown(
                     options=mutation_options,
-                    value=[mut_dict['value'] for mut_dict in
-                           mutation_options[0:20]],
+                    value=[mut_dict['value'] for mut_dict in mutation_options[0:20]],
                     id=f"mutation_dropdown_{aa_id}",
                     maxHeight=300,
                     optionHeight=50,
                     multi=True,
                     searchable=True,
-                    style={"overflow-y": "auto",
-                           'maxHeight': 150},
+                    style={
+                        "overflow-y": "auto",
+                        'maxHeight': 150
+                    },
                 ),
                 html.Br(),
-                dbc.Label(f"Select x most frequent sequences. Maximum number of non-unique mutations: "
-                          f"{len(mutation_options)}",
-                          id=f'max_nb_txt_{aa_id}'),
+                dbc.Label(
+                    f"Select x most frequent sequences. Maximum number of non-unique mutations: "
+                    f"{len(mutation_options)}",
+                    id=f'max_nb_txt_{aa_id}'
+                ),
                 html.Br(),
                 dcc.Input(
                     id=f"select_x_frequent_mut_{aa_id}",
@@ -368,5 +436,7 @@ def get_html_date_picker(d_id):
                     max_date_allowed=today,
                     initial_visible_month=date(2022, 1, 1),
                 ),
-            ]))
+            ]
+        )
+    )
     return date_picker
