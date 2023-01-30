@@ -76,26 +76,25 @@ def get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, tabl
         ],
         [
             Input("reference_radio_0", "value"),
-            Input("gene_dropdown_0", "value"),
             Input("select_all_genes_0", "value"),
         ],
         [
             State("gene_dropdown_0", "options"),
-        ], prevent_initial_call=False,
+        ], prevent_initial_call=True,
         )
-    def actualize_gene_filters(reference_value, gene_value, select_all_genes, gene_options):
+    def actualize_gene_filters(reference_value, select_all_genes, gene_options):
         """
          gene --> mut
         """
         if dash.ctx.triggered_id == "select_all_genes_0":
             if len(select_all_genes) == 1:
-                gene_value = [i['value'] for i in get_all_genes_per_reference(df_dict["referenceView"], reference_value, color_dict)]
+                gene_value = [i['value'] for i in get_all_genes_per_reference(df_dict["variantView"], reference_value,
+                                                                              color_dict)]
             elif len(select_all_genes) == 0:
                 gene_value = []
-        if dash.ctx.triggered_id in ["reference_radio_0"]:
-            gene_options = get_all_genes_per_reference(df_dict["referenceView"], reference_value, color_dict)
+        if dash.ctx.triggered_id == "reference_radio_0":
+            gene_options = get_all_genes_per_reference(df_dict["variantView"], reference_value, color_dict)
             gene_value = [i['value'] for i in gene_options]
-
         return gene_options, gene_value
 
 
