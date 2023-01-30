@@ -1,43 +1,34 @@
 import argparse
+import pandas as pd
 import shlex
 import time
-
 import dash
-from dash import callback
-from dash import html
-from dash import Input
-from dash import no_update
-from dash import Output
-from dash import State
 import dash_bootstrap_components as dbc
-from data import load_all_sql_files
-import pandas as pd
+from dash import html, Input, Output, State, callback, no_update
 import plotly.express as px
 import plotly.graph_objects as go
 
+from data import load_all_sql_files
+from pages.utils_worldMap_explorer import WorldMap, DateSlider, TableFilter
+from pages.utils_explorer_filter import get_all_references, \
+    get_all_frequency_sorted_seqtech, \
+    get_all_frequency_sorted_countries, \
+    get_all_frequency_sorted_mutation, \
+    get_all_genes_per_reference
+from pages.html_data_explorer import create_worldMap_explorer, \
+    create_table_explorer, \
+    get_html_elem_reference_radioitems, \
+    get_html_elem_dropdown_aa_mutations, \
+    get_html_elem_method_radioitems, \
+    get_html_elem_checklist_seq_tech, \
+    get_html_interval, \
+    get_html_elem_dropdown_countries, \
+    get_html_elem_dropdown_genes, create_table_compare, get_html_date_picker
 from pages.config import color_schemes
 from pages.config import location_coordinates
-from pages.html_data_explorer import create_table_compare
-from pages.html_data_explorer import create_table_explorer
-from pages.html_data_explorer import create_worldMap_explorer
-from pages.html_data_explorer import get_html_elem_checklist_seq_tech
-from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations
-from pages.html_data_explorer import get_html_elem_dropdown_countries
-from pages.html_data_explorer import get_html_elem_dropdown_genes
-from pages.html_data_explorer import get_html_elem_method_radioitems
-from pages.html_data_explorer import get_html_elem_reference_radioitems
-from pages.html_data_explorer import get_html_interval
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
-from pages.utils_explorer_filter import get_all_frequency_sorted_countries
-from pages.utils_explorer_filter import get_all_frequency_sorted_mutation
-from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
-from pages.utils_explorer_filter import get_all_genes_per_reference
-from pages.utils_explorer_filter import get_all_references
-from pages.utils_worldMap_explorer import DateSlider
-from pages.utils_worldMap_explorer import TableFilter
-from pages.utils_worldMap_explorer import WorldMap
 from .app_controller import get_freq_mutation
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
@@ -46,197 +37,115 @@ from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 
 df_dict = load_all_sql_files()
-world_map = WorldMap(
-    df_dict["propertyView"], df_dict["variantView"], location_coordinates
-)
+world_map = WorldMap(df_dict["propertyView"], df_dict["variantView"], location_coordinates)
 date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
-variantView_cds = df_dict["variantView"][
-    df_dict["variantView"]["element.type"] == "cds"
-]
+variantView_cds = df_dict['variantView'][df_dict['variantView']['element.type'] == 'cds']
 table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
-all_reference_options = get_all_references(df_dict["variantView"])
+all_reference_options = get_all_references(df_dict['variantView'])
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
 all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
-all_mutation_options = get_all_frequency_sorted_mutation(
-    world_map.df_all_dates_all_voc, 2, world_map.color_dict
-)
-all_gene_options = get_all_genes_per_reference(
-    df_dict["variantView"], 2, world_map.color_dict
-)
+all_mutation_options = get_all_frequency_sorted_mutation(world_map.df_all_dates_all_voc, 2, world_map.color_dict)
+all_gene_options = get_all_genes_per_reference(df_dict["variantView"], 2, world_map.color_dict)
 
 dash.register_page(__name__, path="/Tool")
 
 tab_explored_tool = html.Div(
     [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        get_html_elem_reference_radioitems(
-                                            all_reference_options
-                                        )
-                                    ],
-                                ),
-                                dbc.Col(
-                                    [get_html_elem_dropdown_genes(all_gene_options)],
-                                ),
-                                dbc.Col(
-                                    [
-                                        get_html_elem_checklist_seq_tech(
-                                            all_seq_tech_options
-                                        )
-                                    ],
-                                ),
-                                dbc.Col(
-                                    [
-                                        get_html_elem_dropdown_countries(
-                                            all_country_options
-                                        )
-                                    ],
-                                ),
-                                dbc.Col(
-                                    [
-                                        get_html_elem_method_radioitems(),
-                                        get_html_interval(),
-                                    ],
-                                ),
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        get_html_elem_dropdown_aa_mutations(
-                                            all_mutation_options
-                                        )
-                                    ],
-                                    width=12,
-                                ),
-                            ]
-                        ),
-                    ]
-                ),
-                html.Div(create_worldMap_explorer(date_slider)),
-                html.Div(create_table_explorer(table_filter)),
-            ],
-            id="div_elem_standard",
-        ),
-    ]
-)
-
-tab_compare_tool = (
-    html.Div(
-        [
+        html.Div([
             html.Div(
                 [
-                    html.Div(
+                    dbc.Row(
                         [
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_reference_radioitems(
-                                                all_reference_options, radio_id=1
-                                            ),
-                                            get_html_elem_dropdown_genes(
-                                                all_gene_options, g_id=1
-                                            ),
-                                            get_html_elem_checklist_seq_tech(
-                                                all_seq_tech_options, s_id=1
-                                            ),
-                                            get_html_elem_dropdown_countries(
-                                                all_country_options, c_id=1
-                                            ),
-                                        ]
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_reference_radioitems(
-                                                all_reference_options, radio_id=2
-                                            ),
-                                            get_html_elem_dropdown_genes(
-                                                all_gene_options, g_id=2
-                                            ),
-                                            get_html_elem_checklist_seq_tech(
-                                                all_seq_tech_options, s_id=2
-                                            ),
-                                            get_html_elem_dropdown_countries(
-                                                all_country_options, c_id=2
-                                            ),
-                                        ]
-                                    ),
-                                ]
+                            dbc.Col(
+                                [get_html_elem_reference_radioitems(all_reference_options)],
                             ),
-                            html.Br(),
-                            dbc.Row(
-                                [
-                                    dbc.Button(
-                                        "Compare",
-                                        id="compare_button",
-                                        size="lg",
-                                        className="me-1",
-                                        color="primary",
-                                        n_clicks=0,
-                                    )
-                                ]
+                            dbc.Col(
+                                [get_html_elem_dropdown_genes(all_gene_options)],
                             ),
-                            html.Br(),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_dropdown_aa_mutations(
-                                                all_mutation_options,
-                                                title="AA Mutations unique for left selection",
-                                                aa_id=1,
-                                            ),
-                                        ]
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_dropdown_aa_mutations(
-                                                all_mutation_options,
-                                                title="AA Mutations unique for right selection",
-                                                aa_id=2,
-                                            ),
-                                        ]
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            get_html_elem_dropdown_aa_mutations(
-                                                all_mutation_options,
-                                                title="AA Mutations in both selections",
-                                                aa_id=3,
-                                            )
-                                        ],
-                                    ),
-                                ]
+                            dbc.Col(
+                                [get_html_elem_checklist_seq_tech(all_seq_tech_options)],
                             ),
-                            dbc.Row(
-                                [
-                                    create_table_compare(
-                                        title="unique for left selection", table_id=1
-                                    ),
-                                    create_table_compare(
-                                        title="unique for right selection", table_id=2
-                                    ),
-                                    create_table_compare(
-                                        title="in both selection", table_id=3
-                                    ),
-                                ]
+                            dbc.Col(
+                                [get_html_elem_dropdown_countries(all_country_options)],
+                            ),
+                            dbc.Col(
+                                [get_html_elem_method_radioitems(),
+                                 get_html_interval()],
+                            ),
+                        ]
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options)], width=12
                             ),
                         ]
                     ),
                 ]
             ),
-        ],
-        id="compare_elem",
-    ),
+            html.Div(create_worldMap_explorer(date_slider)),
+            html.Div(create_table_explorer(table_filter)),
+        ], id="div_elem_standard"),
+    ]
 )
+
+tab_compare_tool = html.Div(
+    [
+        html.Div([
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [get_html_elem_reference_radioitems(all_reference_options, radio_id=1),
+                                 get_html_elem_dropdown_genes(all_gene_options, g_id=1),
+                                 get_html_elem_checklist_seq_tech(all_seq_tech_options, s_id=1),
+                                 get_html_elem_dropdown_countries(all_country_options, c_id=1),
+                                 get_html_date_picker(d_id=1)
+                                 ]
+                            ),
+                            dbc.Col(
+                                [get_html_elem_reference_radioitems(all_reference_options, radio_id=2),
+                                 get_html_elem_dropdown_genes(all_gene_options, g_id=2),
+                                 get_html_elem_checklist_seq_tech(all_seq_tech_options, s_id=2),
+                                 get_html_elem_dropdown_countries(all_country_options, c_id=2),
+                                 get_html_date_picker(d_id=2)
+                                 ]
+                            ),
+                        ]),
+                    html.Br(),
+                    dbc.Row(
+                        [dbc.Button('Compare', id='compare_button', size="lg", className="me-1", color="primary", n_clicks=0)]),
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options,
+                                                                     title="AA Mutations unique for left selection",
+                                                                     aa_id=1), ]
+                            ),
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options,
+                                                                     title="AA Mutations unique for right selection",
+                                                                     aa_id=2), ]
+                            ),
+                            dbc.Col(
+                                [get_html_elem_dropdown_aa_mutations(all_mutation_options,
+                                                                     title="AA Mutations in both selections",
+                                                                     aa_id=3)], )
+                        ]
+                    ),
+
+                    dbc.Row(
+                        [create_table_compare(title="unique for left selection", table_id=1),
+                         create_table_compare(title="unique for right selection", table_id=2),
+                         create_table_compare(title="in both selection", table_id=3)]
+                    ),
+                ]
+            ),
+        ]
+        ),
+    ], id="compare_elem"),
 
 tab_advanced_tool = html.Div(
     [
@@ -284,7 +193,7 @@ layout = html.Div(
 
 def calculate_coordinate(ouput_df, selected_column):
     """
-    TODO:     1. improve performance of map
+        TODO:     1. improve performance of map
     """
     # concate the coordinate
     ouput_df = ouput_df[selected_column]
@@ -310,8 +219,8 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
     # convert to list of string.
     ouput_df[column_profile] = (
         ouput_df[column_profile]
-        .str.split(",")
-        .map(lambda elements: [e.strip() for e in elements])
+            .str.split(",")
+            .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     ouput_df = ouput_df.explode(column_profile)
@@ -506,8 +415,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     # convert to list of string.
     table_df[column_profile] = (
         table_df[column_profile]
-        .str.split(",")
-        .map(lambda elements: [e.strip() for e in elements])
+            .str.split(",")
+            .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     table_df = table_df.explode(column_profile)
@@ -533,7 +442,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
     table_df["mutation_list"] = (
-        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+            table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
     )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(
@@ -658,15 +567,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 """
 
 # This is the EXPLORE TOOL PART
-get_explore_callbacks(
-    df_dict,
-    world_map,
-    date_slider,
-    variantView_cds,
-    table_filter,
-    all_seq_tech_options,
-    world_map.color_dict,
-)
+get_explore_callbacks(df_dict, world_map, date_slider, variantView_cds, table_filter, all_seq_tech_options,
+                      world_map.color_dict)
 
 # COMPARE PART
 get_compare_callbacks(df_dict, variantView_cds, world_map.color_dict)
