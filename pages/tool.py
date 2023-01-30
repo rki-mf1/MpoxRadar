@@ -20,6 +20,7 @@ from pages.config import location_coordinates
 from pages.html_data_explorer import create_table_compare
 from pages.html_data_explorer import create_table_explorer
 from pages.html_data_explorer import create_worldMap_explorer
+from pages.html_data_explorer import get_html_date_picker
 from pages.html_data_explorer import get_html_elem_checklist_seq_tech
 from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations
 from pages.html_data_explorer import get_html_elem_dropdown_countries
@@ -63,7 +64,7 @@ all_mutation_options = get_all_frequency_sorted_mutation(
 all_gene_options = get_all_genes_per_reference(
     df_dict["variantView"], 2, world_map.color_dict
 )
-print("Prebuild cache is complete")
+
 dash.register_page(__name__, path="/Tool")
 
 tab_explored_tool = html.Div(
@@ -151,6 +152,7 @@ tab_compare_tool = (
                                             get_html_elem_dropdown_countries(
                                                 all_country_options, c_id=1
                                             ),
+                                            get_html_date_picker(d_id=1),
                                         ]
                                     ),
                                     dbc.Col(
@@ -167,6 +169,7 @@ tab_compare_tool = (
                                             get_html_elem_dropdown_countries(
                                                 all_country_options, c_id=2
                                             ),
+                                            get_html_date_picker(d_id=2),
                                         ]
                                     ),
                                 ]

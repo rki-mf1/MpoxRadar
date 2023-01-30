@@ -61,6 +61,7 @@ def get_explore_callbacks(  # noqa: C901
         # TODO now return top x mut without checking for mutations with same number
         if dash.ctx.triggered_id == "select_x_frequent_mut_0":
             mut_value = [i["value"] for i in mut_options[0:select_x_mut]]
+            max_select = len(mut_options)
 
         else:
             variantView_cds_ref = variantView_cds[
@@ -76,15 +77,21 @@ def get_explore_callbacks(  # noqa: C901
             mut_options = get_frequency_sorted_mutation_by_filters(
                 variantView_cds_ref_gene, propertyView_seq_country, color_dict
             )
+            max_select = len(mut_options)
             if select_x_mut > len(mut_options):
                 select_x_mut = len(mut_options)
+            if select_x_mut == 0:
+                if len(mut_options) < 20:
+                    select_x_mut = len(mut_options)
+                else:
+                    select_x_mut = 20
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
 
         text = (
             f"Select x most frequent sequences. Maximum number of mutations (including unique mutations) with chosen "
             f"filter options: {len(mut_options)}"
         )
-        return mut_options, mut_value, text, len(mut_options), select_x_mut
+        return mut_options, mut_value, text, max_select, select_x_mut
 
     @callback(
         [
@@ -93,17 +100,14 @@ def get_explore_callbacks(  # noqa: C901
         ],
         [
             Input("reference_radio_0", "value"),
-            Input("gene_dropdown_0", "value"),
             Input("select_all_genes_0", "value"),
         ],
         [
             State("gene_dropdown_0", "options"),
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )
-    def actualize_gene_filters(
-        reference_value, gene_value, select_all_genes, gene_options
-    ):
+    def actualize_gene_filters(reference_value, select_all_genes, gene_options):
         """
         gene --> mut
         """
@@ -112,17 +116,16 @@ def get_explore_callbacks(  # noqa: C901
                 gene_value = [
                     i["value"]
                     for i in get_all_genes_per_reference(
-                        df_dict["referenceView"], reference_value, color_dict
+                        df_dict["variantView"], reference_value, color_dict
                     )
                 ]
             elif len(select_all_genes) == 0:
                 gene_value = []
-        if dash.ctx.triggered_id in ["reference_radio_0"]:
+        if dash.ctx.triggered_id == "reference_radio_0":
             gene_options = get_all_genes_per_reference(
-                df_dict["referenceView"], reference_value, color_dict
+                df_dict["variantView"], reference_value, color_dict
             )
             gene_value = [i["value"] for i in gene_options]
-
         return gene_options, gene_value
 
     @callback(
@@ -439,8 +442,7 @@ def get_explore_callbacks(  # noqa: C901
         )
         return fig_develop
 
-        # fill table
-
+    # fill table
     @callback(
         [
             Output(component_id="table_explorer", component_property="data"),

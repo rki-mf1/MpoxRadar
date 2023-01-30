@@ -163,6 +163,7 @@ class DataFrameLoader:
                     column: self.column_dtypes[table_name][column] for column in columns
                 }
                 queried_columns = "*"
+            # here is the download!
             df = pd.read_sql_query(
                 f"SELECT {queried_columns} FROM {table_name};",
                 con=db_connection,

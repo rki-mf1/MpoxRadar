@@ -1,3 +1,5 @@
+import datetime
+
 import dash
 from dash import callback
 from dash import Input
@@ -9,9 +11,9 @@ from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
 from pages.utils_explorer_filter import get_all_genes_per_reference
 from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_filters
+from pages.utils_worldMap_explorer import DateSlider
 
 
-# This is the EXPLORE TOOL PART
 def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
     @callback(
         [
@@ -43,6 +45,10 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
             State("reference_radio_2", "value"),
             State("seq_tech_dropdown_2", "value"),
             State("country_dropdown_2", "value"),
+            Input("date_picker_range_1", "start_date"),
+            Input("date_picker_range_1", "end_date"),
+            Input("date_picker_range_2", "start_date"),
+            Input("date_picker_range_2", "end_date"),
         ],
         prevent_initial_call=False,
     )
@@ -56,14 +62,22 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
         reference_value_2,
         seqtech_value_2,
         country_value_2,
+        start_date_1,
+        end_date_1,
+        start_date_2,
+        end_date_2,
     ):
-        """ """
+        date_list_1 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
+        )
         variantView_cds_ref_1 = variantView_cds[
             (variantView_cds["reference.id"] == reference_value_1)
         ]
         propertyView_seq_country_1 = df_dict["propertyView"][
             (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_1))
             & (df_dict["propertyView"]["COUNTRY"].isin(country_value_1))
+            & (df_dict["propertyView"]["COLLECTION_DATE"].isin(date_list_1))
         ]
         variantView_cds_ref_gene_1 = variantView_cds_ref_1[
             variantView_cds_ref_1["element.symbol"].isin(gene_value_1)
@@ -73,12 +87,17 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
         )
         mut_value_1 = [i["value"] for i in mut_options_1]
 
+        date_list_2 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_2, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_2, "%Y-%m-%d").date(),
+        )
         variantView_cds_ref_2 = variantView_cds[
             (variantView_cds["reference.id"] == reference_value_2)
         ]
         propertyView_seq_country_2 = df_dict["propertyView"][
             (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_2))
             & (df_dict["propertyView"]["COUNTRY"].isin(country_value_2))
+            & (df_dict["propertyView"]["COLLECTION_DATE"].isin(date_list_2))
         ]
         variantView_cds_ref_gene_2 = variantView_cds_ref_2[
             variantView_cds_ref_2["element.symbol"].isin(gene_value_2)
@@ -203,7 +222,6 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
         country_value,
         seq_tech_value,
     ):
-        """ """
         if dash.ctx.triggered_id == "select_all_genes_1":
             if len(select_all_genes) == 1:
                 gene_value = [i["value"] for i in gene_options]
@@ -279,7 +297,7 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
         country_value,
         seq_tech_value,
     ):
-        """ """
+
         if dash.ctx.triggered_id == "select_all_genes_2":
             if len(select_all_genes) == 1:
                 gene_value = [i["value"] for i in gene_options]
