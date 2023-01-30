@@ -10,8 +10,11 @@ def create_worldMap_explorer(date_slider):
     """
 
     world_map_with_slider = html.Div([
+        html.H3("Output result from filter options"),
+        html.H4("Mutation counts based on filters"),
         dbc.FormText(
-            "Only once occurring mutations removed from map and plots.",
+            "Note, mutations only occurring once are removed from the map and plots below to allow for an overview. "
+            "Those are still included in the table of results.",
             color="primary",
         ),
         dcc.Graph(animate=False, id="world_map_explorer"),
@@ -33,7 +36,8 @@ def create_worldMap_explorer(date_slider):
                                     id='auto_stepper',
                                     # TODO this might cause the error: { message: "Circular Dependencies", html: "Error: Dependency Cycle Found: auto_stepper.n_intervals -> auto_stepper.disabled -> auto_stepper.n_intervals" }
                                     interval=500,
-                                    # time between steps, this component will increment the counter n_intervals every interval milliseconds, 300 to fast for processing
+                                    # time between steps, this component will increment the counter n_intervals every
+                                    # interval milliseconds, 300 to fast for processing
                                     n_intervals=0,  # Number of times the interval has passed.
                                     max_intervals=0,
                                     disabled=True),
@@ -71,7 +75,12 @@ def create_worldMap_explorer(date_slider):
     )
 
     map_chart_header = html.Div([
-        html.H5(id='chosen_location')
+        html.H4("Detailed look at the sequences with the chosen mutations for the selected country"),
+        html.H5(id='chosen_location'),
+        dbc.FormText(
+            "Please click on a country you are interested in on the global map above to see detail plots for that country.",
+            color="primary",
+        ),
     ])
 
     map_charts = html.Div([
@@ -81,8 +90,7 @@ def create_worldMap_explorer(date_slider):
                 dcc.Graph(id='results_per_location'),
             ]
         ),
-        html.Div(
-            [
+        html.Div([
                 html.H6("Mutation Development", id="header_lower_plot"),
                 dcc.Graph(id='mutation_development'),
             ]
@@ -143,7 +151,6 @@ def create_table_explorer(tableFilter):
     df = tableFilter.get_filtered_table()
     Output_table_standard = dbc.Card(  # Output
         [
-            html.H3("Output result from filter options."),
             dbc.Accordion(
                 [
                     dbc.AccordionItem(
@@ -270,7 +277,7 @@ def get_html_elem_dropdown_genes(gene_options, g_id=0):
                     searchable=True,
                     style={
                         "overflow-y": "auto",  # without not scrollable, just cut
-                        'maxHeight': 200
+                        'maxHeight': 200,
                     },  # height field
                 ),
                 html.Br(),

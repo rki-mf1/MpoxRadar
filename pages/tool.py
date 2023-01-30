@@ -107,6 +107,7 @@ tab_explored_tool = html.Div(
                     ),
                 ]
             ),
+
             html.Div(create_worldMap_explorer(date_slider)),
             html.Div(create_table_explorer(table_filter)),
         ], id="div_elem_standard"),
