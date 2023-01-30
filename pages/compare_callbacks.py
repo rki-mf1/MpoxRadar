@@ -10,7 +10,8 @@ import pandas as pd
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
 from pages.utils_explorer_filter import get_all_genes_per_reference
-from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_filters
+from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_df
+from pages.utils_explorer_filter import get_mutations_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 
 
@@ -67,60 +68,74 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
         start_date_2,
         end_date_2,
     ):
+        # LEFT OPTIONS
         date_list_1 = DateSlider.get_all_dates(
             datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
             datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
         )
-        variantView_cds_ref_1 = variantView_cds[
+        variantView_cds_ref_gene_1 = variantView_cds[
             (variantView_cds["reference.id"] == reference_value_1)
+            & variantView_cds["element.symbol"].isin(gene_value_1)
         ]
         propertyView_seq_country_1 = df_dict["propertyView"][
             (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_1))
             & (df_dict["propertyView"]["COUNTRY"].isin(country_value_1))
             & (df_dict["propertyView"]["COLLECTION_DATE"].isin(date_list_1))
         ]
-        variantView_cds_ref_gene_1 = variantView_cds_ref_1[
-            variantView_cds_ref_1["element.symbol"].isin(gene_value_1)
-        ]
-        mut_options_1 = get_frequency_sorted_mutation_by_filters(
-            variantView_cds_ref_gene_1, propertyView_seq_country_1, color_dict
-        )
-        mut_value_1 = [i["value"] for i in mut_options_1]
 
+        df_mutations_1 = get_mutations_by_filters(
+            variantView_cds_ref_gene_1, propertyView_seq_country_1
+        )
+        # RIGHT OPTIONS
         date_list_2 = DateSlider.get_all_dates(
             datetime.datetime.strptime(start_date_2, "%Y-%m-%d").date(),
             datetime.datetime.strptime(end_date_2, "%Y-%m-%d").date(),
         )
-        variantView_cds_ref_2 = variantView_cds[
+        variantView_cds_ref_gene_2 = variantView_cds[
             (variantView_cds["reference.id"] == reference_value_2)
+            & variantView_cds["element.symbol"].isin(gene_value_2)
         ]
         propertyView_seq_country_2 = df_dict["propertyView"][
             (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_2))
             & (df_dict["propertyView"]["COUNTRY"].isin(country_value_2))
             & (df_dict["propertyView"]["COLLECTION_DATE"].isin(date_list_2))
         ]
-        variantView_cds_ref_gene_2 = variantView_cds_ref_2[
-            variantView_cds_ref_2["element.symbol"].isin(gene_value_2)
-        ]
-        mut_options_2 = get_frequency_sorted_mutation_by_filters(
-            variantView_cds_ref_gene_2, propertyView_seq_country_2, color_dict
+
+        df_mutations_2 = get_mutations_by_filters(
+            variantView_cds_ref_gene_2, propertyView_seq_country_2
         )
-        mut_value_2 = [i["value"] for i in mut_options_2]
 
-        unique_mutations_value_1 = list(set(mut_value_1).difference(set(mut_value_2)))
-        mut_options_1 = [
-            {"value": mut, "label": mut} for mut in unique_mutations_value_1
-        ]
-        unique_mutations_value_2 = list(set(mut_value_2).difference(set(mut_value_1)))
-        mut_options_2 = [
-            {"value": mut, "label": mut} for mut in unique_mutations_value_2
-        ]
-        intersection_mutation = list(set(mut_value_2).intersection(set(mut_value_1)))
-        mut_options_3 = [{"value": mut, "label": mut} for mut in intersection_mutation]
+        gene_mutations_df_merge = pd.merge(
+            df_mutations_1[["variant.label", "element.symbol"]],
+            df_mutations_2[["variant.label", "element.symbol"]],
+            how="outer",
+            indicator=True,
+            on=["variant.label", "element.symbol"],
+        )
 
-        text_1 = f"Unique number of mutations in left selection: {len(unique_mutations_value_1)}"
-        text_2 = f"Unique number of mutations in right selection: {len(unique_mutations_value_2)}"
-        text_3 = f"Number of mutations in both selections: {len(intersection_mutation)}"
+        gene_mutations_df_left = gene_mutations_df_merge[
+            gene_mutations_df_merge["_merge"] == "left_only"
+        ][["variant.label", "element.symbol"]]
+        gene_mutations_df_right = gene_mutations_df_merge[
+            gene_mutations_df_merge["_merge"] == "right_only"
+        ][["variant.label", "element.symbol"]]
+
+        gene_mutations_df_inner = gene_mutations_df_merge[
+            gene_mutations_df_merge["_merge"] == "both"
+        ][["variant.label", "element.symbol"]]
+        mut_options_1 = get_frequency_sorted_mutation_by_df(
+            gene_mutations_df_left, color_dict
+        )
+        mut_options_2 = get_frequency_sorted_mutation_by_df(
+            gene_mutations_df_right, color_dict
+        )
+        mut_options_3 = get_frequency_sorted_mutation_by_df(
+            gene_mutations_df_inner, color_dict
+        )
+
+        text_1 = f"Unique number of mutations in left selection: {len(mut_options_1)}"
+        text_2 = f"Unique number of mutations in right selection: {len(mut_options_2)}"
+        text_3 = f"Number of mutations in both selections: {len(mut_options_3)}"
 
         df_all = pd.merge(
             df_dict["variantView"],
@@ -139,19 +154,19 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
             "ISOLATE",
         ]
         table_df_1 = df_all[
-            df_all["variant.label"].isin(unique_mutations_value_1)
+            df_all["variant.label"].isin([v["value"] for v in mut_options_1])
             & (df_all["reference.id"] == reference_value_1)
             & (df_all["SEQ_TECH"].isin(seqtech_value_1))
             & (df_all["COUNTRY"].isin(country_value_1))
         ][table_columns]
         table_df_2 = df_all[
-            df_all["variant.label"].isin(unique_mutations_value_2)
+            df_all["variant.label"].isin([v["value"] for v in mut_options_2])
             & (df_all["reference.id"] == reference_value_2)
             & (df_all["SEQ_TECH"].isin(seqtech_value_2))
             & (df_all["COUNTRY"].isin(country_value_2))
         ][table_columns]
         table_df_3 = df_all[
-            df_all["variant.label"].isin(intersection_mutation)
+            df_all["variant.label"].isin([v["value"] for v in mut_options_3])
             & (df_all["reference.id"].isin([reference_value_1, reference_value_2]))
             & (df_all["SEQ_TECH"].isin((seqtech_value_1 + seqtech_value_2)))
             & (df_all["COUNTRY"].isin((country_value_1 + seqtech_value_2)))
@@ -169,13 +184,13 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
 
         return (
             mut_options_1,
-            unique_mutations_value_1,
+            [v["value"] for v in mut_options_1],
             text_1,
             mut_options_2,
-            unique_mutations_value_2,
+            [v["value"] for v in mut_options_2],
             text_2,
             mut_options_3,
-            intersection_mutation,
+            [v["value"] for v in mut_options_3],
             text_3,
             table_df_1_records,
             column_names_1,

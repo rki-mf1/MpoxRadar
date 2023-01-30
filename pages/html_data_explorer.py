@@ -14,9 +14,11 @@ def create_worldMap_explorer(date_slider):
 
     world_map_with_slider = html.Div(
         [
-            dbc.Row(html.H2("Output", style={"textAlign": "center"})),
+            html.H3("Output result from filter options", style={"textAlign": "center"}),
+            html.H4("Mutation counts based on filters"),
             dbc.FormText(
-                "Only once occurring mutations removed from map and plots.",
+                "Note, mutations only occurring once are removed from the map and plots below to allow for an overview. "
+                "Those are still included in the table of results.",
                 color="primary",
             ),
             dbc.Spinner(
@@ -81,7 +83,18 @@ def create_worldMap_explorer(date_slider):
         ],
     )
 
-    map_chart_header = html.Div([html.H5(id="chosen_location")])
+    map_chart_header = html.Div(
+        [
+            html.H4(
+                "Detailed look at the sequences with the chosen mutations for the selected country"
+            ),
+            html.H5(id="chosen_location"),
+            dbc.FormText(
+                "Please click on a country you are interested in on the global map above to see detail plots for that country.",
+                color="primary",
+            ),
+        ]
+    )
 
     map_charts = (
         html.Div(
@@ -158,7 +171,6 @@ def create_table_explorer(tableFilter):
     df = tableFilter.get_filtered_table()
     Output_table_standard = dbc.Card(  # Output
         [
-            html.H3("Output result from filter options."),
             dbc.Accordion(
                 [
                     dbc.AccordionItem(

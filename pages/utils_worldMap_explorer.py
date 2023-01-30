@@ -318,17 +318,11 @@ class DfsAndDetailPlot(object):
         wildtype= green, no_mutation (no sequence meets the user selected mutations, dates, location) = grey
         """
         color_dict = {}
-        color_schemes = [
-            px.colors.qualitative.Light24[1:],
-            px.colors.qualitative.Dark24[1:],
-        ]
+        color_schemes = px.colors.qualitative.Dark24
         for ref, group_df in variantView.groupby("reference.id"):
             for i, (gene, gene_df) in enumerate(group_df.groupby("element.symbol")):
-                j = i % 46
-                if j < 23:
-                    color_dict[gene] = color_schemes[0][j]
-                elif 22 < j < 46:
-                    color_dict[gene] = color_schemes[1][j - 23]
+                j = i % 24
+                color_dict[gene] = color_schemes[j]
         color_dict["no_gene"] = "grey"
         return color_dict
 

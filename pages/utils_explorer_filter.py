@@ -1,6 +1,8 @@
 from dash import html
 import pandas as pd
 
+# from tabulate import tabulate
+
 
 def get_all_frequency_sorted_seqtech(propertyView):
     df_grouped_by_seqtech = (
@@ -87,13 +89,12 @@ def get_all_genes_per_reference(variantView, reference_id, color_dict):
     return gene_dict
 
 
-# TODO remove once appearing mutations here?
 def get_frequency_sorted_mutation_by_filters(
-    df_mut_ref_select, df_seq_tech, color_dict
+    variantView_mut_ref_select, propertyView_seq_tech, color_dict
 ):
-    df_merge = pd.merge(df_mut_ref_select, df_seq_tech, how="inner", on="sample.id")[
-        ["sample.id", "variant.label", "element.symbol"]
-    ]
+    df_merge = pd.merge(
+        variantView_mut_ref_select, propertyView_seq_tech, how="inner", on="sample.id"
+    )[["sample.id", "variant.label", "element.symbol"]]
     df_grouped_by_mutation = (
         df_merge.groupby(["variant.label", "element.symbol"])
         .count()
@@ -113,6 +114,36 @@ def get_frequency_sorted_mutation_by_filters(
         )
     ]
     return sorted_mutations_dict
+
+
+def get_frequency_sorted_mutation_by_df(df, color_dict):
+    df = (
+        df.groupby(df.columns.tolist())
+        .size()
+        .reset_index()
+        .rename(columns={0: "count"})
+    )
+    df_grouped_by_mutation = df.sort_values(["count"], ascending=False)
+    sorted_mutations_dict = [
+        {
+            "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),
+            "value": gene_mut[1],
+        }
+        for gene_mut in list(
+            zip(
+                df_grouped_by_mutation["element.symbol"],
+                df_grouped_by_mutation["variant.label"],
+            )
+        )
+    ]
+    return sorted_mutations_dict
+
+
+def get_mutations_by_filters(variantView_mut_ref_select, propertyView_seq_tech):
+    df_merge = pd.merge(
+        variantView_mut_ref_select, propertyView_seq_tech, how="inner", on="sample.id"
+    )[["sample.id", "variant.label", "element.symbol"]]
+    return df_merge
 
 
 def get_all_frequency_sorted_countries_by_filters(df_prop, country_options):
