@@ -988,4 +988,5 @@ class DateSlider:
         marks[self.unix_time_millis(self.date_list[-1])] = self.date_list[-1].strftime(
             "%Y-%m-%d"
         )
+        print(marks)
         return marks

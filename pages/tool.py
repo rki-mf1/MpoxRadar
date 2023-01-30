@@ -63,7 +63,7 @@ all_mutation_options = get_all_frequency_sorted_mutation(
 all_gene_options = get_all_genes_per_reference(
     df_dict["variantView"], 2, world_map.color_dict
 )
-
+print("Prebuild cache is complete")
 dash.register_page(__name__, path="/Tool")
 
 tab_explored_tool = html.Div(

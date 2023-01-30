@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mpxradar-frontend"
-version = "0.3.2"
+version = "0.3.3"
 description = "MonkeyPoxRadar"
 authors = ["Kunaphas.Kong <kunaphas.kon@gmail.com>"]
 
@@ -41,6 +41,7 @@ safety = "^2.0.0"
 zimports = "^0.6.0"
 pytest-sugar = "^0.9.5"
 dash = {extras = ["diskcache"], version = "^2.7.1"}
+memory-profiler = "^0.61.0"
 
 
 [build-system]
