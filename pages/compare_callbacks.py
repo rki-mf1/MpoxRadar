@@ -1,11 +1,11 @@
-import datetime
-
-import dash
 from dash import callback
 from dash import Input
 from dash import Output
 from dash import State
+import dash
 import pandas as pd
+import datetime
+from tabulate import tabulate
 
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
@@ -15,7 +15,7 @@ from pages.utils_explorer_filter import get_mutations_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 
 
-def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
+def get_compare_callbacks(df_dict, variantView_cds, color_dict):
     @callback(
         [
             Output("mutation_dropdown_1", "options"),
@@ -171,9 +171,9 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
             & (df_all["SEQ_TECH"].isin((seqtech_value_1 + seqtech_value_2)))
             & (df_all["COUNTRY"].isin((country_value_1 + seqtech_value_2)))
         ][table_columns]
-        table_df_1.rename(columns={"element.symbol": "GENE"})
-        table_df_2.rename(columns={"element.symbol": "GENE"})
-        table_df_3.rename(columns={"element.symbol": "GENE"})
+        table_df_1 = table_df_1.rename(columns={"element.symbol": "gene.symbol"})
+        table_df_2 = table_df_2.rename(columns={"element.symbol": "gene.symbol"})
+        table_df_3 = table_df_3.rename(columns={"element.symbol": "gene.symbol"})
 
         table_df_1_records = table_df_1.to_dict("records")
         table_df_2_records = table_df_2.to_dict("records")
@@ -320,7 +320,7 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
                 gene_value = []
         elif dash.ctx.triggered_id == "select_all_countries_2":
             if len(select_all_countries) == 1:
-                country_value = [i["value"] for i in country_options]
+                country_value = [i['value'] for i in country_options]
             elif len(select_all_countries) == 0:
                 country_value = []
         elif dash.ctx.triggered_id == "select_all_seq_tech_2":
