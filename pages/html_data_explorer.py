@@ -418,7 +418,7 @@ def get_html_interval(interval=30):
 # TODO : max for input field?
 # TODO design dropdown
 def get_html_elem_dropdown_aa_mutations(
-    mutation_options, title="AA mutations: ", aa_id=0
+        mutation_options, title="AA mutations: ", aa_id=0
 ):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
@@ -482,3 +482,33 @@ def get_html_date_picker(d_id):
         )
     )
     return date_picker
+
+
+def get_html_aa_nt_radio():
+    item = dbc.Card(
+        dbc.CardBody(
+            [
+                dbc.Label("Compare amino acid  or nucleotide mutations:"),
+                html.Br(),
+                dcc.RadioItems(
+                    options=[
+                        {'label': 'Amino Acids',
+                         'value': 'Amino Acids'},
+                        {'label': 'Nucleotides',
+                         'value': 'Nucleotides'}
+                    ],
+                    value='Amino Acids',
+                    inline=True,
+                    style={
+                        'font-size': 20,
+                    },
+                    id="aa_nt_radio",
+                ),
+            ],
+            style={
+                "display": "flex",
+                "align-itmes": "center",
+            },
+        )
+    )
+    return item

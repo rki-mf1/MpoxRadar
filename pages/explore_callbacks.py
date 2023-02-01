@@ -116,14 +116,14 @@ def get_explore_callbacks(  # noqa: C901
                 gene_value = [
                     i["value"]
                     for i in get_all_genes_per_reference(
-                        df_dict["variantView"], reference_value, color_dict
+                        variantView_cds, reference_value, color_dict
                     )
                 ]
             elif len(select_all_genes) == 0:
                 gene_value = []
         if dash.ctx.triggered_id == "reference_radio_0":
             gene_options = get_all_genes_per_reference(
-                df_dict["variantView"], reference_value, color_dict
+                variantView_cds, reference_value, color_dict
             )
             gene_value = [i["value"] for i in gene_options]
         return gene_options, gene_value
