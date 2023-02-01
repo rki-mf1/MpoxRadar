@@ -18,15 +18,15 @@ from pages.utils_worldMap_explorer import DateSlider
 def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
     @callback(
         [
-            Output("mutation_dropdown_1", "options"),
-            Output("mutation_dropdown_1", "value"),
-            Output("max_nb_txt_1", "children"),
-            Output("mutation_dropdown_2", "options"),
-            Output("mutation_dropdown_2", "value"),
-            Output("max_nb_txt_2", "children"),
-            Output("mutation_dropdown_3", "options"),
-            Output("mutation_dropdown_3", "value"),
-            Output("max_nb_txt_3", "children"),
+            Output("mutation_dropdown_left", "options"),
+            Output("mutation_dropdown_left", "value"),
+            Output("max_nb_txt_left", "children"),
+            Output("mutation_dropdown_right", "options"),
+            Output("mutation_dropdown_right", "value"),
+            Output("max_nb_txt_right", "children"),
+            Output("mutation_dropdown_both", "options"),
+            Output("mutation_dropdown_both", "value"),
+            Output("max_nb_txt_both", "children"),
         ],
         [
             Input("compare_button", "n_clicks"),
@@ -46,7 +46,7 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             State("date_picker_range_2", "end_date"),
             State("aa_nt_radio", "value")
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )
     def actualize_mutation_filter(
             compare_button,
@@ -64,11 +64,7 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             end_date_2,
             aa_nt_radio,
     ):
-        # LEFT OPTIONS
-        date_list_1 = DateSlider.get_all_dates(
-            datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
-            datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
-        )
+
         if aa_nt_radio == "Amino Acids":
             variantView_ref_gene_1 = variantView_cds[
                 (variantView_cds["reference.id"] == reference_value_1)
@@ -85,6 +81,12 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             variantView_ref_gene_2 = variantView_nt[
                 (variantView_nt["reference.id"] == reference_value_2)
                 ]
+
+        # LEFT OPTIONS
+        date_list_1 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
+        )
         propertyView_seq_country_1 = df_dict["propertyView"][
             (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_1))
             & (df_dict["propertyView"]["COUNTRY"].isin(country_value_1))
@@ -165,9 +167,9 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             Output(component_id="table_compare_3", component_property="columns"),
         ],
         [
-            Input("mutation_dropdown_1", "value"),
-            Input("mutation_dropdown_1", "value"),
-            Input("mutation_dropdown_1", "value"),
+            Input("mutation_dropdown_left", "value"),
+            Input("mutation_dropdown_right", "value"),
+            Input("mutation_dropdown_both", "value"),
         ],
         [
             State("reference_radio_1", "value"),
@@ -180,7 +182,6 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             State("date_picker_range_1", "end_date"),
             State("date_picker_range_2", "start_date"),
             State("date_picker_range_2", "end_date"),
-            State("aa_nt_radio", "value")
         ],
         prevent_initial_call=True,
     )
@@ -199,7 +200,6 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             start_date_2,
             end_date_2,
     ):
-        print("triggered")
         date_list_1 = DateSlider.get_all_dates(
             datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
             datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
@@ -266,8 +266,6 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             column_names_3,
         )
 
-
-
     @callback(
         [
             Output("gene_dropdown_1", "options"),
@@ -292,7 +290,7 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             State("country_dropdown_1", "value"),
             State("seq_tech_dropdown_1", "value"),
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )
     def actualize_filters_left(
             aa_nt_radio,
@@ -383,7 +381,7 @@ def get_compare_callbacks(df_dict, variantView_cds, variantView_nt, color_dict):
             State("country_dropdown_2", "value"),
             State("seq_tech_dropdown_2", "value"),
         ],
-        prevent_initial_call=False,
+        prevent_initial_call=True,
     )
     def actualize_filters_right(
             aa_nt_radio,

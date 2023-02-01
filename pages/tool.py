@@ -18,7 +18,8 @@ import plotly.graph_objects as go
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
-from pages.html_data_explorer import create_table_compare, get_html_aa_nt_radio
+from pages.html_data_explorer import create_table_compare, get_html_aa_nt_radio, \
+    get_html_elem_dropdown_aa_mutations_without_max
 from pages.html_data_explorer import create_table_explorer
 from pages.html_data_explorer import create_worldMap_explorer
 from pages.html_data_explorer import get_html_date_picker
@@ -54,7 +55,7 @@ world_map = WorldMap(
 date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
 variantView_cds = df_dict["variantView"][
     df_dict["variantView"]["element.type"] == "cds"
-]
+    ]
 variantView_nt = df_dict["variantView"][
     df_dict["variantView"]["element.type"] == "source"
     ]
@@ -157,14 +158,18 @@ tab_compare_tool = (
                             dbc.Row(
                                 get_html_aa_nt_radio()
                             ),
-                            html.Br(),
                             dbc.Col(
                                 [
                                     dbc.Row(
-                                        html.H3(
-                                            "Left Filter", style={"textAlign": "center"}
-                                        )
-                                    ),
+                                        [
+                                            html.H3(
+                                                "Left Filter",
+                                                style={
+                                                    "textAlign": "center",
+                                                    "margin-top": 20
+                                                }
+                                            )
+                                        ]),
                                     html.Div(
                                         get_html_elem_reference_radioitems(
                                             all_reference_options, radio_id=1
@@ -201,7 +206,10 @@ tab_compare_tool = (
                                     dbc.Row(
                                         html.H3(
                                             "Right Filter",
-                                            style={"textAlign": "center"},
+                                            style={
+                                                "textAlign": "center",
+                                                "margin-top": 20
+                                            }
                                         )
                                     ),
                                     html.Div(
@@ -260,28 +268,28 @@ tab_compare_tool = (
                         [
                             dbc.Col(
                                 [
-                                    get_html_elem_dropdown_aa_mutations(
-                                        all_mutation_options,
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{'value': 'no_mutation'}],
                                         title="Mutations unique for left selection",
-                                        aa_id=1,
+                                        aa_id='left',
                                     ),
                                 ]
                             ),
                             dbc.Col(
                                 [
-                                    get_html_elem_dropdown_aa_mutations(
-                                        all_mutation_options,
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{'value': 'no_mutation'}],
                                         title="Mutations unique for right selection",
-                                        aa_id=2,
+                                        aa_id='right',
                                     ),
                                 ]
                             ),
                             dbc.Col(
                                 [
-                                    get_html_elem_dropdown_aa_mutations(
-                                        all_mutation_options,
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{'value': 'no_mutation'}],
                                         title="Mutations in both selections",
-                                        aa_id=3,
+                                        aa_id='both',
                                     )
                                 ],
                             ),
@@ -378,8 +386,8 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
     # convert to list of string.
     ouput_df[column_profile] = (
         ouput_df[column_profile]
-        .str.split(",")
-        .map(lambda elements: [e.strip() for e in elements])
+            .str.split(",")
+            .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     ouput_df = ouput_df.explode(column_profile)
@@ -574,8 +582,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     # convert to list of string.
     table_df[column_profile] = (
         table_df[column_profile]
-        .str.split(",")
-        .map(lambda elements: [e.strip() for e in elements])
+            .str.split(",")
+            .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     table_df = table_df.explode(column_profile)
@@ -601,7 +609,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
     table_df["mutation_list"] = (
-        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+            table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
     )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(
