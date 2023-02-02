@@ -319,7 +319,9 @@ class DfsAndDetailPlot(object):
         """
         color_dict = {}
         color_schemes = px.colors.qualitative.Dark24
-        for ref, group_df in variantView.groupby("reference.id"):
+        for k, (ref, group_df) in enumerate(variantView.groupby("reference.id")):
+            # add color per ref (element.symbol for nucleotides)
+            color_dict[ref] = px.colors.qualitative.D3[k]
             for i, (gene, gene_df) in enumerate(group_df.groupby("element.symbol")):
                 j = i % 24
                 color_dict[gene] = color_schemes[j]

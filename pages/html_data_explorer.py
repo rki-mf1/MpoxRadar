@@ -268,10 +268,6 @@ def get_html_elem_reference_radioitems(reference_options, radio_id=0):
                     value=2,
                     id=f"reference_radio_{radio_id}",
                 ),
-                dbc.FormText(
-                    "Only one reference allowed.",
-                    color="secondary",
-                ),
             ]
         )
     )
@@ -415,6 +411,39 @@ def get_html_interval(interval=30):
     return interval_card
 
 
+def get_html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
+    checklist_aa_mutations = dbc.Card(
+        dbc.CardBody(
+            [
+                dbc.Label(title),
+                html.Br(),
+                dbc.Spinner(
+                    dcc.Dropdown(
+                        options=mutation_options,
+                        value=[
+                            mut_dict["value"] for mut_dict in mutation_options[0:20]
+                        ],
+                        id=f"mutation_dropdown_{aa_id}",
+                        maxHeight=300,
+                        optionHeight=50,
+                        multi=True,
+                        searchable=True,
+                        style={"overflow-y": "auto", "maxHeight": 300},
+                    ),
+                    color="danger",
+                    type="grow",
+                ),
+                html.Br(),
+                dbc.Label(
+                    "Number mutations",
+                    id=f"max_nb_txt_{aa_id}",
+                ),
+            ],
+        )
+    )
+    return checklist_aa_mutations
+
+
 # TODO : max for input field?
 # TODO design dropdown
 def get_html_elem_dropdown_aa_mutations(
@@ -482,3 +511,37 @@ def get_html_date_picker(d_id):
         )
     )
     return date_picker
+
+
+def get_html_aa_nt_radio():
+    item = dbc.Card(
+        [
+            dbc.FormText(
+                "Compare amino acid  or nucleotide mutations:",
+                color="primary",
+            ),
+            dbc.CardBody(
+                [
+                    dcc.RadioItems(
+                        options=[
+                            {"label": "Amino Acids", "value": "Amino Acids"},
+                            {"label": "Nucleotides", "value": "Nucleotides"},
+                        ],
+                        value="Amino Acids",
+                        inline=True,
+                        labelStyle={
+                            "margin-left": "50px",
+                        },
+                        style={
+                            "font-size": 20,
+                            "font-weight": "bold",
+                            "align-itmes": "center",
+                            "textAlign": "center",
+                        },
+                        id="aa_nt_radio",
+                    ),
+                ],
+            ),
+        ],
+    )
+    return item

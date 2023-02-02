@@ -21,9 +21,11 @@ from pages.config import logging_radar
 from pages.html_data_explorer import create_table_compare
 from pages.html_data_explorer import create_table_explorer
 from pages.html_data_explorer import create_worldMap_explorer
+from pages.html_data_explorer import get_html_aa_nt_radio
 from pages.html_data_explorer import get_html_date_picker
 from pages.html_data_explorer import get_html_elem_checklist_seq_tech
 from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations
+from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations_without_max
 from pages.html_data_explorer import get_html_elem_dropdown_countries
 from pages.html_data_explorer import get_html_elem_dropdown_genes
 from pages.html_data_explorer import get_html_elem_method_radioitems
@@ -56,6 +58,9 @@ date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
 variantView_cds = df_dict["variantView"][
     df_dict["variantView"]["element.type"] == "cds"
 ]
+variantView_nt = df_dict["variantView"][
+    df_dict["variantView"]["element.type"] == "source"
+]
 table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
 all_reference_options = get_all_references(df_dict["variantView"])
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
@@ -63,9 +68,7 @@ all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"]
 all_mutation_options = get_all_frequency_sorted_mutation(
     world_map.df_all_dates_all_voc, 2, world_map.color_dict
 )
-all_gene_options = get_all_genes_per_reference(
-    df_dict["variantView"], 2, world_map.color_dict
-)
+all_gene_options = get_all_genes_per_reference(variantView_cds, 2, world_map.color_dict)
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 
@@ -152,12 +155,19 @@ tab_compare_tool = (
                 [
                     dbc.Row(
                         [
+                            dbc.Row(get_html_aa_nt_radio()),
                             dbc.Col(
                                 [
                                     dbc.Row(
-                                        html.H3(
-                                            "Left Filter", style={"textAlign": "center"}
-                                        )
+                                        [
+                                            html.H3(
+                                                "Left Filter",
+                                                style={
+                                                    "textAlign": "center",
+                                                    "margin-top": 20,
+                                                },
+                                            )
+                                        ]
                                     ),
                                     html.Div(
                                         get_html_elem_reference_radioitems(
@@ -195,7 +205,10 @@ tab_compare_tool = (
                                     dbc.Row(
                                         html.H3(
                                             "Right Filter",
-                                            style={"textAlign": "center"},
+                                            style={
+                                                "textAlign": "center",
+                                                "margin-top": 20,
+                                            },
                                         )
                                     ),
                                     html.Div(
@@ -254,28 +267,28 @@ tab_compare_tool = (
                         [
                             dbc.Col(
                                 [
-                                    get_html_elem_dropdown_aa_mutations(
-                                        all_mutation_options,
-                                        title="AA Mutations unique for left selection",
-                                        aa_id=1,
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{"value": "no_mutation"}],
+                                        title="Mutations unique for left selection",
+                                        aa_id="left",
                                     ),
                                 ]
                             ),
                             dbc.Col(
                                 [
-                                    get_html_elem_dropdown_aa_mutations(
-                                        all_mutation_options,
-                                        title="AA Mutations unique for right selection",
-                                        aa_id=2,
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{"value": "no_mutation"}],
+                                        title="Mutations unique for right selection",
+                                        aa_id="right",
                                     ),
                                 ]
                             ),
                             dbc.Col(
                                 [
-                                    get_html_elem_dropdown_aa_mutations(
-                                        all_mutation_options,
-                                        title="AA Mutations in both selections",
-                                        aa_id=3,
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{"value": "no_mutation"}],
+                                        title="Mutations in both selections",
+                                        aa_id="both",
                                     )
                                 ],
                             ),
@@ -732,4 +745,4 @@ get_explore_callbacks(
 )
 
 # COMPARE PART
-get_compare_callbacks(df_dict, variantView_cds, world_map.color_dict)
+get_compare_callbacks(df_dict, variantView_cds, variantView_nt, world_map.color_dict)

@@ -77,10 +77,7 @@ def get_all_frequency_sorted_countries(propertyView):
 
 
 def get_all_genes_per_reference(variantView, reference_id, color_dict):
-    df = variantView[
-        (variantView["reference.id"] == reference_id)
-        & (variantView["element.type"] == "cds")
-    ]
+    df = variantView[(variantView["reference.id"] == reference_id)]
     gene_list = list(df["element.symbol"].unique())
     gene_dict = [
         {"label": html.Span(gene, style={"color": color_dict[gene]}), "value": gene}
@@ -116,7 +113,7 @@ def get_frequency_sorted_mutation_by_filters(
     return sorted_mutations_dict
 
 
-def get_frequency_sorted_mutation_by_df(df, color_dict):
+def get_frequency_sorted_mutation_by_df(df, color_dict, mut_type="Amino Acids"):
     df = (
         df.groupby(df.columns.tolist())
         .size()
@@ -124,18 +121,28 @@ def get_frequency_sorted_mutation_by_df(df, color_dict):
         .rename(columns={0: "count"})
     )
     df_grouped_by_mutation = df.sort_values(["count"], ascending=False)
-    sorted_mutations_dict = [
-        {
-            "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),
-            "value": gene_mut[1],
-        }
-        for gene_mut in list(
-            zip(
-                df_grouped_by_mutation["element.symbol"],
-                df_grouped_by_mutation["variant.label"],
+
+    if mut_type == "Amino Acids":
+        sorted_mutations_dict = [
+            {
+                "label": html.Span(
+                    gene_mut[1], style={"color": color_dict[gene_mut[0]]}
+                ),
+                "value": gene_mut[1],
+            }
+            for gene_mut in list(
+                zip(
+                    df_grouped_by_mutation["element.symbol"],
+                    df_grouped_by_mutation["variant.label"],
+                )
             )
-        )
-    ]
+        ]
+    else:
+        sorted_mutations_dict = [
+            {"label": gene_mut, "value": gene_mut}
+            for gene_mut in list(df_grouped_by_mutation["variant.label"])
+        ]
+
     return sorted_mutations_dict
 
 
