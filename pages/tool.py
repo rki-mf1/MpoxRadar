@@ -47,6 +47,7 @@ from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 
+
 df_dict = load_all_sql_files()
 world_map = WorldMap(
     df_dict["propertyView"], df_dict["variantView"], location_coordinates
@@ -423,8 +424,8 @@ def update_output_div(input_value):
     try:
         badge = html.Div([dbc.Badge("Looks OK!", color="success", className="me-1")])
         _list = shlex.split(input_value)
-        args = parse_args(_list)
-        print(args)
+        parse_args(_list)
+        # print(args)
 
     except:  # noqa: E722
         badge = html.Div(
@@ -450,6 +451,7 @@ def update_output_div(input_value):
     State("my-input", "value"),
     running=[(Output("submit-button-state", "disabled"), True, False)],
     # background=True,
+    # manager=background_callback_manager
     # prevent_initial_call=True
 )
 def update_output_sonar(n_clicks, commands):  # noqa: C901

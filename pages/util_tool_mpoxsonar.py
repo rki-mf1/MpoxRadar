@@ -310,7 +310,7 @@ Output_mpxsonar = [
                             dbc.Row(
                                 html.Div(
                                     dbc.Alert(
-                                        "Note: the count and list-prop command cannot be used with map.",
+                                        "Note: If no result on the table or count and list-prop commands are used, the map will show nothing.",
                                         color="warning",
                                         id="alert-msg-map",
                                     )

@@ -1,11 +1,11 @@
+import datetime
+
+import dash
 from dash import callback
 from dash import Input
 from dash import Output
 from dash import State
-import dash
 import pandas as pd
-import datetime
-from tabulate import tabulate
 
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
@@ -15,7 +15,7 @@ from pages.utils_explorer_filter import get_mutations_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 
 
-def get_compare_callbacks(df_dict, variantView_cds, color_dict):
+def get_compare_callbacks(df_dict, variantView_cds, color_dict):  # noqa: C901
     @callback(
         [
             Output("mutation_dropdown_1", "options"),
@@ -320,7 +320,7 @@ def get_compare_callbacks(df_dict, variantView_cds, color_dict):
                 gene_value = []
         elif dash.ctx.triggered_id == "select_all_countries_2":
             if len(select_all_countries) == 1:
-                country_value = [i['value'] for i in country_options]
+                country_value = [i["value"] for i in country_options]
             elif len(select_all_countries) == 0:
                 country_value = []
         elif dash.ctx.triggered_id == "select_all_seq_tech_2":

@@ -232,6 +232,7 @@ def create_reference_view(df):
 
 def load_all_sql_files():
     loader = DataFrameLoader()
+    # check if df_dict is load or not?
     df_dict = loader.load_from_sql_db()
     # TODO query for variantView tooo long.
     df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
