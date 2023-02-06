@@ -5,19 +5,23 @@ import dash_bootstrap_components as dbc
 
 from pages.config import __version__
 from pages.config import background_callback_manager
+from pages.config import background_manager
+from pages.config import cache
 from pages.config import DEBUG
 from pages.config import SERVER
 from pages.util_footer_table import footer_table
-
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(
     __name__,
     use_pages=True,
     external_stylesheets=[dbc.themes.ZEPHYR, dbc.icons.BOOTSTRAP],
-    background_callback_manager=background_callback_manager,
+    long_callback_manager=background_callback_manager,
+    background_callback_manager=background_manager,
+    suppress_callback_exceptions=True,
 )
 server = app.server
+cache.init_app(server)
 
 app.layout = dbc.Container(
     [

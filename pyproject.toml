@@ -26,6 +26,8 @@ statsmodels = "^0.13.5"
 PyMySQL = "^1.0.2"
 pyarrow = "^10.0.1"
 scipy = "1.8.1"
+redis = "^4.4.2"
+Flask-Caching = "^2.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

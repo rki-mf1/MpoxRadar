@@ -7,6 +7,7 @@ from dash import Output
 from dash import State
 import pandas as pd
 
+from pages.config import cache
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
 from pages.utils_explorer_filter import get_all_genes_per_reference
@@ -50,6 +51,7 @@ def get_compare_callbacks(  # noqa: C901
         ],
         prevent_initial_call=True,
     )
+    @cache.memoize()
     def actualize_mutation_filter(
         compare_button,
         gene_value_1,
@@ -187,6 +189,7 @@ def get_compare_callbacks(  # noqa: C901
         ],
         prevent_initial_call=True,
     )
+    @cache.memoize()
     def actualize_tables(
         mut_value_1,
         mut_value_2,

@@ -49,7 +49,6 @@ from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 
-
 df_dict = load_all_sql_files()
 world_map = WorldMap(
     df_dict["propertyView"], df_dict["variantView"], location_coordinates
@@ -303,7 +302,8 @@ tab_compare_tool = (
                                 title="Unique for right selection", table_id=2
                             ),
                             create_table_compare(title="In both selection", table_id=3),
-                        ]
+                        ],
+                        className="mt-3",
                     ),
                 ],
                 className="mt-2",
@@ -463,10 +463,12 @@ def update_output_div(input_value):
     Input("submit-button-state", "n_clicks"),
     State("my-input", "value"),
     running=[(Output("submit-button-state", "disabled"), True, False)],
-    # background=True,
+    #   background=True,
     # manager=background_callback_manager
-    # prevent_initial_call=True
+    prevent_initial_call=True,
 )
+# @cache.cached(key_prefix='adv_sonar_table')
+# @cache.memoize()
 def update_output_sonar(n_clicks, commands):  # noqa: C901
     """
     Callback handle mpxsonar commands to output table/Div

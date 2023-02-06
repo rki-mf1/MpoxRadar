@@ -222,6 +222,7 @@ def get_explore_callbacks(  # noqa: C901
         ],
         prevent_initial_call=True,
     )
+    # @cache.memoize()
     def update_world_map_explorer(
         mutation_list,
         reference_id,
@@ -375,6 +376,7 @@ def get_explore_callbacks(  # noqa: C901
         ],
         prevent_initial_call=True,
     )
+    # @cache.memoize()
     def update_upper_plot(
         click_data,
         mutations,
@@ -459,6 +461,7 @@ def get_explore_callbacks(  # noqa: C901
         ],
         prevent_initial_call=True,
     )
+    # @cache.memoize()
     def update_table_filter(
         mutation_list, reference_id, gene_list, seqtech_list, interval, dates, countries
     ):

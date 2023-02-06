@@ -1,12 +1,16 @@
 import logging
 import os
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from dash import CeleryManager
 from dash import DiskcacheManager
+from dash.long_callback import CeleryLongCallbackManager
 from dotenv import load_dotenv
+from flask_caching import Cache
 import pandas as pd
 import plotly.express as px
+import redis
 import tomli
 
 load_dotenv()
@@ -66,11 +70,45 @@ if "REDIS_URL" in os.environ:
     # Use Redis & Celery if REDIS_URL set as an env variable
     from celery import Celery  # type: ignore
 
+    # Redis server
+    # TODO: reorganize cache loading.
+    try:
+        __uri = urlparse(REDIS_BACKEND_URL)
+        db_user = __uri.username
+        db_pass = __uri.password
+        db_url = __uri.hostname
+        db_port = __uri.port
+        db_database = __uri.path.replace("/", "")
+        pool = redis.ConnectionPool(host=db_url, port=db_port, db=db_database)
+        redis_manager = redis.Redis(connection_pool=pool)
+    except (ConnectionError, TimeoutError, ValueError) as e:
+        redis_manager = None
+        logging_radar.error(f"Error connecting to Redis: {e}")
+        logging_radar.warn("No Redis system is used")
+        # sys.exit(1)
+
     celery_app = Celery(
-        __name__, broker=REDIS_BROKER_URL, backend=REDIS_BACKEND_URL, expire=60
+        __name__, broker=REDIS_BROKER_URL, backend=REDIS_BROKER_URL, expire=60
     )
-    background_callback_manager = CeleryManager(
-        celery_app, cache_by=[lambda: launch_uid]
+
+    background_manager = CeleryManager(celery_app, cache_by=[lambda: launch_uid])
+
+    background_callback_manager = CeleryLongCallbackManager(celery_app, expire=300)
+
+    cache = Cache(
+        config={
+            "CACHE_TYPE": "RedisCache",
+            # this is fine since cache is only invalid after pipeline run
+            "CACHE_DEFAULT_TIMEOUT": 60 * 60 * 23,
+            "CACHE_REDIS_HOST": db_url,
+            "CACHE_REDIS_PORT": db_port or 6379,
+            "CACHE_REDIS_DB": db_database or 1,
+            "CACHE_REDIS_PASSWORD": db_pass or "",
+            "CACHE_REDIS_USER": db_user or "",
+            # if the source code changes, the cache is invalidated
+            "CACHE_SOURCE_CHECK": True,
+            "DEBUG": True if os.environ.get("DEBUG_REDIS") == "true" else False,
+        }
     )
 
 else:

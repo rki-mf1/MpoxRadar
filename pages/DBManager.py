@@ -4,8 +4,8 @@ from urllib.parse import urlparse
 
 import mariadb
 
-from .config import DB_URL
-from .config import logging_radar
+from pages.config import DB_URL
+from pages.config import logging_radar
 
 
 class DBManager(object):

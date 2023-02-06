@@ -1,5 +1,6 @@
 from datetime import datetime
 import multiprocessing as mp
+import pickle
 from time import perf_counter
 from urllib.parse import urlparse
 
@@ -9,6 +10,7 @@ import sqlalchemy
 from sqlalchemy import create_engine
 
 from pages.config import DB_URL
+from pages.config import redis_manager
 
 tables = ["propertyView", "variantView", "referenceView"]
 
@@ -232,10 +234,22 @@ def create_reference_view(df):
 
 def load_all_sql_files():
     loader = DataFrameLoader()
+
+    # NOTE:
+    # 1. Using Pickle should only be used on 100% trusted data
+    # 2. msgpack can be other options.
     # check if df_dict is load or not?
-    df_dict = loader.load_from_sql_db()
-    # TODO query for variantView tooo long.
-    df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
-    df_dict["variantView"] = create_variant_view(df_dict["variantView"])
-    df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
+    if redis_manager and redis_manager.exists("df_dict"):
+        print("Load from cache")
+        df_dict = pickle.loads(redis_manager.get("df_dict"))
+    else:
+        # TODO query for variantView tooo long.
+        df_dict = loader.load_from_sql_db()
+        df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
+        df_dict["variantView"] = create_variant_view(df_dict["variantView"])
+        df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
+        if redis_manager:
+            print("Create a new cache")
+            redis_manager.set("df_dict", pickle.dumps(df_dict), ex=3600 * 23)
+
     return df_dict

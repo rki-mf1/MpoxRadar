@@ -185,15 +185,17 @@ def create_table_explorer(tableFilter):
                                         ],
                                         id="table_explorer",
                                         page_current=0,
-                                        page_size=20,
+                                        page_size=5,
                                         style_data={
                                             "whiteSpace": "normal",
                                             "height": "auto",
+                                            "lineHeight": "15px",
                                             # all three widths are needed
-                                            "minWidth": "300px",
-                                            "width": "300px",
-                                            "maxWidth": "300px",
+                                            "minWidth": "50px",
+                                            "width": "400px",
+                                            "maxWidth": "750px",
                                         },
+                                        style_cell={"fontSize": 12},
                                         style_table={"overflowX": "auto"},
                                         export_format="csv",
                                     ),
@@ -276,66 +278,81 @@ def get_html_elem_reference_radioitems(reference_options, radio_id=0):
 
 def get_html_elem_dropdown_genes(gene_options, g_id=0):
     checklist_aa_mutations = dbc.Card(
-        dbc.CardBody(
-            [
-                dbc.Label("Gene: "),
-                html.Br(),
-                dbc.Spinner(
-                    dcc.Dropdown(
-                        options=gene_options,
-                        value=[c["value"] for c in gene_options],
-                        id=f"gene_dropdown_{g_id}",
-                        maxHeight=300,  # just height of dropdown not choose option field
-                        optionHeight=35,  # height options in dropdown, not chosen options
-                        multi=True,
-                        searchable=True,
-                        style={
-                            "overflow-y": "auto",  # without not scrollable, just cut
-                            "maxHeight": 200,
-                        },  # height field
+        [
+            dbc.CardBody(
+                [
+                    dbc.Label("Gene: "),
+                    html.Br(),
+                    dbc.Row(
+                        dbc.Spinner(
+                            dcc.Dropdown(
+                                options=gene_options,
+                                value=[c["value"] for c in gene_options],
+                                id=f"gene_dropdown_{g_id}",
+                                # maxHeight=200,  # just height of dropdown not choose option field
+                                optionHeight=35,  # height options in dropdown, not chosen options
+                                multi=True,
+                                searchable=True,
+                            ),
+                            color="dark",
+                            type="grow",
+                        ),
                     ),
-                    color="dark",
-                    type="grow",
+                ],
+                style={
+                    "overflow-y": "auto",  # without not scrollable, just cut
+                    "maxHeight": 300,
+                    "minHeight": 200,
+                },  # height field
+            ),
+            dbc.CardFooter(
+                dbc.Row(
+                    dcc.Checklist(
+                        id=f"select_all_genes_{g_id}",
+                        options=[{"label": "Select All", "value": 1}],
+                        value=[1],
+                    ),
                 ),
-                html.Br(),
-                dcc.Checklist(
-                    id=f"select_all_genes_{g_id}",
-                    options=[{"label": "Select All", "value": 1}],
-                    value=[1],
-                ),
-            ],
-        )
+            ),
+        ]
     )
     return checklist_aa_mutations
 
 
 def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
     checklist_seq_tech = dbc.Card(
-        dbc.CardBody(
-            [
-                dbc.Label("Sequencing Technology: "),
-                dbc.Spinner(
-                    dbc.Checklist(
-                        options=seq_tech_options,
-                        value=[tech_dict["value"] for tech_dict in seq_tech_options],
-                        id=f"seq_tech_dropdown_{s_id}",
-                        labelStyle={"display": "block"},
-                        style={
-                            "maxHeight": 200,
-                            "overflowY": "scroll",
-                        },
+        [
+            dbc.CardBody(
+                [
+                    dbc.Label("Sequencing Technology: "),
+                    dbc.Spinner(
+                        dbc.Checklist(
+                            options=seq_tech_options,
+                            value=[
+                                tech_dict["value"] for tech_dict in seq_tech_options
+                            ],
+                            id=f"seq_tech_dropdown_{s_id}",
+                            labelStyle={"display": "block"},
+                            style={
+                                "maxHeight": 200,
+                                "overflowY": "scroll",
+                            },
+                        ),
+                        color="primary",
+                        type="grow",
                     ),
-                    color="primary",
-                    type="grow",
+                ],
+            ),
+            dbc.CardFooter(
+                dbc.Row(
+                    dcc.Checklist(
+                        id=f"select_all_seq_tech_{s_id}",
+                        options=[{"label": "Select All", "value": 1}],
+                        value=[1],
+                    ),
                 ),
-                html.Br(),
-                dcc.Checklist(
-                    id=f"select_all_seq_tech_{s_id}",
-                    options=[{"label": "Select All", "value": 1}],
-                    value=[1],
-                ),
-            ],
-        )
+            ),
+        ]
     )
     return checklist_seq_tech
 
@@ -343,32 +360,41 @@ def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
 # TODO design dropdown
 def get_html_elem_dropdown_countries(countries, c_id=0):
     checklist_aa_mutations = dbc.Card(
-        dbc.CardBody(
-            [
-                dbc.Label("Country: "),
-                html.Br(),
-                dbc.Spinner(
-                    dcc.Dropdown(
-                        options=countries,
-                        value=[c["value"] for c in countries],
-                        id=f"country_dropdown_{c_id}",
-                        maxHeight=200,
-                        optionHeight=35,
-                        multi=True,
-                        searchable=True,
-                        style={"overflow-y": "auto", "maxHeight": 200},
+        [
+            dbc.CardBody(
+                [
+                    dbc.Label("Country: "),
+                    html.Br(),
+                    dbc.Spinner(
+                        dcc.Dropdown(
+                            options=countries,
+                            value=[c["value"] for c in countries],
+                            id=f"country_dropdown_{c_id}",
+                            # maxHeight=200,
+                            optionHeight=35,
+                            multi=True,
+                            searchable=True,
+                        ),
+                        color="danger",
+                        type="grow",
                     ),
-                    color="danger",
-                    type="grow",
+                ],
+                style={
+                    "overflow-y": "auto",  # without not scrollable, just cut
+                    "maxHeight": 300,
+                    "minHeight": 200,
+                },  # height field
+            ),
+            dbc.CardFooter(
+                dbc.Row(
+                    dcc.Checklist(
+                        id=f"select_all_countries_{c_id}",
+                        options=[{"label": "Select All", "value": 1}],
+                        value=[1],
+                    ),
                 ),
-                html.Br(),
-                dcc.Checklist(
-                    id=f"select_all_countries_{c_id}",
-                    options=[{"label": "Select All", "value": 1}],
-                    value=[1],
-                ),
-            ],
-        )
+            ),
+        ]
     )
     return checklist_aa_mutations
 
@@ -413,33 +439,38 @@ def get_html_interval(interval=30):
 
 def get_html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
     checklist_aa_mutations = dbc.Card(
-        dbc.CardBody(
-            [
-                dbc.Label(title),
-                html.Br(),
-                dbc.Spinner(
-                    dcc.Dropdown(
-                        options=mutation_options,
-                        value=[
-                            mut_dict["value"] for mut_dict in mutation_options[0:20]
-                        ],
-                        id=f"mutation_dropdown_{aa_id}",
-                        maxHeight=300,
-                        optionHeight=50,
-                        multi=True,
-                        searchable=True,
-                        style={"overflow-y": "auto", "maxHeight": 300},
+        [
+            dbc.CardBody(
+                [
+                    dbc.Label(title),
+                    html.Br(),
+                    dbc.Spinner(
+                        dcc.Dropdown(
+                            options=mutation_options,
+                            value=[
+                                mut_dict["value"] for mut_dict in mutation_options[0:20]
+                            ],
+                            id=f"mutation_dropdown_{aa_id}",
+                            optionHeight=50,
+                            multi=True,
+                            searchable=True,
+                        ),
+                        color="danger",
+                        type="grow",
                     ),
-                    color="danger",
-                    type="grow",
+                    html.Br(),
+                ],
+                style={"overflow-y": "auto", "maxHeight": 300, "minHeight": 200},
+            ),
+            dbc.CardFooter(
+                dbc.Row(
+                    dbc.Label(
+                        "Number mutations",
+                        id=f"max_nb_txt_{aa_id}",
+                    ),
                 ),
-                html.Br(),
-                dbc.Label(
-                    "Number mutations",
-                    id=f"max_nb_txt_{aa_id}",
-                ),
-            ],
-        )
+            ),
+        ]
     )
     return checklist_aa_mutations
 
@@ -461,11 +492,10 @@ def get_html_elem_dropdown_aa_mutations(
                             mut_dict["value"] for mut_dict in mutation_options[0:20]
                         ],
                         id=f"mutation_dropdown_{aa_id}",
-                        maxHeight=300,
+                        # maxHeight=300,
                         optionHeight=50,
                         multi=True,
                         searchable=True,
-                        style={"overflow-y": "auto", "maxHeight": 300},
                     ),
                     color="danger",
                     type="grow",
@@ -488,6 +518,11 @@ def get_html_elem_dropdown_aa_mutations(
                 ),
                 html.Br(),
             ],
+            style={
+                "overflow-y": "auto",
+                "maxHeight": 300,
+                "minHeight": 200,
+            },
         )
     )
     return checklist_aa_mutations
@@ -516,22 +551,19 @@ def get_html_date_picker(d_id):
 def get_html_aa_nt_radio():
     item = dbc.Card(
         [
-            dbc.FormText(
-                "Compare amino acid  or nucleotide mutations:",
-                color="primary",
-            ),
             dbc.CardBody(
                 [
-                    dcc.RadioItems(
+                    dbc.Label(
+                        "Compare amino acid  or nucleotide mutations:",
+                        color="primary",
+                    ),
+                    dbc.RadioItems(
                         options=[
                             {"label": "Amino Acids", "value": "Amino Acids"},
                             {"label": "Nucleotides", "value": "Nucleotides"},
                         ],
                         value="Amino Acids",
                         inline=True,
-                        labelStyle={
-                            "margin-left": "50px",
-                        },
                         style={
                             "font-size": 20,
                             "font-weight": "bold",
@@ -539,6 +571,11 @@ def get_html_aa_nt_radio():
                             "textAlign": "center",
                         },
                         id="aa_nt_radio",
+                    ),
+                    dbc.Badge(
+                        "Warning: The nucleotide option might take a long time to compute.",
+                        color="warning",
+                        className="me-1",
                     ),
                 ],
             ),
