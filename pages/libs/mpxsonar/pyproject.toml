@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "MPoxSonar"
-version = "0.5.0"
+name = "mpxsonar"
+version = "0.5.2"
 description = "A database-driven system for handling genomic sequences and screening genomic profiles."
 authors = ["Stephan Fuchs <FuchsS@rki.de>", "Kunaphas Kongkitimanon <KongkitimanonK@rki.de>", "Matthew Huska <HuskaM@rki.de>"]
 license = "GPL3"
 readme = "README.md"
-homepage = "https://github.com/rki-mf1/covsonar"
-repository = "https://github.com/rki-mf1/covsonar"
+homepage = "https://github.com/rki-mf1/MpoxSonar"
+repository = "https://github.com/rki-mf1/MpoxSonar"
 
 [tool.poetry.dependencies]
 python = "^3.9"

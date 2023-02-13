@@ -3,6 +3,7 @@ from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
 
+from pages.util_help_tables import cheatsheet_table
 from pages.util_help_tables import table
 from pages.util_help_tables import table_1
 from pages.util_help_tables import table_2
@@ -239,6 +240,8 @@ tab_2 = [
                         The following commands are currently available in MpoxRadar website.
                     """
                     ),
+                    cheatsheet_table,
+                    html.P("More examples"),
                     table_2,
                     html.I(className="bi bi-exclamation-triangle-fill me-2"),
                     html.Strong("Reminder"),

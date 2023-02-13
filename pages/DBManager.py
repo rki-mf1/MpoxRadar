@@ -4,8 +4,8 @@ from urllib.parse import urlparse
 
 import mariadb
 
-from .config import DB_URL
-from .config import logging_radar
+from pages.config import DB_URL
+from pages.config import logging_radar
 
 
 class DBManager(object):
@@ -187,7 +187,7 @@ class DBManager(object):
         sql = (
             "SELECT COUNT(DISTINCT value_text) AS count "
             "FROM sample2property "
-            "WHERE property_id = 12;"
+            "WHERE property_id = 12 AND value_text != '';"
         )
         self.cursor.execute(sql)
         number_of_rows = self.cursor.fetchone()["count"]
@@ -224,6 +224,17 @@ class DBManager(object):
             "ORDER BY Freq DESC) AS T1 "
             "Group BY `reference.accession` "
             "ORDER BY max_each_ref DESC;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def get_reference_gene(self, ref_accession):
+        sql = (
+            "SELECT`reference.accession`, `element.type`, `element.symbol`, `element.description`,"
+            " `element.start`, `element.end`, `element.strand`, `element.sequence` "
+            "FROM referenceView "
+            f"WHERE `element.type` = 'cds' AND `reference.accession` = '{ref_accession}';"
         )
         self.cursor.execute(sql)
         _rows = self.cursor.fetchall()

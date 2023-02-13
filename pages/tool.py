@@ -4,116 +4,314 @@ import time
 
 import dash
 from dash import callback
-from dash import dcc
 from dash import html
 from dash import Input
 from dash import no_update
 from dash import Output
 from dash import State
 import dash_bootstrap_components as dbc
+from data import load_all_sql_files
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from pages.util_tool_checklists import checklist_1
-from pages.util_tool_checklists import checklist_2
-from pages.util_tool_checklists import checklist_3
-from pages.util_tool_checklists import checklist_4
+from pages.config import color_schemes
+from pages.config import location_coordinates
+from pages.config import logging_radar
+from pages.html_data_explorer import create_table_compare
+from pages.html_data_explorer import create_table_explorer
+from pages.html_data_explorer import create_worldMap_explorer
+from pages.html_data_explorer import get_html_aa_nt_radio
+from pages.html_data_explorer import get_html_date_picker
+from pages.html_data_explorer import get_html_elem_checklist_seq_tech
+from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations
+from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations_without_max
+from pages.html_data_explorer import get_html_elem_dropdown_countries
+from pages.html_data_explorer import get_html_elem_dropdown_genes
+from pages.html_data_explorer import get_html_elem_method_radioitems
+from pages.html_data_explorer import get_html_elem_reference_radioitems
+from pages.html_data_explorer import get_html_interval
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
+from pages.utils_explorer_filter import get_all_frequency_sorted_countries
+from pages.utils_explorer_filter import get_all_frequency_sorted_mutation
+from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
+from pages.utils_explorer_filter import get_all_genes_per_reference
+from pages.utils_explorer_filter import get_all_references
+from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import TableFilter
+from pages.utils_worldMap_explorer import WorldMap
 from .app_controller import get_freq_mutation
-from .app_controller import get_value_by_filter
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
+from .compare_callbacks import get_compare_callbacks
+from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 
+df_dict = load_all_sql_files()
+world_map = WorldMap(
+    df_dict["propertyView"], df_dict["variantView"], location_coordinates
+)
+date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
+variantView_cds = df_dict["variantView"][
+    df_dict["variantView"]["element.type"] == "cds"
+]
+variantView_nt = df_dict["variantView"][
+    df_dict["variantView"]["element.type"] == "source"
+]
+table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
+all_reference_options = get_all_references(df_dict["variantView"])
+all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
+all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
+all_mutation_options = get_all_frequency_sorted_mutation(
+    world_map.df_all_dates_all_voc, 2, world_map.color_dict
+)
+all_gene_options = get_all_genes_per_reference(variantView_cds, 2, world_map.color_dict)
+logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 
-
-# example data for example map
-# note_data = pd.read_csv("data/Data.csv")
-
-# predefine
-coord_data = pd.read_csv("data/location_coordinates.csv")
-
-# 56 colors
-color_schemes = (
-    px.colors.cyclical.Twilight
-    + px.colors.cyclical.IceFire
-    + px.colors.cyclical.Phase
-    + px.colors.cyclical.Edge
+tab_explored_tool = html.Div(
+    [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        dbc.Row(html.H2("Filter Panel", style={"textAlign": "center"})),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        get_html_elem_reference_radioitems(
+                                            all_reference_options
+                                        )
+                                    ],
+                                    width=2,
+                                ),
+                                dbc.Col(
+                                    [get_html_elem_dropdown_genes(all_gene_options)],
+                                    width=4,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_elem_checklist_seq_tech(
+                                            all_seq_tech_options
+                                        )
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_elem_dropdown_countries(
+                                            all_country_options
+                                        )
+                                    ],
+                                    width=3,
+                                ),
+                            ]
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        get_html_elem_method_radioitems(),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_interval(),
+                                    ],
+                                    width=3,
+                                ),
+                                dbc.Col(
+                                    [
+                                        get_html_elem_dropdown_aa_mutations(
+                                            all_mutation_options
+                                        )
+                                    ],
+                                    width=6,
+                                ),
+                            ],
+                            className="mt-2",
+                        ),
+                    ],
+                ),
+                html.Hr(),
+                html.Div(create_worldMap_explorer(date_slider)),
+                html.Div(create_table_explorer(table_filter)),
+            ],
+            id="div_elem_standard",
+            className="mt-2",
+        ),
+    ]
 )
 
-tab_explored_tool = [
-    dbc.Container(
+tab_compare_tool = (
+    html.Div(
         [
-            dbc.Row(
-                html.H2(
-                    [
-                        "Filter",
-                    ],
-                    style={"textAlign": "center"},
-                )
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Row(get_html_aa_nt_radio()),
+                            dbc.Col(
+                                [
+                                    dbc.Row(
+                                        [
+                                            html.H3(
+                                                "Left Filter",
+                                                style={
+                                                    "textAlign": "center",
+                                                    "margin-top": 20,
+                                                },
+                                            )
+                                        ]
+                                    ),
+                                    html.Div(
+                                        get_html_elem_reference_radioitems(
+                                            all_reference_options, radio_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_dropdown_genes(
+                                            all_gene_options, g_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_checklist_seq_tech(
+                                            all_seq_tech_options, s_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_dropdown_countries(
+                                            all_country_options, c_id=1
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_date_picker(d_id=1),
+                                        className="mt-1",
+                                    ),
+                                ]
+                            ),
+                            html.Hr(className="vr"),
+                            dbc.Col(
+                                [
+                                    dbc.Row(
+                                        html.H3(
+                                            "Right Filter",
+                                            style={
+                                                "textAlign": "center",
+                                                "margin-top": 20,
+                                            },
+                                        )
+                                    ),
+                                    html.Div(
+                                        get_html_elem_reference_radioitems(
+                                            all_reference_options, radio_id=2
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_dropdown_genes(
+                                            all_gene_options, g_id=2
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_checklist_seq_tech(
+                                            all_seq_tech_options, s_id=2
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_elem_dropdown_countries(
+                                            all_country_options, c_id=2
+                                        ),
+                                        className="mt-1",
+                                    ),
+                                    html.Div(
+                                        get_html_date_picker(d_id=2),
+                                        className="mt-1",
+                                    ),
+                                ]
+                            ),
+                        ]
+                    ),
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Button(
+                                [html.I(className="bi bi-terminal me-1"), "Compare"],
+                                id="compare_button",
+                                size="lg",
+                                className="me-1",
+                                color="primary",
+                                n_clicks=0,
+                            )
+                        ]
+                    ),
+                ],
+                className="mt-2",
             ),
-            html.Div(id="alertmsg"),
+            html.Hr(),
+            dbc.Row(html.H2("Output Section", style={"textAlign": "center"})),
             html.Div(
                 [
                     dbc.Row(
                         [
                             dbc.Col(
-                                [checklist_1, html.Div(id="selected-ref-values")],
-                                style={
-                                    "display": "inline-block",
-                                    "width": "23%",
-                                    "marginRight": "3%",
-                                },
-                                className="relative",
+                                [
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{"value": "no_mutation"}],
+                                        title="Mutations unique for left selection",
+                                        aa_id="left",
+                                    ),
+                                ]
                             ),
-                            dbc.Form(
-                                [checklist_2],
-                                style={
-                                    "display": "inline-block",
-                                    "width": "23%",
-                                    "marginRight": "3%",
-                                },
-                                className="relative",
+                            dbc.Col(
+                                [
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{"value": "no_mutation"}],
+                                        title="Mutations unique for right selection",
+                                        aa_id="right",
+                                    ),
+                                ]
                             ),
-                            dbc.Form(
-                                [checklist_3],
-                                style={
-                                    "display": "inline-block",
-                                    "width": "23%",
-                                    "marginRight": "3%",
-                                },
-                                className="relative",
-                            ),
-                            dbc.Form(
-                                [checklist_4],
-                                style={"display": "inline-block", "width": "22%"},
-                                className="relative",
+                            dbc.Col(
+                                [
+                                    get_html_elem_dropdown_aa_mutations_without_max(
+                                        [{"value": "no_mutation"}],
+                                        title="Mutations in both selections",
+                                        aa_id="both",
+                                    )
+                                ],
                             ),
                         ]
                     ),
-                ]
-            ),
-            html.Br(style={"lineHeight": "10"}),
-            html.Div(
-                [
-                    html.Br(),
-                    html.H1("Here is a map"),
-                    dbc.Spinner(
-                        dcc.Graph(id="my-map"),
-                        color="info",
-                        type="grow",
-                        spinner_style={"width": "3rem", "height": "3rem"},
+                    dbc.Row(
+                        [
+                            create_table_compare(
+                                title="Unique for left selection", table_id=1
+                            ),
+                            create_table_compare(
+                                title="Unique for right selection", table_id=2
+                            ),
+                            create_table_compare(title="In both selection", table_id=3),
+                        ],
+                        className="mt-3",
                     ),
-                    html.Br(),
-                ]
+                ],
+                className="mt-2",
             ),
-        ]
-    )
-]
+        ],
+        id="compare_elem",
+    ),
+)
 
 tab_advanced_tool = html.Div(
     [
@@ -148,6 +346,7 @@ layout = html.Div(
                             [
                                 dbc.Tab(tab_explored_tool, label="Explore Tool"),
                                 dbc.Tab(tab_advanced_tool, label="Advanced Tool"),
+                                dbc.Tab(tab_compare_tool, label="Compare Tool"),
                             ]
                         ),  # end tabs
                     ]
@@ -158,82 +357,15 @@ layout = html.Div(
 )
 
 
-# update map here
-@callback(
-    Output("alertmsg", "children"),
-    Output("my-map", component_property="figure"),
-    [
-        Input("1_checklist_input", "value"),
-        Input("2_checklist_input", "value"),
-        Input("3_checklist_input", "value"),
-        Input("4_checklist_input", "value"),
-    ],
-)
-def update_figure(
-    ref_checklist,
-    mut_checklist,
-    viz_checklist,
-    seqtech_checklist,
-):
-    alertmsg = ""
-    all_or_none = ref_checklist + mut_checklist + viz_checklist + seqtech_checklist
-    output_df = pd.DataFrame(
-        columns=["COUNTRY", "RELEASE_DATE", "lat", "lon", "CaseNumber"]
-    )
-    fig = go.Figure()
-    if len(all_or_none) == 0:
-        msg = "All"
-    else:
-        msg = all_or_none
-    print(msg)
-    selected_column = ["COUNTRY", "RELEASE_DATE", "AA_PROFILE", "REFERENCE_ACCESSION"]
-    output_df = get_value_by_filter(ref_checklist, mut_checklist, seqtech_checklist)
-    output_df = calculate_coordinate(output_df, selected_column)
-    # sort DATE
-    output_df["RELEASE_DATE"] = pd.to_datetime(output_df["RELEASE_DATE"]).dt.date
-    output_df.sort_values(by="RELEASE_DATE", inplace=True)
-    output_df = calculate_accumulator(output_df, "AA_PROFILE")
-
-    fig = px.scatter_mapbox(
-        output_df,
-        lat="lat",
-        lon="lon",
-        size="Case",
-        animation_frame="RELEASE_DATE",
-        animation_group="AA_PROFILE",
-        size_max=50,
-        height=600,
-        zoom=3,
-        hover_data={
-            "lat": False,
-            "lon": False,
-            "RELEASE_DATE": True,
-            "Case": True,
-            "COUNTRY": True,
-        },  # ["NUC_PROFILE", "COUNTRY", "RELEASE_DATE", "CaseNumber"],
-        center=dict(lat=8.584314, lon=-75.95781),
-        mapbox_style="carto-positron",
-        color="AA_PROFILE",
-        color_continuous_scale=px.colors.sequential.Reds,
-    )
-    fig.update_layout(
-        legend=dict(
-            title=None, orientation="h", y=1, yanchor="bottom", x=0.5, xanchor="center"
-        ),
-        margin={"r": 0, "t": 0, "l": 0, "b": 0},
-    )
-
-    return alertmsg, fig
-
-
 def calculate_coordinate(ouput_df, selected_column):
     """
-    TODO:
-    1. improve performance of map
+    TODO:     1. improve performance of map
     """
     # concate the coordinate
     ouput_df = ouput_df[selected_column]
-    result = pd.merge(ouput_df, coord_data, left_on="COUNTRY", right_on="name")
+    result = pd.merge(
+        ouput_df, location_coordinates, left_on="COUNTRY", right_on="name"
+    )
     result.drop(columns=["location_ID", "name"], inplace=True)
 
     # result["number"] = [
@@ -290,14 +422,6 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
 @callback(Output("query_output", "children"), [Input("query_input", "value")])
 def output_text(value):
     return value
-
-@callback(
-    Output(component_id="selected-ref-values", component_property="children"),
-    Input(component_id="1_checklist_input", component_property="value")
-)
-def reference_text(value):
-    print(value)
-    return value
 """
 
 
@@ -311,10 +435,10 @@ def update_output_div(input_value):
     This function will developed for validation of sonar command
     """
     try:
-        badge = html.Div([dbc.Badge("Look ok!", color="success", className="me-1")])
+        badge = html.Div([dbc.Badge("Looks OK!", color="success", className="me-1")])
         _list = shlex.split(input_value)
-        args = parse_args(_list)
-        print(args)
+        parse_args(_list)
+        # print(args)
 
     except:  # noqa: E722
         badge = html.Div(
@@ -339,14 +463,16 @@ def update_output_div(input_value):
     Input("submit-button-state", "n_clicks"),
     State("my-input", "value"),
     running=[(Output("submit-button-state", "disabled"), True, False)],
-    # background=True,
-    # prevent_initial_call=True
+    #   background=True,
+    # manager=background_callback_manager
+    prevent_initial_call=True,
 )
+# @cache.cached(key_prefix='adv_sonar_table')
+# @cache.memoize()
 def update_output_sonar(n_clicks, commands):  # noqa: C901
     """
     Callback handle mpxsonar commands to output table/Div
     """
-
     # calls backend
     _list = shlex.split(commands)
     # print(_list)
@@ -373,9 +499,9 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
             else:
                 df = _tmp_output
                 # Drop columns
-                if len(output) != 0:
-                    df = output.df(
-                        ["AA_X_PROFILE", "NUC_N_PROFILE"], axis=1, errors="ignore"
+                if len(df) > 0:
+                    df = df.drop(
+                        columns=["AA_X_PROFILE", "NUC_N_PROFILE"], errors="ignore"
                     )
                 # reorder column
                 if "AA_PROFILE" in df:
@@ -419,9 +545,9 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
     # prevent_initial_call=True
 )
 def update_output_sonar_map(rows, columns):  # noqa: C901
-    """
-    Callback handle sonar ouput to map.
-    """
+
+    # Callback handle sonar ouput to map.
+
     hidden_state = {"display": "none"}
 
     if rows is None or len(rows) == 0:
@@ -484,7 +610,9 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     # sort value
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
-    table_df["new_name"] = table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+    table_df["mutation_list"] = (
+        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+    )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(
         table_df,
@@ -499,7 +627,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         hover_data={
             "lat": False,
             "lon": False,
-            "new_name": False,
+            "mutation_list": False,
             "AA_PROFILE": True,
             "Case": True,
             "REFERENCE_ACCESSION": True,
@@ -507,10 +635,11 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         },  # ["NUC_PROFILE", "COUNTRY", "RELEASE_DATE", "CaseNumber"],
         center=dict(lat=53, lon=9),
         mapbox_style="carto-positron",
-        color="new_name",
+        color="mutation_list",
         color_discrete_sequence=color_schemes,
     )
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
     # update legend
 
     # print(table_df)
@@ -518,34 +647,6 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 
     # fig.for_each_trace(lambda t: t.update(name = newnames[t.name]))
     return fig, hidden_state, True
-
-
-@callback(
-    Output("4_checklist_input", "value"),
-    [Input("seqtech_all-or-none", "value")],
-    [State("4_checklist_input", "options")],
-)
-def seqtech_select_all_none(all_selected, options):
-    """
-    Callback handle select all seq tech
-    """
-    all_or_none = []
-    all_or_none = [option["value"] for option in options if all_selected]
-    return all_or_none
-
-
-@callback(
-    Output("2_checklist_input", "value"),
-    [Input("mutation_all-or-none", "value")],
-    [State("2_checklist_input", "options")],
-)
-def mutation_select_all_none(all_selected, options):
-    """
-    Callback handle select all NT mutation
-    """
-    all_or_none = []
-    all_or_none = [option["value"] for option in options if all_selected]
-    return all_or_none
 
 
 @callback(
@@ -559,7 +660,6 @@ def open_toast(n):
 
 
 """
-
 @callback(
     Output("mysonar-map", component_property="figure"),
     Output(component_id="alert-msg-map-div", component_property="style"),
@@ -571,7 +671,7 @@ def open_toast(n):
 )
 def update_output_sonar_map(rows, columns):  # noqa: C901
 
-    Callback handle sonar ouput to map.
+  #  Callback handle sonar ouput to map.
 
     hidden_state = {"display": "none"}
 
@@ -634,3 +734,19 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig, hidden_state
 """
+
+# This is the EXPLORE TOOL PART
+get_explore_callbacks(
+    df_dict,
+    world_map,
+    date_slider,
+    variantView_cds,
+    table_filter,
+    all_seq_tech_options,
+    world_map.color_dict,
+)
+
+# COMPARE PART
+get_compare_callbacks(df_dict, variantView_cds, variantView_nt, world_map.color_dict)
+
+del df_dict

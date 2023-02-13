@@ -1,0 +1,465 @@
+import datetime
+
+import dash
+from dash import callback
+from dash import Input
+from dash import Output
+from dash import State
+import pandas as pd
+
+from pages.config import cache
+from pages.utils_explorer_filter import get_all_frequency_sorted_countries
+from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
+from pages.utils_explorer_filter import get_all_genes_per_reference
+from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_df
+from pages.utils_explorer_filter import get_mutations_by_filters
+from pages.utils_worldMap_explorer import DateSlider
+
+
+def get_compare_callbacks(  # noqa: C901
+    df_dict, variantView_cds, variantView_nt, color_dict
+):
+    @callback(
+        [
+            Output("mutation_dropdown_left", "options"),
+            Output("mutation_dropdown_left", "value"),
+            Output("max_nb_txt_left", "children"),
+            Output("mutation_dropdown_right", "options"),
+            Output("mutation_dropdown_right", "value"),
+            Output("max_nb_txt_right", "children"),
+            Output("mutation_dropdown_both", "options"),
+            Output("mutation_dropdown_both", "value"),
+            Output("max_nb_txt_both", "children"),
+        ],
+        [
+            Input("compare_button", "n_clicks"),
+        ],
+        [
+            State("gene_dropdown_1", "value"),
+            State("gene_dropdown_2", "value"),
+            State("reference_radio_1", "value"),
+            State("seq_tech_dropdown_1", "value"),
+            State("country_dropdown_1", "value"),
+            State("reference_radio_2", "value"),
+            State("seq_tech_dropdown_2", "value"),
+            State("country_dropdown_2", "value"),
+            State("date_picker_range_1", "start_date"),
+            State("date_picker_range_1", "end_date"),
+            State("date_picker_range_2", "start_date"),
+            State("date_picker_range_2", "end_date"),
+            State("aa_nt_radio", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    @cache.memoize()
+    def actualize_mutation_filter(
+        compare_button,
+        gene_value_1,
+        gene_value_2,
+        reference_value_1,
+        seqtech_value_1,
+        country_value_1,
+        reference_value_2,
+        seqtech_value_2,
+        country_value_2,
+        start_date_1,
+        end_date_1,
+        start_date_2,
+        end_date_2,
+        aa_nt_radio,
+    ):
+
+        if aa_nt_radio == "Amino Acids":
+            variantView_ref_gene_1 = variantView_cds[
+                (variantView_cds["reference.id"] == reference_value_1)
+                & variantView_cds["element.symbol"].isin(gene_value_1)
+            ]
+            variantView_ref_gene_2 = variantView_cds[
+                (variantView_cds["reference.id"] == reference_value_2)
+                & variantView_cds["element.symbol"].isin(gene_value_2)
+            ]
+        elif aa_nt_radio == "Nucleotides":
+            variantView_ref_gene_1 = variantView_nt[
+                (variantView_nt["reference.id"] == reference_value_1)
+            ]
+            variantView_ref_gene_2 = variantView_nt[
+                (variantView_nt["reference.id"] == reference_value_2)
+            ]
+
+        # LEFT OPTIONS
+        date_list_1 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
+        )
+        propertyView_seq_country_1 = df_dict["propertyView"][
+            (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_1))
+            & (df_dict["propertyView"]["COUNTRY"].isin(country_value_1))
+            & (df_dict["propertyView"]["COLLECTION_DATE"].isin(date_list_1))
+        ]
+
+        df_mutations_1 = get_mutations_by_filters(
+            variantView_ref_gene_1, propertyView_seq_country_1
+        )
+
+        # RIGHT OPTIONS
+        date_list_2 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_2, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_2, "%Y-%m-%d").date(),
+        )
+
+        propertyView_seq_country_2 = df_dict["propertyView"][
+            (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value_2))
+            & (df_dict["propertyView"]["COUNTRY"].isin(country_value_2))
+            & (df_dict["propertyView"]["COLLECTION_DATE"].isin(date_list_2))
+        ]
+
+        df_mutations_2 = get_mutations_by_filters(
+            variantView_ref_gene_2, propertyView_seq_country_2
+        )
+
+        gene_mutations_df_merge = pd.merge(
+            df_mutations_1[["variant.label", "element.symbol"]],
+            df_mutations_2[["variant.label", "element.symbol"]],
+            how="outer",
+            indicator=True,
+            on=["variant.label", "element.symbol"],
+        )
+
+        gene_mutations_df_left = gene_mutations_df_merge[
+            gene_mutations_df_merge["_merge"] == "left_only"
+        ][["variant.label", "element.symbol"]]
+        gene_mutations_df_right = gene_mutations_df_merge[
+            gene_mutations_df_merge["_merge"] == "right_only"
+        ][["variant.label", "element.symbol"]]
+
+        gene_mutations_df_inner = gene_mutations_df_merge[
+            gene_mutations_df_merge["_merge"] == "both"
+        ][["variant.label", "element.symbol"]]
+        mut_options_1 = get_frequency_sorted_mutation_by_df(
+            gene_mutations_df_left, color_dict, aa_nt_radio
+        )
+        mut_options_2 = get_frequency_sorted_mutation_by_df(
+            gene_mutations_df_right, color_dict, aa_nt_radio
+        )
+        mut_options_3 = get_frequency_sorted_mutation_by_df(
+            gene_mutations_df_inner, color_dict, aa_nt_radio
+        )
+
+        text_1 = f"Unique number of mutations in left selection: {len(mut_options_1)}"
+        text_2 = f"Unique number of mutations in right selection: {len(mut_options_2)}"
+        text_3 = f"Number of mutations in both selections: {len(mut_options_3)}"
+
+        return (
+            mut_options_1,
+            [v["value"] for v in mut_options_1],
+            text_1,
+            mut_options_2,
+            [v["value"] for v in mut_options_2],
+            text_2,
+            mut_options_3,
+            [v["value"] for v in mut_options_3],
+            text_3,
+        )
+
+    @callback(
+        [
+            Output(component_id="table_compare_1", component_property="data"),
+            Output(component_id="table_compare_1", component_property="columns"),
+            Output(component_id="table_compare_2", component_property="data"),
+            Output(component_id="table_compare_2", component_property="columns"),
+            Output(component_id="table_compare_3", component_property="data"),
+            Output(component_id="table_compare_3", component_property="columns"),
+        ],
+        [
+            Input("mutation_dropdown_left", "value"),
+            Input("mutation_dropdown_right", "value"),
+            Input("mutation_dropdown_both", "value"),
+        ],
+        [
+            State("reference_radio_1", "value"),
+            State("seq_tech_dropdown_1", "value"),
+            State("country_dropdown_1", "value"),
+            State("reference_radio_2", "value"),
+            State("seq_tech_dropdown_2", "value"),
+            State("country_dropdown_2", "value"),
+            State("date_picker_range_1", "start_date"),
+            State("date_picker_range_1", "end_date"),
+            State("date_picker_range_2", "start_date"),
+            State("date_picker_range_2", "end_date"),
+        ],
+        prevent_initial_call=True,
+    )
+    @cache.memoize()
+    def actualize_tables(
+        mut_value_1,
+        mut_value_2,
+        mut_value_3,
+        reference_value_1,
+        seqtech_value_1,
+        country_value_1,
+        reference_value_2,
+        seqtech_value_2,
+        country_value_2,
+        start_date_1,
+        end_date_1,
+        start_date_2,
+        end_date_2,
+    ):
+        date_list_1 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_1, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_1, "%Y-%m-%d").date(),
+        )
+        date_list_2 = DateSlider.get_all_dates(
+            datetime.datetime.strptime(start_date_2, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end_date_2, "%Y-%m-%d").date(),
+        )
+
+        df_all = pd.merge(
+            df_dict["variantView"],
+            df_dict["propertyView"],
+            how="inner",
+            on=["sample.id", "sample.name"],
+        )
+        table_columns = [
+            "sample.name",
+            "reference.accession",
+            "element.symbol",
+            "variant.label",
+            "COUNTRY",
+            "SEQ_TECH",
+            "GEO_LOCATION",
+            "ISOLATE",
+        ]
+
+        table_df_1 = df_all[
+            df_all["variant.label"].isin(mut_value_1)
+            & (df_all["reference.id"] == reference_value_1)
+            & (df_all["SEQ_TECH"].isin(seqtech_value_1))
+            & (df_all["COUNTRY"].isin(country_value_1))
+            & (df_all["COLLECTION_DATE"].isin(date_list_1))
+        ][table_columns]
+        table_df_2 = df_all[
+            df_all["variant.label"].isin(mut_value_2)
+            & (df_all["reference.id"] == reference_value_2)
+            & (df_all["SEQ_TECH"].isin(seqtech_value_2))
+            & (df_all["COUNTRY"].isin(country_value_2))
+            & (df_all["COLLECTION_DATE"].isin(date_list_2))
+        ][table_columns]
+        table_df_3 = df_all[
+            df_all["variant.label"].isin(mut_value_3)
+            & (df_all["reference.id"].isin([reference_value_1, reference_value_2]))
+            & (df_all["SEQ_TECH"].isin((seqtech_value_1 + seqtech_value_2)))
+            & (df_all["COUNTRY"].isin((country_value_1 + seqtech_value_2)))
+            & (df_all["COLLECTION_DATE"].isin(set(date_list_1).union(set(date_list_2))))
+        ][table_columns]
+        table_df_1 = table_df_1.rename(columns={"element.symbol": "gene.symbol"})
+        table_df_2 = table_df_2.rename(columns={"element.symbol": "gene.symbol"})
+        table_df_3 = table_df_3.rename(columns={"element.symbol": "gene.symbol"})
+
+        table_df_1_records = table_df_1.to_dict("records")
+        table_df_2_records = table_df_2.to_dict("records")
+        table_df_3_records = table_df_3.to_dict("records")
+        column_names_1 = [{"name": i, "id": i} for i in table_df_1.columns]
+        column_names_2 = [{"name": i, "id": i} for i in table_df_2.columns]
+        column_names_3 = [{"name": i, "id": i} for i in table_df_3.columns]
+        return (
+            table_df_1_records,
+            column_names_1,
+            table_df_2_records,
+            column_names_2,
+            table_df_3_records,
+            column_names_3,
+        )
+
+    @callback(
+        [
+            Output("gene_dropdown_1", "options"),
+            Output("gene_dropdown_1", "value"),
+            Output("country_dropdown_1", "options"),
+            Output("country_dropdown_1", "value"),
+            Output("seq_tech_dropdown_1", "options"),
+            Output("seq_tech_dropdown_1", "value"),
+        ],
+        [
+            Input("aa_nt_radio", "value"),
+            Input("reference_radio_1", "value"),
+            Input("select_all_seq_tech_1", "value"),
+            Input("select_all_genes_1", "value"),
+            Input("select_all_countries_1", "value"),
+        ],
+        [
+            State("gene_dropdown_1", "options"),
+            State("country_dropdown_1", "options"),
+            State("seq_tech_dropdown_1", "options"),
+            State("gene_dropdown_1", "value"),
+            State("country_dropdown_1", "value"),
+            State("seq_tech_dropdown_1", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def actualize_filters_left(
+        aa_nt_radio,
+        reference_value,
+        select_all_seq_techs,
+        select_all_genes,
+        select_all_countries,
+        gene_options,
+        country_options,
+        seq_tech_options,
+        gene_value,
+        country_value,
+        seq_tech_value,
+    ):
+        if dash.ctx.triggered_id == "aa_nt_radio":
+            if aa_nt_radio == "Amino Acids":
+                gene_options = get_all_genes_per_reference(
+                    variantView_cds, reference_value, color_dict
+                )
+                gene_value = [i["value"] for i in gene_options]
+            elif aa_nt_radio == "Nucleotides":
+                gene_options = [
+                    {"value": 0, "label": "no_gene_options_for_nucleotides"}
+                ]
+                gene_value = []
+
+        if dash.ctx.triggered_id == "select_all_genes_1":
+            if len(select_all_genes) == 1:
+                gene_value = [i["value"] for i in gene_options]
+            elif len(select_all_genes) == 0:
+                gene_value = []
+
+        elif dash.ctx.triggered_id == "select_all_countries_1":
+            if len(select_all_countries) == 1:
+                country_value = [i["value"] for i in country_options]
+            elif len(select_all_countries) == 0:
+                country_value = []
+
+        elif dash.ctx.triggered_id == "select_all_seq_tech_1":
+            if len(select_all_seq_techs) == 1:
+                seq_tech_value = [i["value"] for i in seq_tech_options]
+            elif len(select_all_seq_techs) == 0:
+                seq_tech_value = []
+        else:
+            if aa_nt_radio == "Amino Acids":
+                gene_options = get_all_genes_per_reference(
+                    variantView_cds, reference_value, color_dict
+                )
+            elif aa_nt_radio == "Nucleotides":
+                gene_options = [
+                    {"value": 0, "label": "no_gene_options_for_nucleotides"}
+                ]
+
+            gene_value = [g["value"] for g in gene_options]
+
+            country_options = get_all_frequency_sorted_countries(
+                df_dict["propertyView"]
+            )
+            country_value = [c["value"] for c in country_options]
+
+            seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
+            seq_tech_value = [s["value"] for s in seq_tech_options]
+
+        return (
+            gene_options,
+            gene_value,
+            country_options,
+            country_value,
+            seq_tech_options,
+            seq_tech_value,
+        )
+
+    @callback(
+        [
+            Output("gene_dropdown_2", "options"),
+            Output("gene_dropdown_2", "value"),
+            Output("country_dropdown_2", "options"),
+            Output("country_dropdown_2", "value"),
+            Output("seq_tech_dropdown_2", "options"),
+            Output("seq_tech_dropdown_2", "value"),
+        ],
+        [
+            Input("aa_nt_radio", "value"),
+            Input("reference_radio_2", "value"),
+            Input("select_all_seq_tech_2", "value"),
+            Input("select_all_genes_2", "value"),
+            Input("select_all_countries_2", "value"),
+        ],
+        [
+            State("gene_dropdown_2", "options"),
+            State("country_dropdown_2", "options"),
+            State("seq_tech_dropdown_2", "options"),
+            State("gene_dropdown_2", "value"),
+            State("country_dropdown_2", "value"),
+            State("seq_tech_dropdown_2", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    def actualize_filters_right(
+        aa_nt_radio,
+        reference_value,
+        select_all_seq_techs,
+        select_all_genes,
+        select_all_countries,
+        gene_options,
+        country_options,
+        seq_tech_options,
+        gene_value,
+        country_value,
+        seq_tech_value,
+    ):
+        if dash.ctx.triggered_id == "aa_nt_radio":
+            if aa_nt_radio == "Amino Acids":
+                gene_options = get_all_genes_per_reference(
+                    variantView_cds, reference_value, color_dict
+                )
+                gene_value = [i["value"] for i in gene_options]
+            elif aa_nt_radio == "Nucleotides":
+                gene_options = [
+                    {"value": 0, "label": "no_gene_options_for_nucleotides"}
+                ]
+                gene_value = []
+
+        if dash.ctx.triggered_id == "select_all_genes_2":
+            if len(select_all_genes) == 1:
+                gene_value = [i["value"] for i in gene_options]
+            elif len(select_all_genes) == 0:
+                gene_value = []
+
+        elif dash.ctx.triggered_id == "select_all_countries_2":
+            if len(select_all_countries) == 1:
+                country_value = [i["value"] for i in country_options]
+            elif len(select_all_countries) == 0:
+                country_value = []
+
+        elif dash.ctx.triggered_id == "select_all_seq_tech_2":
+            if len(select_all_seq_techs) == 1:
+                seq_tech_value = [i["value"] for i in seq_tech_options]
+            elif len(select_all_seq_techs) == 0:
+                seq_tech_value = []
+        else:
+            if aa_nt_radio == "Amino Acids":
+                gene_options = get_all_genes_per_reference(
+                    variantView_cds, reference_value, color_dict
+                )
+            elif aa_nt_radio == "Nucleotides":
+                gene_options = [
+                    {"value": 0, "label": "no_gene_options_for_nucleotides"}
+                ]
+            gene_value = [g["value"] for g in gene_options]
+
+            country_options = get_all_frequency_sorted_countries(
+                df_dict["propertyView"]
+            )
+            country_value = [c["value"] for c in country_options]
+
+            seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
+            seq_tech_value = [s["value"] for s in seq_tech_options]
+
+        return (
+            gene_options,
+            gene_value,
+            country_options,
+            country_value,
+            seq_tech_options,
+            seq_tech_value,
+        )

@@ -9,7 +9,7 @@ Use the table of contents icon on the top left corner of this document to get to
 Clone the repo, and the you can run these commands from within the `covsonar/` directory:
 
 ```sh
-mamba create -n covsonar-dev python=3.9 poetry fortran-compiler nox pre-commit emboss=6.6.0
+mamba create -n covsonar-dev python=3.10 poetry fortran-compiler nox pre-commit emboss=6.6.0
 mamba activate covsonar-dev  # needs to be activated for the following commands to work
 git config blame.ignoreRevsFile .git-blame-ignore-revs  # ignore black reformatting when doing git blame
 pre-commit install  # install pre-commit hooks for formatting and linting

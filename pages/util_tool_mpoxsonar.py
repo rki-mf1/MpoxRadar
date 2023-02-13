@@ -40,9 +40,15 @@ custom_cmd_cards = html.Div(
                                         html.Div(
                                             [
                                                 dbc.Button(
-                                                    children=["Submit"],
+                                                    children=[
+                                                        html.I(
+                                                            className="bi bi-bullseye me-1"
+                                                        ),
+                                                        "Submit",
+                                                    ],
                                                     id="submit-button-state",
                                                     n_clicks=0,
+                                                    outline=True,
                                                     color="primary",
                                                     className="mb-2",
                                                 ),
@@ -304,7 +310,7 @@ Output_mpxsonar = [
                             dbc.Row(
                                 html.Div(
                                     dbc.Alert(
-                                        "Note: the count and list-prop command cannot be used with map.",
+                                        "Note: If no result on the table or count and list-prop commands are used, the map will show nothing.",
                                         color="warning",
                                         id="alert-msg-map",
                                     )
