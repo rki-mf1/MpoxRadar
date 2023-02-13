@@ -23,6 +23,10 @@ LOG_LEVEL = os.getenv("LOG_LEVEL")
 # REDIS_URL =  os.getenv("REDIS_URL")
 REDIS_BACKEND_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BACKEND"))
 REDIS_BROKER_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BROKER"))
+CACHE_DIR = ".cache"
+# create .cache dir.
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
 
 
 def get_module_logger(mod_name):
@@ -88,7 +92,7 @@ if "REDIS_URL" in os.environ:
         # sys.exit(1)
 
     celery_app = Celery(
-        __name__, broker=REDIS_BROKER_URL, backend=REDIS_BROKER_URL, expire=60
+        __name__, broker=REDIS_BROKER_URL, backend=REDIS_BROKER_URL, expire=300
     )
 
     background_manager = CeleryManager(celery_app, cache_by=[lambda: launch_uid])

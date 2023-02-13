@@ -748,3 +748,5 @@ get_explore_callbacks(
 
 # COMPARE PART
 get_compare_callbacks(df_dict, variantView_cds, variantView_nt, world_map.color_dict)
+
+del df_dict

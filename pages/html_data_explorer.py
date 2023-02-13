@@ -227,24 +227,28 @@ def create_table_compare(title, table_id):
                             ),
                             html.Div(
                                 [
-                                    dash_table.DataTable(
-                                        data=df.to_dict("records"),
-                                        columns=[
-                                            {"name": i, "id": i} for i in df.columns
-                                        ],
-                                        id=f"table_compare_{table_id}",
-                                        page_current=0,
-                                        page_size=20,
-                                        style_data={
-                                            "whiteSpace": "normal",
-                                            "height": "auto",
-                                            # all three widths are needed
-                                            "minWidth": "300px",
-                                            "width": "300px",
-                                            "maxWidth": "300px",
-                                        },
-                                        style_table={"overflowX": "auto"},
-                                        export_format="csv",
+                                    dbc.Spinner(
+                                        dash_table.DataTable(
+                                            data=df.to_dict("records"),
+                                            columns=[
+                                                {"name": i, "id": i} for i in df.columns
+                                            ],
+                                            id=f"table_compare_{table_id}",
+                                            page_current=0,
+                                            page_size=20,
+                                            style_data={
+                                                "whiteSpace": "normal",
+                                                "height": "auto",
+                                                # all three widths are needed
+                                                "minWidth": "300px",
+                                                "width": "300px",
+                                                "maxWidth": "300px",
+                                            },
+                                            style_table={"overflowX": "auto"},
+                                            export_format="csv",
+                                        ),
+                                        color="dark",
+                                        type="grow",
                                     ),
                                 ]
                             ),

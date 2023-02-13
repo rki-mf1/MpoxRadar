@@ -34,6 +34,11 @@ class sonarBasicsChild(sonarBasics):
         showNX=False,
     ):
         output = None
+        if outfile:
+            output = """The current MpoxSonar in the MpoxRadar is
+            not supporting the save-output-to-file command (-o). """
+            return output
+
         with sonarDBManager(db, debug=debug) as dbm:
             if format == "vcf" and reference is None:
                 reference = dbm.get_default_reference_accession()
@@ -64,12 +69,15 @@ class sonarBasicsChild(sonarBasics):
             elif format == "count":
                 output = cursor.fetchone()["count"]
             elif format == "vcf":
-                # TODO: remove this. and change
-                sonarBasics.exportVCF(
-                    cursor, reference=reference, outfile=outfile, na="*** no match ***"
-                )
+                # remove this export
+                # sonarBasics.exportVCF(
+                #     cursor, reference=reference, outfile=outfile, na="*** no match ***"
+                # )
+                output = """The current MpoxSonar in the MpoxRadar is not
+                supporting the VCF command (--format vcf). """
             else:
                 sys.exit("error: '" + format + "' is not a valid output format")
+
         return output
 
     def list_prop(db=None):
@@ -227,7 +235,9 @@ def get_value_by_reference(checked_ref):
 def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
     output_df = pd.DataFrame()
 
-    if len(checked_ref) == 0:  # all hardcode for now TODO:
+    if (
+        len(checked_ref) == 0
+    ):  # all hardcode for now TODO: remove the hardcode if possible.
         checked_ref = ["NC_063383.1", "MT903344.1", "ON563414.3"]
 
     propdict = {}

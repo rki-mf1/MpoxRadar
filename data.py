@@ -1,6 +1,7 @@
+import csv
 from datetime import datetime
 import multiprocessing as mp
-import pickle
+import os
 from time import perf_counter
 from urllib.parse import urlparse
 
@@ -9,8 +10,11 @@ import pandas as pd
 import sqlalchemy
 from sqlalchemy import create_engine
 
+from pages.config import CACHE_DIR
 from pages.config import DB_URL
 from pages.config import redis_manager
+from pages.utils import load_Cpickle
+from pages.utils import write_Cpickle
 
 tables = ["propertyView", "variantView", "referenceView"]
 
@@ -141,7 +145,7 @@ class DataFrameLoader:
     def load_db_from_sql(self, table_name):
         start = perf_counter()
         db_connection = get_database_connection()
-        df_dict = {}
+        # df_dict = {}
         try:
             # we cannot use read_sql_table because it doesn't allow difining dtypes
             columns = pd.read_sql_query(
@@ -166,33 +170,86 @@ class DataFrameLoader:
                 }
                 queried_columns = "*"
             # here is the download!
-            df = pd.read_sql_query(
-                f"SELECT {queried_columns} FROM {table_name};",
-                con=db_connection,
-                dtype=types,
-            )
+            if table_name == "variantView":
+                with open(".cache/variantView.csv", "w") as tmpfile:
+                    outcsv = csv.writer(tmpfile, lineterminator="\n")
+                    query = f"SELECT {queried_columns} FROM {table_name};"
+                    engine = db_connection
+                    connection = engine.connect()
+                    cursor = connection.execute(query)
+                    headers = []
+                    for columns in cursor.keys():
+                        headers.append(columns)
+                    # dump column titles
+                    outcsv.writerows([headers])
+
+                    # dump rows
+                    outcsv.writerows(cursor.fetchall())
+
+                # df = pd.read_csv(f'.cache/{table_name}.csv')
+            else:
+                df = pd.read_sql_query(
+                    f"SELECT {queried_columns} FROM {table_name};",
+                    con=db_connection,
+                    dtype=types,
+                )
+                # FIXME: should put , doublequote=True, or
+                df.to_csv(f".cache/{table_name}.csv", index=False)
         # missing table
         except sqlalchemy.exc.ProgrammingError:
             print(f"table {table_name} not in database.")
             df = pd.DataFrame()
         print(f"Loading time {table_name}: {(perf_counter() - start):.4f} sec.")
+        # FIXME: should return file path.
+        return {table_name: f".cache/{table_name}.csv"}
+        """
         if not df.empty:
             df_dict[table_name] = df
+            print(df_dict)
+            print("After this")
             return df_dict
+        """
 
     def load_from_sql_db(self):
+
+        # NOTE: WARN:
+        """
+        Avoid shifting large amounts of data between processes.
+        multiprocessing.Pool relies on a locked buffer (an OS Pipe/CPU type.)
+        to distribute the tasks between the workers and retrieve their results.
+        If an object larger than the buffer is pushed trough the pipe,
+        there are chances the logic might hang. We can dump the job result to files
+        (e.g., using pickle) and return/send the filename.
+        We can prevent logic from getting stuck and pipe becomes a severe bottleneck.
+        (Hopefully notice speed improvements as well)
+        """
         pool = mp.Pool(mp.cpu_count())
+        # FIXME: should store file path.
         dict_list = pool.starmap(
             self.load_db_from_sql,
             [[table] for table in self.tables],
         )
-        pool.close()
+        pool.close()  # tells the pool not to accept any new job.
         pool.terminate()
-        pool.join()
+        pool.join()  # tells the pool to wait until all jobs finished then exit
+        # blocking the parent process is just a side effect of what pool.join is doing.
+        """
+        with WorkerPool() as pool:
+            dict_list = pool.map( self.load_db_from_sql,
+            [table for table in self.tables], progress_bar=True)
+        """
+
+        # NOTE: HARD CODE
+        # read results back.
+        print(dict_list)
+        for i, _dict in enumerate(dict_list):
+            for k, v in _dict.items():
+                dict_list[i][k] = pd.read_csv(v)
         df_dict = {}
         for df_d in dict_list:
             if df_d is not None:
                 df_dict.update(df_d)
+        del dict_list
         return df_dict
 
 
@@ -240,16 +297,38 @@ def load_all_sql_files():
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict"):
-        print("Load from cache")
-        df_dict = pickle.loads(redis_manager.get("df_dict"))
+        print("Load data from cache")
+        # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
+        # df_dict = pickle.loads(redis_manager.get("df_dict"))
+        df_dict = load_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"))
     else:
-        # TODO query for variantView tooo long.
+        # PROBLEM: query for variantView tooo long.
+        print("Load data from database...")
         df_dict = loader.load_from_sql_db()
         df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
         df_dict["variantView"] = create_variant_view(df_dict["variantView"])
         df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
+        print("Data preprocessing...")
         if redis_manager:
             print("Create a new cache")
-            redis_manager.set("df_dict", pickle.dumps(df_dict), ex=3600 * 23)
+            # NOTE: set pickle cache, however the limitation of redis
+            # is.... the tool can store data size up to 512MB
+            # 1 sec
+            # redis_manager.set("df_dict", pickle.dumps(df_dict), ex=3600 * 23)
+
+            # HACK: 1. SpaceSaving, so we use the another method, using Cpickle + BZ2 compression.
+            # WARN: the performance is limited by compression algorithm and stroage I/O type.
+            # 40 secs, 40 MB
+            # redis_manager.set("df_dict", "1", ex=3600 * 23)
+            # compressed_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"),df_dict)
+
+            # HACK: 2. Using Cpickle only
+            # 30 secs, 419 MB
+            write_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"), df_dict)
+            redis_manager.set("df_dict", 1, ex=3600 * 23)
+
+            # df_dict["propertyView"].to_pickle(".cache/propertyView.pkl")
+            # df_dict["variantView"].to_pickle(".cache/variantView.pkl")
+            # df_dict["referenceView"].to_pickle(".cache/referenceView.pkl")
 
     return df_dict

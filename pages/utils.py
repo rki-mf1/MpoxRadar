@@ -1,6 +1,11 @@
+import bz2
+from datetime import datetime
+from datetime import timedelta
+import os
 import re
 from re import finditer
 
+import _pickle as cPickle
 import pandas as pd
 
 from pages.DBManager import DBManager
@@ -97,3 +102,35 @@ def get_gene_byNT(reference, mutation="del:136552-136554"):
         raise
     # print(result_dict)
     return result_dict
+
+
+# Pickle a file and then compress it into a file with extension
+def compressed_pickle(title, data):
+    with bz2.BZ2File(title, "w") as f:
+        cPickle.dump(data, f)
+
+
+# Load any compressed pickle file
+def decompress_pickle(file):
+    data = bz2.BZ2File(file, "rb")
+    data = cPickle.load(data)
+    return data
+
+
+def is_file_older_than(file, delta=timedelta(days=1)):
+    cutoff = datetime.utcnow() - delta
+    mtime = datetime.utcfromtimestamp(os.path.getmtime(file))
+    if mtime < cutoff:
+        return True
+    return False
+
+
+def write_Cpickle(filename, data):
+    with open(filename, "wb") as output_file:
+        cPickle.dump(data, output_file)
+
+
+def load_Cpickle(filename):
+    with open(filename, "rb") as input_file:
+        data = cPickle.load(input_file)
+    return data
