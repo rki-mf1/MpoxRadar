@@ -1,4 +1,5 @@
 import csv
+from collections import defaultdict
 from datetime import datetime
 import multiprocessing as mp
 import os
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy
 from sqlalchemy import create_engine
+from tabulate import tabulate
 
 from pages.config import CACHE_DIR
 from pages.config import DB_URL
@@ -16,7 +18,7 @@ from pages.config import redis_manager
 from pages.utils import load_Cpickle
 from pages.utils import write_Cpickle
 
-tables = ["propertyView", "variantView", "referenceView"]
+tables = ["propertyView", "variantView"]
 
 # pandas normally uses python strings, which have about 50 bytes overhead. that's catastrophic!
 stringType = "string[pyarrow]"
@@ -114,13 +116,6 @@ needed_columns = {
         #  "variant.parent_id"
         "element.type",
         "element.symbol",
-    ],
-    "referenceView": [
-        "reference.id",
-        "element.type",
-        "element.symbol",
-        "element.start",
-        "element.end",
     ],
 }
 
@@ -271,25 +266,23 @@ def create_property_view(df, dummy_date="2021-12-31"):
     )
     df["SEQ_TECH"] = df["SEQ_TECH"].replace([np.nan, ""], "undefined")
     #  print(f"time pre-processing PropertyView final: {(perf_counter()-start)} sec.")
-    #  print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
+    #  print(tabulate(df[0:10], headers='keys', tablefmt='psql'))
     return df
 
 
-def create_variant_view(df):
+def create_variant_view(df, propertyViewSamples):
     df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
     df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
-    return df
-
-
-def create_reference_view(df):
-    """
-    reference.id, element.type, element.symbol, element.start, element.end
-    """
-    df = df[(df["element.type"] == "cds")]
+    df = df[df['sample.id'].isin(propertyViewSamples)]
     return df
 
 
 def load_all_sql_files():
+    """
+    to handle big db size: split into multiple tables in processed_df_dict:
+    processed_df_dict["propertyView"]["complete" OR "partial"]
+    processed_df_dict["variantView"]["complete" OR "partial"][reference_id][seq_type]
+    """
     loader = DataFrameLoader()
 
     # NOTE:
@@ -300,15 +293,59 @@ def load_all_sql_files():
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
-        df_dict = load_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"))
+        processed_df_dict = load_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"))
+        print(tabulate(processed_df_dict["propertyView"]["complete"][0:10],
+                       headers='keys',
+                       tablefmt='psql'))
+        print(tabulate(processed_df_dict["propertyView"]["partial"][0:10],
+                       headers='keys',
+                       tablefmt='psql'))
+        for ts in ['complete', 'partial']:
+            for reference_id in processed_df_dict["variantView"][ts].keys():
+                for seq_type in ['source', 'cds']:
+                    print(reference_id, seq_type, ts)
+                    print(len(processed_df_dict["variantView"][ts][reference_id][seq_type]))
+                    print(tabulate(processed_df_dict["variantView"][ts][reference_id][seq_type][0:10],
+                                   headers='keys',
+                                   tablefmt='psql'))
+
     else:
         # PROBLEM: query for variantView tooo long.
         print("Load data from database...")
-        df_dict = loader.load_from_sql_db()
-        df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
-        df_dict["variantView"] = create_variant_view(df_dict["variantView"])
-        df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
+        loaded_df_dict = loader.load_from_sql_db()
+        processed_df_dict = defaultdict(dict)
         print("Data preprocessing...")
+        propertyView = create_property_view(loaded_df_dict["propertyView"])
+        processed_df_dict["propertyView"]["complete"] = propertyView[propertyView["GENOME_COMPLETENESS"] == 'complete']
+        processed_df_dict["propertyView"]["partial"] = propertyView[propertyView["GENOME_COMPLETENESS"] == 'partial']
+        del loaded_df_dict["propertyView"]
+        del propertyView
+
+        variantViewComplete = create_variant_view(loaded_df_dict["variantView"],
+                                                  processed_df_dict["propertyView"]["complete"]['sample.id'])
+        processed_df_dict["variantView"]["complete"] = {}
+        for reference_id in variantViewComplete['reference.id'].unique():
+            processed_df_dict["variantView"]["complete"][reference_id] = {}
+            for seq_type in ['source', 'cds']:
+                processed_df_dict["variantView"]["complete"][reference_id][seq_type] = variantViewComplete[
+                    (variantViewComplete['reference.id'] == reference_id)
+                    & (variantViewComplete['element.type'] == seq_type)
+                    ]
+        del variantViewComplete
+
+        variantViewPartial = create_variant_view(loaded_df_dict["variantView"],
+                                                 processed_df_dict["propertyView"]["partial"]['sample.id'])
+        processed_df_dict["variantView"]["partial"] = {}
+        for reference_id in variantViewPartial['reference.id'].unique():
+            processed_df_dict["variantView"]["partial"][reference_id] = {}
+            for seq_type in ['source', 'cds']:
+                processed_df_dict["variantView"]["partial"][reference_id][seq_type] = variantViewPartial[
+                    (variantViewPartial['reference.id'] == reference_id)
+                    & (variantViewPartial['element.type'] == seq_type)
+                    ]
+        del loaded_df_dict["variantView"]
+        del variantViewPartial
+
         if redis_manager:
             print("Create a new cache")
             # NOTE: set pickle cache, however the limitation of redis
@@ -324,11 +361,11 @@ def load_all_sql_files():
 
             # HACK: 2. Using Cpickle only
             # 30 secs, 419 MB
-            write_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"), df_dict)
+            write_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"), processed_df_dict)
             redis_manager.set("df_dict", 1, ex=3600 * 23)
 
             # df_dict["propertyView"].to_pickle(".cache/propertyView.pkl")
             # df_dict["variantView"].to_pickle(".cache/variantView.pkl")
             # df_dict["referenceView"].to_pickle(".cache/referenceView.pkl")
 
-    return df_dict
+    return processed_df_dict
