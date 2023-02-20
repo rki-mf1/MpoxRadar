@@ -6,7 +6,7 @@ from dash import State
 from dash.exceptions import PreventUpdate
 
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries_by_filters
-from pages.utils_explorer_filter import get_all_genes_per_reference
+from pages.utils_explorer_filter import get_all_genes_names
 from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_filters
 from pages.utils_explorer_filter import get_frequency_sorted_seq_techs_by_filters
 from pages.utils_worldMap_explorer import DateSlider
@@ -115,14 +115,14 @@ def get_explore_callbacks(  # noqa: C901
             if len(select_all_genes) == 1:
                 gene_value = [
                     i["value"]
-                    for i in get_all_genes_per_reference(
+                    for i in get_all_genes_names(
                         variantView_cds, reference_value, color_dict
                     )
                 ]
             elif len(select_all_genes) == 0:
                 gene_value = []
         if dash.ctx.triggered_id == "reference_radio_0":
-            gene_options = get_all_genes_per_reference(
+            gene_options = get_all_genes_names(
                 variantView_cds, reference_value, color_dict
             )
             gene_value = [i["value"] for i in gene_options]

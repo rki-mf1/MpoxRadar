@@ -563,8 +563,8 @@ def get_html_aa_nt_radio():
                     ),
                     dbc.RadioItems(
                         options=[
-                            {"label": "Amino Acids", "value": "Amino Acids"},
-                            {"label": "Nucleotides", "value": "Nucleotides"},
+                            {"label": "Amino Acids", "value": "cds"},
+                            {"label": "Nucleotides", "value": "source"},
                         ],
                         value="Amino Acids",
                         inline=True,
@@ -575,6 +575,41 @@ def get_html_aa_nt_radio():
                             "textAlign": "center",
                         },
                         id="aa_nt_radio",
+                    ),
+                    dbc.Badge(
+                        "Warning: The nucleotide option might take a long time to compute.",
+                        color="warning",
+                        className="me-1",
+                    ),
+                ],
+            ),
+        ],
+    )
+    return item
+
+def get_html_complete_partial_radio(tab):
+    item = dbc.Card(
+        [
+            dbc.CardBody(
+                [
+                    dbc.Label(
+                        "Use all genomes (including partial sequences) or only complete genomes:",
+                        color="primary",
+                    ),
+                    dbc.RadioItems(
+                        options=[
+                            {"label": "Complete Genomes", "value": "complete"},
+                            {"label": "Complete & partial genomes", "value": "partial"},
+                        ],
+                        value="complete",
+                        inline=True,
+                        style={
+                            "font-size": 20,
+                            "font-weight": "bold",
+                            "align-itmes": "center",
+                            "textAlign": "center",
+                        },
+                        id=f"complete_partial_radio_{tab}",
                     ),
                     dbc.Badge(
                         "Warning: The nucleotide option might take a long time to compute.",

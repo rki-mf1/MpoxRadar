@@ -18,7 +18,7 @@ import plotly.graph_objects as go
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
-from pages.html_data_explorer import create_table_compare
+from pages.html_data_explorer import create_table_compare, get_html_complete_partial_radio
 from pages.html_data_explorer import create_table_explorer
 from pages.html_data_explorer import create_worldMap_explorer
 from pages.html_data_explorer import get_html_aa_nt_radio
@@ -37,7 +37,7 @@ from pages.util_tool_summary import descriptive_summary_panel
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_mutation
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
-from pages.utils_explorer_filter import get_all_genes_per_reference
+from pages.utils_explorer_filter import get_all_genes_names
 from pages.utils_explorer_filter import get_all_references
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import TableFilter
@@ -54,12 +54,6 @@ world_map = WorldMap(
     df_dict["propertyView"], df_dict["variantView"], location_coordinates
 )
 date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
-variantView_cds = df_dict["variantView"][
-    df_dict["variantView"]["element.type"] == "cds"
-]
-variantView_nt = df_dict["variantView"][
-    df_dict["variantView"]["element.type"] == "source"
-]
 table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
 all_reference_options = get_all_references(df_dict["variantView"])
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
@@ -67,7 +61,7 @@ all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"]
 all_mutation_options = get_all_frequency_sorted_mutation(
     world_map.df_all_dates_all_voc, 2, world_map.color_dict
 )
-all_gene_options = get_all_genes_per_reference(variantView_cds, 2, world_map.color_dict)
+all_gene_options = get_all_genes_names(df_dict, 2, world_map.color_dict)
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 
@@ -78,6 +72,7 @@ tab_explored_tool = html.Div(
                 html.Div(
                     [
                         dbc.Row(html.H2("Filter Panel", style={"textAlign": "center"})),
+                        dbc.Row(get_html_complete_partial_radio('explore')),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -154,6 +149,7 @@ tab_compare_tool = (
                 [
                     dbc.Row(
                         [
+                            dbc.Row(get_html_complete_partial_radio('compare')),
                             dbc.Row(get_html_aa_nt_radio()),
                             dbc.Col(
                                 [
@@ -740,13 +736,12 @@ get_explore_callbacks(
     df_dict,
     world_map,
     date_slider,
-    variantView_cds,
     table_filter,
     all_seq_tech_options,
     world_map.color_dict,
 )
 
 # COMPARE PART
-get_compare_callbacks(df_dict, variantView_cds, variantView_nt, world_map.color_dict)
+get_compare_callbacks(df_dict, world_map.color_dict)
 
 del df_dict
