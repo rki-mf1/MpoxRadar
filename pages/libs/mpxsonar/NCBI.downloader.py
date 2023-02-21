@@ -33,6 +33,7 @@ IGNORE_LIST = [
     "FV537352.1",
     "OX044338.1",
     "OX009124.1",
+    "NC_003310.1",  # from 1996
 ]
 
 Entrez.api_key = os.getenv("NCBI_API_KEY", "")
@@ -179,6 +180,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
         "RELEASE_DATE",
         "COLLECTION_DATE",
         "SEQ_TECH",
+        "HOST",
         "GENOME_COMPLETENESS",
     ]
     meta_out_handler.write("\t".join(header) + "\n")  # Write the header line
@@ -198,6 +200,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                 _collection_date = ""
                 _seq_tech = ""
                 _nuc_completeness = ""
+                _host = ""
                 # print("Dealing with GenBank record %s" % seq_record.id)
 
                 fasta_out_handler.write(
@@ -210,7 +213,8 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                     _nuc_completeness = "partial"
                 elif "complete" in seq_record.description:
                     _nuc_completeness = "complete"
-
+                if "host" in seq_record.features[0].qualifiers:
+                    _host = seq_record.features[0].qualifiers["host"][0]
                 if "isolate" in seq_record.features[0].qualifiers:
                     _isolate = seq_record.features[0].qualifiers["isolate"][0]
                 if "country" in seq_record.features[0].qualifiers:
@@ -260,7 +264,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                     _NCBI_release_date = d.strftime("%Y-%m-%d")
 
                 meta_out_handler.write(
-                    "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+                    "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
                     % (
                         seq_record.id,
                         _isolate,
@@ -270,6 +274,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                         _NCBI_release_date,
                         _collection_date,
                         _seq_tech,
+                        _host,
                         _nuc_completeness,
                     )
                 )

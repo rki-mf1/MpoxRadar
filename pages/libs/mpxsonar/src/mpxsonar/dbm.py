@@ -1984,15 +1984,29 @@ class sonarDBManager:
             logging.info(f"Profile sqls: {profile_sqls}")
             logging.info(f"Profile vals: {profile_vals}")
 
-        variant_id_list = self.get_ref_variant_ID(profiles)
-        if len(variant_id_list) > 0:
-            selected_variant_ids = ", ".join([str(x) for x in variant_id_list])
-            logging.info(f"Selected Reference ID: {selected_variant_ids}")
-            varinat_condition_stm = (
-                " AND `reference.id` IN (" + selected_variant_ids + ")"
+        # ------------------------
+        # NOTE: Find the refID, if refID is not given,
+        # this will return all refIDs that match the given profiles
+        if len(profiles) > 0:
+
+            # WARN: this take only one accession ID into account at a time. *not support multiple refs.
+            if reference_accession:
+                selected_dict = next(
+                    item
+                    for item in self.references
+                    if item["accession"] == reference_accession
+                )
+                selected_ref_ids = str(selected_dict["id"])
+            else:
+                ref_id_list = self.get_ref_variant_ID(profiles)
+                selected_ref_ids = ", ".join([str(x) for x in ref_id_list])
+
+            logging.info(
+                f"Found Reference ID base on given profile: {selected_ref_ids}"
             )
+            variant_condition_stm = " AND `reference.id` IN (" + selected_ref_ids + ")"
         else:
-            varinat_condition_stm = ""
+            variant_condition_stm = ""
         # ------
         if property_sqls and profile_sqls:
             if len(profiles) > 1:
@@ -2001,8 +2015,17 @@ class sonarDBManager:
                 )
             else:
                 sample_selection_sql = property_sqls + " INTERSECT " + profile_sqls
+
+            if reference_accession:
+                sample_selection_sql = (
+                    sample_selection_sql + " " + variant_condition_stm
+                )
         elif property_sqls or profile_sqls:
             sample_selection_sql = property_sqls + profile_sqls
+            if reference_accession:
+                sample_selection_sql = (
+                    sample_selection_sql + " " + variant_condition_stm
+                )
         else:
             if "sample" in reserved_props:
                 # if 'sample' is presented we just use only samples
@@ -2017,7 +2040,10 @@ class sonarDBManager:
                     + " , ".join(samples_condition)
                     + ")"
                 )
-
+                if reference_accession:
+                    sample_selection_sql = (
+                        sample_selection_sql + " " + variant_condition_stm
+                    )
                 property_sqls = []
                 property_vals = []
             else:
@@ -2152,9 +2178,9 @@ class sonarDBManager:
                 + ") AND "
                 + genome_element_condition
                 + nn
-                + varinat_condition_stm
+                + variant_condition_stm
                 + " GROUP BY `sample.id`, reference_accession) nt_profile "
-                + " LEFT JOIN "
+                + " JOIN "
                 + "( SELECT  `sample.id`, `reference.accession` AS reference_accession , group_concat("
                 + m
                 + ' `element.symbol`, ":" ,`variant.label`) AS _profile, `variant.id`'
@@ -2163,7 +2189,7 @@ class sonarDBManager:
                 + ")"
                 + cds_element_condition
                 + nx
-                + varinat_condition_stm
+                + variant_condition_stm
                 + " GROUP BY `sample.id`, reference_accession ) aa_profile "
                 + " ON nt_profile.`sample.id` = aa_profile.`sample.id` AND nt_profile.reference_accession =aa_profile.reference_accession "
                 + ", `sample` "
