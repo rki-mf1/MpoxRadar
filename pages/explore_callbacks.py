@@ -5,22 +5,19 @@ from dash import Output
 from dash import State
 from dash.exceptions import PreventUpdate
 
-from pages.utils_explorer_filter import get_all_frequency_sorted_countries_by_filters
-from pages.utils_explorer_filter import get_all_genes_names
+from pages.utils_explorer_filter import get_all_frequency_sorted_countries_by_filters, get_all_frequency_sorted_seqtech
+from pages.utils_explorer_filter import get_all_gene_dict
 from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_filters
 from pages.utils_explorer_filter import get_frequency_sorted_seq_techs_by_filters
-from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import DateSlider, WorldMap, TableFilter
 
 
 # This is the EXPLORE TOOL PART
 def get_explore_callbacks(  # noqa: C901
-    df_dict,
-    world_map,
-    date_slider,
-    variantView_cds,
-    table_filter,
-    all_seq_tech_options,
-    color_dict,
+        df_dict,
+        date_slider,
+        color_dict,
+        location_coordinates
 ):
     @callback(
         [
@@ -36,6 +33,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("seq_tech_dropdown_0", "value"),
             Input("country_dropdown_0", "value"),
             Input("select_x_frequent_mut_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
         ],
         [
             State("mutation_dropdown_0", "options"),
@@ -43,39 +41,28 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=False,
     )
     def actualize_mutation_filter(
-        reference_value,
-        gene_value,
-        seqtech_value,
-        country_value,
-        select_x_mut,
-        mut_options,
+            reference_value,
+            gene_value,
+            seqtech_value,
+            country_value,
+            select_x_mut,
+            complete_partial_radio,
+            mut_options,
     ):
-        """
-        filter changing depending on each other
-         reference --> seqtech & country & gene & mut
-         country --> mut
-         seqtech -->  mut & country
-         gene --> mut
-         mut --> no callback
-        """
         # TODO now return top x mut without checking for mutations with same number
         if dash.ctx.triggered_id == "select_x_frequent_mut_0":
             mut_value = [i["value"] for i in mut_options[0:select_x_mut]]
             max_select = len(mut_options)
 
         else:
-            variantView_cds_ref = variantView_cds[
-                (variantView_cds["reference.id"] == reference_value)
-            ]
-            propertyView_seq_country = df_dict["propertyView"][
-                (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value))
-                & (df_dict["propertyView"]["COUNTRY"].isin(country_value))
-            ]
-            variantView_cds_ref_gene = variantView_cds_ref[
-                variantView_cds_ref["element.symbol"].isin(gene_value)
-            ]
             mut_options = get_frequency_sorted_mutation_by_filters(
-                variantView_cds_ref_gene, propertyView_seq_country, color_dict
+                df_dict,
+                seqtech_value,
+                country_value,
+                gene_value,
+                complete_partial_radio,
+                reference_value,
+                color_dict
             )
             max_select = len(mut_options)
             if select_x_mut > len(mut_options):
@@ -101,30 +88,24 @@ def get_explore_callbacks(  # noqa: C901
         [
             Input("reference_radio_0", "value"),
             Input("select_all_genes_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
         ],
         [
             State("gene_dropdown_0", "options"),
         ],
         prevent_initial_call=True,
     )
-    def actualize_gene_filters(reference_value, select_all_genes, gene_options):
+    def actualize_gene_filters(reference_value, select_all_genes, complete_partial_radio, gene_options):
         """
         gene --> mut
         """
         if dash.ctx.triggered_id == "select_all_genes_0":
             if len(select_all_genes) == 1:
-                gene_value = [
-                    i["value"]
-                    for i in get_all_genes_names(
-                        variantView_cds, reference_value, color_dict
-                    )
-                ]
+                gene_value = [i["value"] for i in gene_options]
             elif len(select_all_genes) == 0:
                 gene_value = []
-        if dash.ctx.triggered_id == "reference_radio_0":
-            gene_options = get_all_genes_names(
-                variantView_cds, reference_value, color_dict
-            )
+        else:
+            gene_options = get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_dict)
             gene_value = [i["value"] for i in gene_options]
         return gene_options, gene_value
 
@@ -141,6 +122,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("country_dropdown_0", "value"),
             Input("select_all_seq_tech_0", "value"),
             Input("select_all_countries_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
         ],
         [
             State("seq_tech_dropdown_0", "options"),
@@ -149,22 +131,23 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=False,
     )
     def actualize_seqtech_and_country_filters(
-        reference_value,
-        seqtech_value,
-        country_value,
-        select_all_tech,
-        select_all_countries,
-        tech_options,
-        country_options,
+            reference_value,
+            seqtech_value,
+            country_value,
+            select_all_tech,
+            select_all_countries,
+            complete_partial_radio,
+            tech_options,
+            country_options,
     ):
         """
         seqtech changes mut & country filter; is changed by ref
-        country changes mut filter; is changed by ref and country (keep prior country selection)
+        country changes mut filter; is changed by ref and seqtech (keep prior country selection)
         """
         if dash.ctx.triggered_id == "select_all_seq_tech_0":
             if len(select_all_tech) == 1:
                 seqtech_value = [
-                    i["value"] for i in all_seq_tech_options if not i["disabled"]
+                    i["value"] for i in tech_options if not i["disabled"]
                 ]
             elif len(select_all_tech) == 0:
                 seqtech_value = []
@@ -175,33 +158,31 @@ def get_explore_callbacks(  # noqa: C901
                 ]
             elif len(select_all_countries) == 0:
                 country_value = []
-        # countries disable options, seq tech disable options
+        # disable options for countries and seq tech (not changing options)
+        # ref changes seqtech and country
         else:
-            variantView_cds_ref = variantView_cds[
-                (variantView_cds["reference.id"] == reference_value)
-            ]
+            # seq tech
             tech_options = get_frequency_sorted_seq_techs_by_filters(
-                variantView_cds_ref, df_dict["propertyView"], tech_options
+                df_dict, tech_options, complete_partial_radio, reference_value
             )
             seqtech_value = [
                 tech
                 for tech in seqtech_value
                 if tech in [t["value"] for t in tech_options if not t["disabled"]]
             ]
-            sample_id_set = set(variantView_cds_ref["sample.id"])
-            df_prop = df_dict["propertyView"][
-                (df_dict["propertyView"]["SEQ_TECH"].isin(seqtech_value))
-                & (df_dict["propertyView"]["sample.id"].isin(sample_id_set))
-            ]
+            # countries
             country_options = get_all_frequency_sorted_countries_by_filters(
-                df_prop, country_options
+                df_dict,
+                seqtech_value,
+                country_options,
+                complete_partial_radio,
+                reference_value
             )
             country_value = [
                 c["value"]
                 for c in country_options
                 if not c["disabled"] and c["value"] in country_value
             ]
-
         return tech_options, seqtech_value, country_options, country_value
 
     # update map by change of filters or moving slider
@@ -216,6 +197,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("date_slider", "value"),
             Input("country_dropdown_0", "value"),
             Input("gene_dropdown_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
         ],
         [
             State("world_map_explorer", "relayoutData"),
@@ -224,21 +206,24 @@ def get_explore_callbacks(  # noqa: C901
     )
     # @cache.memoize()
     def update_world_map_explorer(
-        mutation_list,
-        reference_id,
-        method,
-        seqtech_list,
-        interval,
-        dates,
-        countries,
-        genes,
-        layout,
-    ):
-        print("trigger new map")
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        fig = world_map.get_world_map(
             mutation_list,
             reference_id,
+            method,
+            seqtech_list,
+            interval,
+            dates,
+            countries,
+            genes,
+            complete_partial_radio,
+            layout,
+    ):
+        date_list = date_slider.get_all_dates_in_interval(dates, interval)
+        world_map_dfs = [df_dict["world_map"]['complete'][reference_id]]
+        if complete_partial_radio == 'partial':
+            world_map_dfs.append(df_dict["world_map"]['partial'][reference_id])
+        world_map = WorldMap(world_map_dfs, color_dict, location_coordinates)
+        fig = world_map.get_world_map(
+            mutation_list,
             seqtech_list,
             method,
             date_list,
@@ -250,7 +235,6 @@ def get_explore_callbacks(  # noqa: C901
         # TODO sometimes not working
         if layout:
             fig.update_layout(layout)
-        print("fig returned")
         return fig
 
     @callback(
@@ -280,10 +264,10 @@ def get_explore_callbacks(  # noqa: C901
             if len(drag_value) == 2:
                 second_date = drag_value[-1]
                 if (
-                    DateSlider.get_date_x_days_before(
-                        DateSlider.unix_to_date(second_date), interval
-                    )
-                    > date_slider.min_date
+                        DateSlider.get_date_x_days_before(
+                            DateSlider.unix_to_date(second_date), interval
+                        )
+                        > date_slider.min_date
                 ):
                     new_first_date = DateSlider.unix_time_millis(
                         DateSlider.get_date_x_days_before(
@@ -372,20 +356,22 @@ def get_explore_callbacks(  # noqa: C901
             Input("date_slider", "value"),
             Input("selected_interval", "value"),
             Input("gene_dropdown_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
             #   Input('yaxis_type', 'value')
         ],
         prevent_initial_call=True,
     )
     # @cache.memoize()
     def update_upper_plot(
-        click_data,
-        mutations,
-        method,
-        reference_id,
-        seqtech_list,
-        dates,
-        interval,
-        genes,
+            click_data,
+            mutations,
+            method,
+            reference_id,
+            seqtech_list,
+            dates,
+            interval,
+            genes,
+            complete_partial_radio
     ):
         try:
             location_name = click_data["points"][0]["hovertext"]
@@ -395,15 +381,19 @@ def get_explore_callbacks(  # noqa: C901
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         # title text
         title_text = location_name
+        world_dfs = [df_dict["world_map"]['complete'][reference_id]]
+        if complete_partial_radio == 'partial':
+            world_dfs.append(df_dict["world_map"]['partial'][reference_id])
+        world_map = WorldMap(world_dfs, color_dict, location_coordinates)
         # 1. plot
         if method == "Increase":
             fig = world_map.get_slope_bar_plot(
-                date_list, mutations, reference_id, seqtech_list, location_name, genes
+                date_list, mutations, seqtech_list, location_name, genes
             )
             plot_header = "Slope mutations"
         elif method == "Frequency":
             fig = world_map.get_frequency_bar_chart(
-                mutations, reference_id, seqtech_list, date_list, location_name, genes
+                mutations, seqtech_list, date_list, location_name, genes
             )
             plot_header = "Number Sequences"
         return fig, title_text, plot_header
@@ -419,18 +409,20 @@ def get_explore_callbacks(  # noqa: C901
             Input("selected_interval", "value"),
             Input("results_per_location", "clickData"),
             Input("gene_dropdown_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
         ],
         prevent_initial_call=True,
     )
     def update_lower_plot(
-        click_data_map,
-        mutations,
-        reference_id,
-        seqtech_list,
-        dates,
-        interval,
-        clickDataBoxPlot,
-        genes,
+            click_data_map,
+            mutations,
+            reference_id,
+            seqtech_list,
+            dates,
+            interval,
+            clickDataBoxPlot,
+            genes,
+            complete_partial_radio,
     ):
         if dash.ctx.triggered_id == "results_per_location":
             mutations = [clickDataBoxPlot["points"][0]["label"]]
@@ -439,8 +431,12 @@ def get_explore_callbacks(  # noqa: C901
         except TypeError:
             location_name = "Germany"
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
+        world_dfs = [df_dict["world_map"]['complete'][reference_id]]
+        if complete_partial_radio == 'partial':
+            world_dfs.append(df_dict["world_map"]['partial'][reference_id])
+        world_map = WorldMap(world_dfs, color_dict, location_coordinates)
         fig_develop = world_map.get_frequency_development_scatter_plot(
-            mutations, reference_id, seqtech_list, date_list, location_name, genes
+            mutations, seqtech_list, date_list, location_name, genes
         )
         return fig_develop
 
@@ -453,21 +449,45 @@ def get_explore_callbacks(  # noqa: C901
         [
             Input("mutation_dropdown_0", "value"),
             Input("reference_radio_0", "value"),
-            Input("gene_dropdown_0", "value"),
             Input("seq_tech_dropdown_0", "value"),
             Input("selected_interval", "value"),
             Input("date_slider", "value"),
             Input("country_dropdown_0", "value"),
+            Input("complete_partial_radio_explore", "value"),
         ],
         prevent_initial_call=True,
     )
     # @cache.memoize()
     def update_table_filter(
-        mutation_list, reference_id, gene_list, seqtech_list, interval, dates, countries
+            mutation_list,
+            reference_id,
+            seq_tech_list,
+            interval,
+            dates,
+            countries,
+            complete_partial_radio,
     ):
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        table_df = table_filter.get_filtered_table(
-            mutation_list, seqtech_list, reference_id, date_list, gene_list, countries
+        if mutation_list is None:
+            mutation_list = []
+        if seq_tech_list is None:
+            seq_tech_list = []
+        if date_list is None:
+            date_list = []
+        if countries is None:
+            countries = []
+        if reference_id is None:
+            reference_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
+
+        table_explorer = TableFilter()
+        table_df = table_explorer.get_filtered_table(
+            df_dict,
+            complete_partial_radio,
+            mutation_list,
+            seq_tech_list,
+            reference_id,
+            date_list,
+            countries
         )
         return table_df.to_dict("records"), [
             {"name": i, "id": i} for i in table_df.columns

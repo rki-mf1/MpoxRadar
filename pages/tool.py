@@ -18,18 +18,19 @@ import plotly.graph_objects as go
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
-from pages.html_data_explorer import create_table_compare, get_html_complete_partial_radio
+from pages.html_compare import create_table_compare
+from pages.html_shared import get_html_complete_partial_radio
 from pages.html_data_explorer import create_table_explorer
-from pages.html_data_explorer import create_worldMap_explorer
-from pages.html_data_explorer import get_html_aa_nt_radio
-from pages.html_data_explorer import get_html_date_picker
-from pages.html_data_explorer import get_html_elem_checklist_seq_tech
+from pages.html_data_explorer import create_world_map_explorer
+from pages.html_compare import get_html_aa_nt_radio
+from pages.html_compare import get_html_date_picker
+from pages.html_shared import get_html_elem_checklist_seq_tech
 from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations
-from pages.html_data_explorer import get_html_elem_dropdown_aa_mutations_without_max
-from pages.html_data_explorer import get_html_elem_dropdown_countries
-from pages.html_data_explorer import get_html_elem_dropdown_genes
+from pages.html_shared import get_html_elem_dropdown_aa_mutations_without_max
+from pages.html_shared import get_html_elem_dropdown_countries
+from pages.html_shared import get_html_elem_dropdown_genes
 from pages.html_data_explorer import get_html_elem_method_radioitems
-from pages.html_data_explorer import get_html_elem_reference_radioitems
+from pages.html_shared import get_html_elem_reference_radioitems
 from pages.html_data_explorer import get_html_interval
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
@@ -37,31 +38,32 @@ from pages.util_tool_summary import descriptive_summary_panel
 from pages.utils_explorer_filter import get_all_frequency_sorted_countries
 from pages.utils_explorer_filter import get_all_frequency_sorted_mutation
 from pages.utils_explorer_filter import get_all_frequency_sorted_seqtech
-from pages.utils_explorer_filter import get_all_genes_names
+from pages.utils_explorer_filter import get_all_gene_dict
 from pages.utils_explorer_filter import get_all_references
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import TableFilter
-from pages.utils_worldMap_explorer import WorldMap
 from .app_controller import get_freq_mutation
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
 from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
+from .utils import get_color_dict
 
 df_dict = load_all_sql_files()
-world_map = WorldMap(
-    df_dict["propertyView"], df_dict["variantView"], location_coordinates
+date_slider = DateSlider(df_dict["propertyView"]['complete']["COLLECTION_DATE"].tolist())
+table_explorer = TableFilter()
+color_dict = get_color_dict(df_dict)
+
+# initialize explore tool with complete and ref_id=min(ref_ids)
+ref_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
+all_reference_options = get_all_references(df_dict)
+all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"]['complete'])
+all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"]['complete'])
+all_colored_mutation_options_dict = get_all_frequency_sorted_mutation(
+    df_dict['world_map']['complete'][ref_id], color_dict
 )
-date_slider = DateSlider(df_dict["propertyView"]["COLLECTION_DATE"].tolist())
-table_filter = TableFilter(df_dict["propertyView"], df_dict["variantView"])
-all_reference_options = get_all_references(df_dict["variantView"])
-all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict["propertyView"])
-all_country_options = get_all_frequency_sorted_countries(df_dict["propertyView"])
-all_mutation_options = get_all_frequency_sorted_mutation(
-    world_map.df_all_dates_all_voc, 2, world_map.color_dict
-)
-all_gene_options = get_all_genes_names(df_dict, 2, world_map.color_dict)
+all_gene_options = get_all_gene_dict(df_dict, ref_id, 'complete', color_dict)
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 
@@ -78,7 +80,7 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         get_html_elem_reference_radioitems(
-                                            all_reference_options
+                                            all_reference_options, ref_id, 0
                                         )
                                     ],
                                     width=2,
@@ -122,7 +124,7 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         get_html_elem_dropdown_aa_mutations(
-                                            all_mutation_options
+                                            all_colored_mutation_options_dict
                                         )
                                     ],
                                     width=6,
@@ -133,8 +135,8 @@ tab_explored_tool = html.Div(
                     ],
                 ),
                 html.Hr(),
-                html.Div(create_worldMap_explorer(date_slider)),
-                html.Div(create_table_explorer(table_filter)),
+                html.Div(create_world_map_explorer(date_slider)),
+                html.Div(create_table_explorer(table_explorer)),
             ],
             id="div_elem_standard",
             className="mt-2",
@@ -166,7 +168,7 @@ tab_compare_tool = (
                                     ),
                                     html.Div(
                                         get_html_elem_reference_radioitems(
-                                            all_reference_options, radio_id=1
+                                            all_reference_options, ref_id, radio_id=1
                                         ),
                                         className="mt-1",
                                     ),
@@ -208,7 +210,7 @@ tab_compare_tool = (
                                     ),
                                     html.Div(
                                         get_html_elem_reference_radioitems(
-                                            all_reference_options, radio_id=2
+                                            all_reference_options, ref_id, radio_id=2
                                         ),
                                         className="mt-1",
                                     ),
@@ -392,8 +394,6 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
         column_profile
     ].transform("count")
 
-    # print(len(ouput_df))
-    # ouput_df.to_csv("test.csv")
     # TODO: Check the Drop duplication
     ouput_df.drop_duplicates(
         subset=[
@@ -406,7 +406,6 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
         keep="last",
         inplace=True,
     )
-    # print(len(ouput_df))
     # a = ouput_df[column_profile].unique()
     # logging_radar.debug(a)
     # ouput_df.to_csv("test-after.csv")
@@ -547,7 +546,6 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     hidden_state = {"display": "none"}
 
     if rows is None or len(rows) == 0:
-        print("empty data")
         hidden_state = {"display": "block"}
         fig = go.Figure()
         fig.update_layout(
@@ -734,14 +732,12 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 # This is the EXPLORE TOOL PART
 get_explore_callbacks(
     df_dict,
-    world_map,
     date_slider,
-    table_filter,
-    all_seq_tech_options,
-    world_map.color_dict,
+    color_dict,
+    location_coordinates
 )
 
 # COMPARE PART
-get_compare_callbacks(df_dict, world_map.color_dict)
+get_compare_callbacks(df_dict, color_dict)
 
 del df_dict

@@ -4,6 +4,7 @@ from datetime import timedelta
 import os
 import re
 from re import finditer
+import plotly.express as px
 
 import _pickle as cPickle
 import pandas as pd
@@ -49,6 +50,26 @@ all_ref_dict = {
     "MT903344.1": get_colour_map_gene("MT903344.1"),
     "ON563414.3": get_colour_map_gene("ON563414.3"),
 }
+
+
+def get_color_dict(df_dict):
+    """
+    defined color by mutation
+    color scheme contains 24 different colors, if #mutations>24 use second color scheme with 24 colors
+    more mutations --> color schema starts again (max 48 different colors)
+    wildtype= green, no_mutation (no sequence meets the user selected mutations, dates, location) = grey
+    """
+    color_dict = {}
+    color_schemes = px.colors.qualitative.Dark24
+    reference_ids = set(df_dict["variantView"]["complete"].keys()).union(set(df_dict["variantView"]["partial"].keys()))
+    for k, reference_id in enumerate(list(reference_ids)):
+        # add color per ref (element.symbol for nucleotides)
+        color_dict[reference_id] = px.colors.qualitative.D3[k]
+        for i, (gene, gene_df) in enumerate(df_dict["variantView"]["complete"][reference_id]["cds"].groupby("element.symbol")):
+            j = i % 24
+            color_dict[gene] = color_schemes[j]
+    color_dict["no_gene"] = "grey"
+    return color_dict
 
 
 def get_gene_byNT(reference, mutation="del:136552-136554"):

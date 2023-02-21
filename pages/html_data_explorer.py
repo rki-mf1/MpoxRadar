@@ -1,5 +1,3 @@
-from datetime import date
-
 from dash import dash_table
 from dash import dcc
 from dash import html
@@ -7,7 +5,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 
 
-def create_worldMap_explorer(date_slider):
+def create_world_map_explorer(date_slider):
     """
     contain layout page
     """
@@ -168,8 +166,8 @@ def create_worldMap_explorer(date_slider):
 
 
 def create_table_explorer(tableFilter):
-    df = tableFilter.get_filtered_table()
-    Output_table_standard = dbc.Card(  # Output
+    empty_df = pd.DataFrame(columns=tableFilter.table_columns)
+    Output_table_standard = dbc.Card(
         [
             dbc.Accordion(
                 [
@@ -179,9 +177,9 @@ def create_table_explorer(tableFilter):
                             html.Div(
                                 [
                                     dash_table.DataTable(
-                                        data=df.to_dict("records"),
+                                        data=empty_df.to_dict("records"),
                                         columns=[
-                                            {"name": i, "id": i} for i in df.columns
+                                            {"name": i, "id": i} for i in empty_df.columns
                                         ],
                                         id="table_explorer",
                                         page_current=0,
@@ -211,196 +209,6 @@ def create_table_explorer(tableFilter):
         className="mx-1 my-1",
     )
     return Output_table_standard
-
-
-def create_table_compare(title, table_id):
-    df = pd.DataFrame()
-    Output_table_standard = dbc.Card(  # Output
-        [
-            html.H3(title),
-            dbc.Accordion(
-                [
-                    dbc.AccordionItem(
-                        [
-                            html.Div(
-                                id=f"compare-table-output_{table_id}", children=""
-                            ),
-                            html.Div(
-                                [
-                                    dbc.Spinner(
-                                        dash_table.DataTable(
-                                            data=df.to_dict("records"),
-                                            columns=[
-                                                {"name": i, "id": i} for i in df.columns
-                                            ],
-                                            id=f"table_compare_{table_id}",
-                                            page_current=0,
-                                            page_size=20,
-                                            style_data={
-                                                "whiteSpace": "normal",
-                                                "height": "auto",
-                                                # all three widths are needed
-                                                "minWidth": "300px",
-                                                "width": "300px",
-                                                "maxWidth": "300px",
-                                            },
-                                            style_table={"overflowX": "auto"},
-                                            export_format="csv",
-                                        ),
-                                        color="dark",
-                                        type="grow",
-                                    ),
-                                ]
-                            ),
-                        ],
-                        title="Click to hide/show output:",
-                    ),
-                ]
-            ),
-        ],
-        body=True,
-        className="mx-1 my-1",
-    )
-    return Output_table_standard
-
-
-def get_html_elem_reference_radioitems(reference_options, radio_id=0):
-    checklist_reference = dbc.Card(
-        dbc.CardBody(
-            [
-                dbc.Label("Reference genome: "),
-                dbc.RadioItems(
-                    options=reference_options,
-                    value=2,
-                    id=f"reference_radio_{radio_id}",
-                ),
-            ]
-        )
-    )
-    return checklist_reference
-
-
-def get_html_elem_dropdown_genes(gene_options, g_id=0):
-    checklist_aa_mutations = dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    dbc.Label("Gene: "),
-                    html.Br(),
-                    dbc.Row(
-                        dbc.Spinner(
-                            dcc.Dropdown(
-                                options=gene_options,
-                                value=[c["value"] for c in gene_options],
-                                id=f"gene_dropdown_{g_id}",
-                                # maxHeight=200,  # just height of dropdown not choose option field
-                                optionHeight=35,  # height options in dropdown, not chosen options
-                                multi=True,
-                                searchable=True,
-                            ),
-                            color="dark",
-                            type="grow",
-                        ),
-                    ),
-                ],
-                style={
-                    "overflow-y": "auto",  # without not scrollable, just cut
-                    "maxHeight": 300,
-                    "minHeight": 200,
-                },  # height field
-            ),
-            dbc.CardFooter(
-                dbc.Row(
-                    dcc.Checklist(
-                        id=f"select_all_genes_{g_id}",
-                        options=[{"label": "Select All", "value": 1}],
-                        value=[1],
-                    ),
-                ),
-            ),
-        ]
-    )
-    return checklist_aa_mutations
-
-
-def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
-    checklist_seq_tech = dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    dbc.Label("Sequencing Technology: "),
-                    dbc.Spinner(
-                        dbc.Checklist(
-                            options=seq_tech_options,
-                            value=[
-                                tech_dict["value"] for tech_dict in seq_tech_options
-                            ],
-                            id=f"seq_tech_dropdown_{s_id}",
-                            labelStyle={"display": "block"},
-                            style={
-                                "maxHeight": 200,
-                                "overflowY": "scroll",
-                            },
-                        ),
-                        color="primary",
-                        type="grow",
-                    ),
-                ],
-            ),
-            dbc.CardFooter(
-                dbc.Row(
-                    dcc.Checklist(
-                        id=f"select_all_seq_tech_{s_id}",
-                        options=[{"label": "Select All", "value": 1}],
-                        value=[1],
-                    ),
-                ),
-            ),
-        ]
-    )
-    return checklist_seq_tech
-
-
-# TODO design dropdown
-def get_html_elem_dropdown_countries(countries, c_id=0):
-    checklist_aa_mutations = dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    dbc.Label("Country: "),
-                    html.Br(),
-                    dbc.Spinner(
-                        dcc.Dropdown(
-                            options=countries,
-                            value=[c["value"] for c in countries],
-                            id=f"country_dropdown_{c_id}",
-                            # maxHeight=200,
-                            optionHeight=35,
-                            multi=True,
-                            searchable=True,
-                        ),
-                        color="danger",
-                        type="grow",
-                    ),
-                ],
-                style={
-                    "overflow-y": "auto",  # without not scrollable, just cut
-                    "maxHeight": 300,
-                    "minHeight": 200,
-                },  # height field
-            ),
-            dbc.CardFooter(
-                dbc.Row(
-                    dcc.Checklist(
-                        id=f"select_all_countries_{c_id}",
-                        options=[{"label": "Select All", "value": 1}],
-                        value=[1],
-                    ),
-                ),
-            ),
-        ]
-    )
-    return checklist_aa_mutations
 
 
 def get_html_elem_method_radioitems():
@@ -439,44 +247,6 @@ def get_html_interval(interval=30):
         )
     )
     return interval_card
-
-
-def get_html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
-    checklist_aa_mutations = dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    dbc.Label(title),
-                    html.Br(),
-                    dbc.Spinner(
-                        dcc.Dropdown(
-                            options=mutation_options,
-                            value=[
-                                mut_dict["value"] for mut_dict in mutation_options[0:20]
-                            ],
-                            id=f"mutation_dropdown_{aa_id}",
-                            optionHeight=50,
-                            multi=True,
-                            searchable=True,
-                        ),
-                        color="danger",
-                        type="grow",
-                    ),
-                    html.Br(),
-                ],
-                style={"overflow-y": "auto", "maxHeight": 300, "minHeight": 200},
-            ),
-            dbc.CardFooter(
-                dbc.Row(
-                    dbc.Label(
-                        "Number mutations",
-                        id=f"max_nb_txt_{aa_id}",
-                    ),
-                ),
-            ),
-        ]
-    )
-    return checklist_aa_mutations
 
 
 # TODO : max for input field?
@@ -530,94 +300,3 @@ def get_html_elem_dropdown_aa_mutations(
         )
     )
     return checklist_aa_mutations
-
-
-def get_html_date_picker(d_id):
-    today = date.today()
-    date_picker = dbc.Card(
-        dbc.CardBody(
-            [
-                dbc.Label("Date interval:"),
-                dcc.DatePickerRange(
-                    id=f"date_picker_range_{d_id}",
-                    start_date="2022-01-01",
-                    end_date=today,
-                    min_date_allowed=date(2022, 1, 1),
-                    max_date_allowed=today,
-                    initial_visible_month=date(2022, 1, 1),
-                ),
-            ]
-        )
-    )
-    return date_picker
-
-
-def get_html_aa_nt_radio():
-    item = dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    dbc.Label(
-                        "Compare amino acid  or nucleotide mutations:",
-                        color="primary",
-                    ),
-                    dbc.RadioItems(
-                        options=[
-                            {"label": "Amino Acids", "value": "cds"},
-                            {"label": "Nucleotides", "value": "source"},
-                        ],
-                        value="Amino Acids",
-                        inline=True,
-                        style={
-                            "font-size": 20,
-                            "font-weight": "bold",
-                            "align-itmes": "center",
-                            "textAlign": "center",
-                        },
-                        id="aa_nt_radio",
-                    ),
-                    dbc.Badge(
-                        "Warning: The nucleotide option might take a long time to compute.",
-                        color="warning",
-                        className="me-1",
-                    ),
-                ],
-            ),
-        ],
-    )
-    return item
-
-def get_html_complete_partial_radio(tab):
-    item = dbc.Card(
-        [
-            dbc.CardBody(
-                [
-                    dbc.Label(
-                        "Use all genomes (including partial sequences) or only complete genomes:",
-                        color="primary",
-                    ),
-                    dbc.RadioItems(
-                        options=[
-                            {"label": "Complete Genomes", "value": "complete"},
-                            {"label": "Complete & partial genomes", "value": "partial"},
-                        ],
-                        value="complete",
-                        inline=True,
-                        style={
-                            "font-size": 20,
-                            "font-weight": "bold",
-                            "align-itmes": "center",
-                            "textAlign": "center",
-                        },
-                        id=f"complete_partial_radio_{tab}",
-                    ),
-                    dbc.Badge(
-                        "Warning: The nucleotide option might take a long time to compute.",
-                        color="warning",
-                        className="me-1",
-                    ),
-                ],
-            ),
-        ],
-    )
-    return item
