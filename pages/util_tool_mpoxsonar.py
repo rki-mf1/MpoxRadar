@@ -345,7 +345,7 @@ Output_mpxsonar = [
                                             className="mb-0",
                                         ),
                                         html.P(
-                                            "3. For more flexibility in map rendering, mutations with frequencies less than 10 are filtered out (please download the full result from the table for downstream analysis).",
+                                            "3. For more flexibility in map rendering, some mutations with frequencies less than a certain number are filtered out (please download the full result from the table for downstream analysis).",
                                             className="mb-0",
                                         ),
                                     ],

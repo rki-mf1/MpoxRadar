@@ -605,8 +605,14 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         keep="last",
         inplace=True,
     )
-    # remove mutation case = 1
-    table_df = table_df[table_df["Case"] > 10]
+    size_data = len(table_df)
+    if size_data > 100:
+        # remove mutation case = 1
+        table_df = table_df[table_df["Case"] > 10]
+    else:
+        pass
+        # remove mutation case = 1
+        # table_df = table_df[table_df["Case"] > 1]
     # sort value
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
