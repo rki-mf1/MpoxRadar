@@ -451,23 +451,34 @@ class sonarDBManager:
         >>> dbm.insert_property(1, "LINEAGE", "BA.5")
 
         """
-        sql = (
-            "INSERT INTO sample2property (sample_id, property_id, value_"
-            + self.properties[property_name]["datatype"]
-            + ") VALUES(?, ?, ?)"
-            + " ON DUPLICATE KEY UPDATE value_"
-            + self.properties[property_name]["datatype"]
-            + "=?"
-        )
-        self.cursor.execute(
-            sql,
-            [
-                sample_id,
-                self.properties[property_name]["id"],
-                property_value,
-                property_value,
-            ],
-        )
+        try:
+            sql = (
+                "INSERT INTO sample2property (sample_id, property_id, value_"
+                + self.properties[property_name]["datatype"]
+                + ") VALUES(?, ?, ?)"
+                + " ON DUPLICATE KEY UPDATE value_"
+                + self.properties[property_name]["datatype"]
+                + "=?"
+            )
+            # tmp solution for insert empty date
+            # Incorrect date value: ''
+            if self.properties[property_name]["datatype"] == "date":
+                if property_value == "":
+                    property_value = None
+
+            self.cursor.execute(
+                sql,
+                [
+                    sample_id,
+                    self.properties[property_name]["id"],
+                    property_value,
+                    property_value,
+                ],
+            )
+        except Exception as e:
+            logging.error(e)
+            logging.error(f"Sample ID:'{str(sample_id)}' cannot be processed")
+            sys.exit("If you need an assistance, please contact us.")
 
     def insert_sequence(self, seqhash):
         """
