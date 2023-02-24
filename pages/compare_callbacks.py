@@ -186,8 +186,6 @@ def get_compare_callbacks(  # noqa: C901
             aa_nt_radio,
             complete_partial_radio,
     ):
-        print('triggered')
-
         table_df_1, table_df_2, table_df_3 = create_comparison_tables(df_dict,
                                                                       complete_partial_radio,
                                                                       aa_nt_radio,
@@ -207,7 +205,6 @@ def get_compare_callbacks(  # noqa: C901
                                                                       gene_dropdown_2,
                                                                       mut_value_3
                                                                       )
-
         table_df_1_records = table_df_1.to_dict("records")
         table_df_2_records = table_df_2.to_dict("records")
         table_df_3_records = table_df_3.to_dict("records")

@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime
 
-from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import DateSlider, TableFilter
 
 
 def merge_df(variantView, propertyView):
@@ -66,6 +66,26 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
 
     df_mutations = pd.concat(merged_dfs, ignore_index=True, axis=0)
     return df_mutations
+
+
+def combine_labels_by_sample(df, aa_nt_radio, col):
+    if not df.empty:
+        if aa_nt_radio == "cds":
+            df['variant.label'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
+        df = df.drop(columns=["element.symbol"])
+        df = (
+            df.groupby(
+                col[:-2],
+                dropna=False,
+            )["variant.label"]
+                .apply(lambda x: ",".join([str(y) for y in set(x)]))
+                .reset_index()
+        )
+        if aa_nt_radio == "cds":
+            df = df.rename(columns={"variant.label": "AA_PROFILE"})
+        elif aa_nt_radio == "source":
+            df = df.rename(columns={"variant.label": "NUC_PROFILE"})
+    return df
 
 
 def create_comparison_tables(df_dict,
@@ -156,8 +176,8 @@ def create_comparison_tables(df_dict,
 
     table_df_3 = merge_tables(variantView_both, propertyView_both)[table_columns]
 
-    table_df_1 = table_df_1.rename(columns={"element.symbol": "gene.symbol"})
-    table_df_2 = table_df_2.rename(columns={"element.symbol": "gene.symbol"})
-    table_df_3 = table_df_3.rename(columns={"element.symbol": "gene.symbol"})
+    table_df_1 = combine_labels_by_sample(table_df_1, aa_nt_radio, table_columns)
+    table_df_2 = combine_labels_by_sample(table_df_2, aa_nt_radio, table_columns)
+    table_df_3 = combine_labels_by_sample(table_df_3, aa_nt_radio, table_columns)
 
     return table_df_1, table_df_2, table_df_3

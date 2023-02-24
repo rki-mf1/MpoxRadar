@@ -122,6 +122,7 @@ class TableFilter(object):
                          on="sample.id")[self.merged_columns])
         df = pd.concat(table_dfs, ignore_index=True, axis=0)
         if not df.empty:
+            #df['variant.label'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
             df = (
                 df.groupby(
                     self.merged_columns[:-1],

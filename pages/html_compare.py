@@ -1,60 +1,7 @@
-from dash import dash_table
 from dash import html
 from dash import dcc
 import dash_bootstrap_components as dbc
-import pandas as pd
 from datetime import date
-
-
-def html_table_compare(title, table_id):
-    df = pd.DataFrame()
-    Output_table_standard = dbc.Card(
-        [
-            html.H3(title),
-            dbc.Accordion(
-                [
-                    dbc.AccordionItem(
-                        [
-                            html.Div(
-                                id=f"compare-table-output_{table_id}", children=""
-                            ),
-                            html.Div(
-                                [
-                                    dbc.Spinner(
-                                        dash_table.DataTable(
-                                            data=df.to_dict("records"),
-                                            columns=[
-                                                {"name": i, "id": i} for i in df.columns
-                                            ],
-                                            id=f"table_compare_{table_id}",
-                                            page_current=0,
-                                            page_size=20,
-                                            style_data={
-                                                "whiteSpace": "normal",
-                                                "height": "auto",
-                                                # all three widths are needed
-                                                "minWidth": "300px",
-                                                "width": "300px",
-                                                "maxWidth": "300px",
-                                            },
-                                            style_table={"overflowX": "auto"},
-                                            export_format="csv",
-                                        ),
-                                        color="dark",
-                                        type="grow",
-                                    ),
-                                ]
-                            ),
-                        ],
-                        title="Click to hide/show output:",
-                    ),
-                ]
-            ),
-        ],
-        body=True,
-        className="mx-1 my-1",
-    )
-    return Output_table_standard
 
 
 def html_date_picker(d_id):

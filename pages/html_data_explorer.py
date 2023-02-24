@@ -1,8 +1,6 @@
-from dash import dash_table
 from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
-import pandas as pd
 
 
 def create_world_map_explorer(date_slider):
@@ -165,50 +163,7 @@ def create_world_map_explorer(date_slider):
     return map_slider_and_detail_plots
 
 
-def create_table_explorer(tableFilter):
-    empty_df = pd.DataFrame(columns=tableFilter.table_columns)
-    Output_table_standard = dbc.Card(
-        [
-            dbc.Accordion(
-                [
-                    dbc.AccordionItem(
-                        [
-                            html.Div(id="filter-table-output", children=""),
-                            html.Div(
-                                [
-                                    dash_table.DataTable(
-                                        data=empty_df.to_dict("records"),
-                                        columns=[
-                                            {"name": i, "id": i} for i in empty_df.columns
-                                        ],
-                                        id="table_explorer",
-                                        page_current=0,
-                                        page_size=5,
-                                        style_data={
-                                            "whiteSpace": "normal",
-                                            "height": "auto",
-                                            "lineHeight": "15px",
-                                            # all three widths are needed
-                                            "minWidth": "50px",
-                                            "width": "400px",
-                                            "maxWidth": "750px",
-                                        },
-                                        style_cell={"fontSize": 12},
-                                        style_table={"overflowX": "auto"},
-                                        export_format="csv",
-                                    ),
-                                ]
-                            ),
-                        ],
-                        title="Click to hide/show output:",
-                    ),
-                ]
-            ),
-        ],
-        body=True,
-        className="mx-1 my-1",
-    )
-    return Output_table_standard
+
 
 
 def html_elem_method_radioitems():

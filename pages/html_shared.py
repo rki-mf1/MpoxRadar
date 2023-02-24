@@ -1,7 +1,7 @@
 from dash import dcc
 from dash import html
+from dash import dash_table
 import dash_bootstrap_components as dbc
-
 
 def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
     checklist_reference = dbc.Card(
@@ -192,7 +192,7 @@ def html_complete_partial_radio(tab):
                     dbc.RadioItems(
                         options=[
                             {"label": "Complete Genomes", "value": "complete"},
-                            {"label": "Complete & partial genomes", "value": "partial"},
+                            {"label": "Complete & Partial Genomes", "value": "partial"},
                         ],
                         value="complete",
                         inline=True,
@@ -228,3 +228,49 @@ def html_disclaimer_seq_errors(tool):
                         id=f"disclaimer_mutation_{tool}"
                     )
     return disclaimer
+
+
+def html_table(df, title, tool):
+    Output_table_standard = dbc.Card(
+        [
+            html.H3(title),
+            dbc.Accordion(
+                [
+                    dbc.AccordionItem(
+                        [
+                            html.Div(id=f"filter-table-output_{tool}", children=""),
+                            html.Div(
+                                [
+                                    dash_table.DataTable(
+                                        data=df.to_dict("records"),
+                                        columns=[
+                                            {"name": i, "id": i} for i in df.columns
+                                        ],
+                                        id=f"table_{tool}",
+                                        page_current=0,
+                                        page_size=5,
+                                        style_data={
+                                            "whiteSpace": "normal",
+                                            "height": "auto",
+                                            "lineHeight": "15px",
+                                            # all three widths are needed
+                                            "minWidth": "50px",
+                                            "width": "400px",
+                                            "maxWidth": "750px",
+                                        },
+                                        style_cell={"fontSize": 12},
+                                        style_table={"overflowX": "auto"},
+                                        export_format="csv",
+                                    ),
+                                ]
+                            ),
+                        ],
+                        title="Click to hide/show output:",
+                    ),
+                ]
+            ),
+        ],
+        body=True,
+        className="mx-1 my-1",
+    )
+    return Output_table_standard

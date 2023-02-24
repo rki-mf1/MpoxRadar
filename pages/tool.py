@@ -18,9 +18,10 @@ import plotly.graph_objects as go
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
-from pages.html_compare import html_table_compare, html_compare_button
-from pages.html_shared import html_complete_partial_radio, html_disclaimer_seq_errors
-from pages.html_data_explorer import create_table_explorer
+from pages.html_compare import html_compare_button
+from pages.html_shared import html_complete_partial_radio
+from pages.html_shared import html_disclaimer_seq_errors
+from pages.html_shared import html_table
 from pages.html_data_explorer import create_world_map_explorer
 from pages.html_compare import html_aa_nt_radio
 from pages.html_compare import html_date_picker
@@ -66,6 +67,7 @@ all_colored_mutation_options_dict = get_all_frequency_sorted_mutation(
 all_gene_options = get_all_gene_dict(df_dict, ref_id, 'complete', color_dict)
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
+tableFilter = TableFilter()
 
 tab_explored_tool = html.Div(
     [
@@ -137,7 +139,8 @@ tab_explored_tool = html.Div(
                 html_disclaimer_seq_errors('explorer'),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
-                html.Div(create_table_explorer(table_explorer)),
+                html.Div(html_table(pd.DataFrame(columns=tableFilter.table_columns),
+                                    "Properties of filtered samples.", 'explorer')),
             ],
             id="div_elem_standard",
             className="mt-2",
@@ -288,15 +291,15 @@ tab_compare_tool = (
                     ),
                     dbc.Row(
                         [
-                            html_table_compare(
-                                title="Unique for left selection", table_id=1
-                            ),
-                            html_table_compare(
-                                title="Unique for right selection", table_id=2
-                            ),
-                            html_table_compare(
-                                title="In both selection", table_id=3
-                            ),
+                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                                       title="Unique for left selection", tool="compare_1"
+                                       ),
+                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                                       title="Unique for right selection", tool="compare_2"
+                                       ),
+                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                                       title="In both selection", tool="compare_3"
+                                       ),
                         ],
                         className="mt-3",
                     ),
@@ -380,8 +383,8 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
     # convert to list of string.
     ouput_df[column_profile] = (
         ouput_df[column_profile]
-        .str.split(",")
-        .map(lambda elements: [e.strip() for e in elements])
+            .str.split(",")
+            .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     ouput_df = ouput_df.explode(column_profile)
@@ -575,8 +578,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     # convert to list of string.
     table_df[column_profile] = (
         table_df[column_profile]
-        .str.split(",")
-        .map(lambda elements: [e.strip() for e in elements])
+            .str.split(",")
+            .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     table_df = table_df.explode(column_profile)
@@ -602,7 +605,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
     table_df["mutation_list"] = (
-        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+            table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
     )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(

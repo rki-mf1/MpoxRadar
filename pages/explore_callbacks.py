@@ -498,7 +498,7 @@ def get_explore_callbacks(  # noqa: C901
             seq_tech_list,
             reference_id,
             date_list,
-            countries
+            countries,
         )
         return table_df.to_dict("records"), [
             {"name": i, "id": i} for i in table_df.columns
