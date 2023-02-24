@@ -88,6 +88,10 @@ class TableFilter(object):
         return variantView[variantView["sample.id"].isin(samples)]
                     #       & variantView["variant.label"].isin(mutation_list)]
 
+    def _combine_gene_and_mutation_label(self, df):
+        df['variant.label'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
+        return df
+
     # TODO no filtering for mutations/genes possible with current DB structure
     def get_filtered_table(
             self,
@@ -100,11 +104,11 @@ class TableFilter(object):
             #     gene_list=None,
             countries,
     ):
-        variantView_dfs = [df_dict["variantView"]['complete'][reference_id]['cds'],
-                           df_dict["variantView"]['complete'][reference_id]['source']]
+        variantView_dfs = [df_dict["variantView"]['complete'][reference_id]['source'],
+                           self._combine_gene_and_mutation_label(df_dict["variantView"]['complete'][reference_id]['cds'])]
         propertyView_dfs = [df_dict["propertyView"]["complete"]]
         if complete_partial_radio == 'partial':
-            variantView_dfs.append(df_dict["variantView"]['partial'][reference_id]['cds'])
+            variantView_dfs.append(self._combine_gene_and_mutation_label(df_dict["variantView"]['partial'][reference_id]['cds']))
             variantView_dfs.append(df_dict["variantView"]['partial'][reference_id]['source'])
             propertyView_dfs.append(df_dict["propertyView"]["partial"])
 
@@ -113,6 +117,8 @@ class TableFilter(object):
         )
         variantView_dfs = [self._get_filteres_variants(variantView, samples) for variantView in
                            variantView_dfs]
+
+
         table_dfs = []
         for i, df in enumerate(variantView_dfs):
             j = 0 if i in [0, 1] else 1
@@ -122,7 +128,6 @@ class TableFilter(object):
                          on="sample.id")[self.merged_columns])
         df = pd.concat(table_dfs, ignore_index=True, axis=0)
         if not df.empty:
-            #df['variant.label'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
             df = (
                 df.groupby(
                     self.merged_columns[:-1],
