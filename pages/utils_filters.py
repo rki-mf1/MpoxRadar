@@ -40,48 +40,6 @@ def get_all_frequency_sorted_seqtech(df_dict):
     return sorted_seqtech_dict
 
 
-def get_all_frequency_sorted_countries(df_dict):
-    propertyView = pd.concat([df_dict['propertyView']['complete'], df_dict['propertyView']['partial']],
-                             ignore_index=True, axis=0)
-    df_grouped_by_country = (
-        propertyView[["sample.id", "COUNTRY"]]
-            .groupby(["COUNTRY"])
-            .count()
-            .reset_index()
-            .sort_values(["sample.id"], ascending=False)
-    )
-    sorted_countries = df_grouped_by_country["COUNTRY"].tolist()
-    sorted_country_dict = [
-        {"label": mut, "value": mut, "disabled": False} for mut in sorted_countries
-    ]
-    return sorted_country_dict
-
-
-def get_all_frequency_sorted_mutation(world_df, color_dict):
-    df = world_df[
-        ["variant.label", "element.symbol", "number_sequences"]
-    ]
-    df_grouped_by_mutation = (
-        df.groupby(["variant.label", "element.symbol"]).sum().reset_index()
-    )
-    df_grouped_by_mutation = df_grouped_by_mutation.sort_values(
-        ["number_sequences"], ascending=False
-    )
-    sorted_mutations_dict = [
-        {
-            "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),
-            "value": gene_mut[1],
-        }
-        for gene_mut in list(
-            zip(
-                df_grouped_by_mutation["element.symbol"],
-                df_grouped_by_mutation["variant.label"],
-            )
-        )
-    ]
-    return sorted_mutations_dict
-
-
 # TODO error if difference between complete and partial
 def get_all_references(df_dict):
     ref_ids = sorted(list(df_dict["variantView"]['complete'].keys()))

@@ -36,8 +36,9 @@ from pages.html_data_explorer import html_interval
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
-from pages.utils_filters import get_all_frequency_sorted_countries
-from pages.utils_filters import get_all_frequency_sorted_mutation
+from pages.utils_filters import  get_frequency_sorted_seq_techs_by_filters
+from pages.utils_filters import  get_all_frequency_sorted_countries_by_filters
+from pages.utils_filters import  get_frequency_sorted_mutation_by_filters
 from pages.utils_filters import get_all_frequency_sorted_seqtech
 from pages.utils_filters import get_all_gene_dict
 from pages.utils_filters import get_all_references
@@ -56,15 +57,40 @@ date_slider = DateSlider(df_dict["propertyView"]['complete']["COLLECTION_DATE"].
 table_explorer = TableFilter()
 color_dict = get_color_dict(df_dict)
 
-# initialize explore tool with complete and ref_id=min(ref_ids)
-ref_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
+# initialize explore tool
+start_cond_ref_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
+start_cond_complete = "complete"
+start_cond_aa_nt = "cds"
 all_reference_options = get_all_references(df_dict)
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict)
-all_country_options = get_all_frequency_sorted_countries(df_dict)
-all_colored_mutation_options_dict = get_all_frequency_sorted_mutation(
-    df_dict['world_map']['complete'][ref_id], color_dict
+start_all_gene_dict = get_all_gene_dict(df_dict, start_cond_ref_id, start_cond_complete, color_dict)
+start_all_gene_value = [s['value'] for s in start_all_gene_dict]
+start_seq_tech_dict = get_frequency_sorted_seq_techs_by_filters(
+    df_dict,
+    all_seq_tech_options,
+    start_cond_complete,
+    start_cond_ref_id,
+    start_all_gene_value,
+    start_cond_aa_nt
 )
-all_gene_options = get_all_gene_dict(df_dict, ref_id, 'complete', color_dict)
+start_seq_tech_values = [s['value'] for s in start_seq_tech_dict if not s['disabled']]
+start_country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
+                                                                      start_seq_tech_values,
+                                                                      start_cond_complete,
+                                                                      start_cond_ref_id,
+                                                                      start_all_gene_value,
+                                                                      start_cond_aa_nt)
+
+start_colored_mutation_options_dict = get_frequency_sorted_mutation_by_filters(
+    df_dict,
+    start_seq_tech_values,
+    start_country_options,
+    start_all_gene_value,
+    start_cond_complete,
+    start_cond_ref_id,
+    color_dict
+)
+
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 tableFilter = TableFilter()
@@ -82,19 +108,19 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         html_elem_reference_radioitems(
-                                            all_reference_options, ref_id, 0
+                                            all_reference_options, start_cond_ref_id, 0
                                         )
                                     ],
                                     width=2,
                                 ),
                                 dbc.Col(
-                                    [html_elem_dropdown_genes(all_gene_options)],
+                                    [html_elem_dropdown_genes(start_all_gene_dict)],
                                     width=4,
                                 ),
                                 dbc.Col(
                                     [
                                         html_elem_checklist_seq_tech(
-                                            all_seq_tech_options
+                                            start_seq_tech_dict, 0
                                         )
                                     ],
                                     width=3,
@@ -102,7 +128,7 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         html_elem_dropdown_countries(
-                                            all_country_options
+                                            start_country_options
                                         )
                                     ],
                                     width=3,
@@ -126,7 +152,7 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         html_elem_dropdown_aa_mutations(
-                                            all_colored_mutation_options_dict
+                                            start_colored_mutation_options_dict
                                         )
                                     ],
                                     width=6,
@@ -172,25 +198,25 @@ tab_compare_tool = (
                                     ),
                                     html.Div(
                                         html_elem_reference_radioitems(
-                                            all_reference_options, ref_id, radio_id=1
+                                            all_reference_options, start_cond_ref_id, radio_id=1
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_genes(
-                                            all_gene_options, g_id=1
+                                            start_all_gene_dict, g_id=1
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_checklist_seq_tech(
-                                            all_seq_tech_options, s_id=1
+                                            start_seq_tech_dict, s_id=1
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_countries(
-                                            all_country_options, c_id=1
+                                            start_country_options, c_id=1
                                         ),
                                         className="mt-1",
                                     ),
@@ -214,25 +240,25 @@ tab_compare_tool = (
                                     ),
                                     html.Div(
                                         html_elem_reference_radioitems(
-                                            all_reference_options, ref_id, radio_id=2
+                                            all_reference_options, start_cond_ref_id, radio_id=2
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_genes(
-                                            all_gene_options, g_id=2
+                                            start_all_gene_dict, g_id=2
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_checklist_seq_tech(
-                                            all_seq_tech_options, s_id=2
+                                            start_seq_tech_dict, s_id=2
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_countries(
-                                            all_country_options, c_id=2
+                                            start_country_options, c_id=2
                                         ),
                                         className="mt-1",
                                     ),

@@ -30,7 +30,7 @@ def html_elem_dropdown_genes(gene_options, g_id=0):
                         dbc.Spinner(
                             dcc.Dropdown(
                                 options=gene_options,
-                                value=[c["value"] for c in gene_options],
+                                value=[g['value'] for g in gene_options],
                                 id=f"gene_dropdown_{g_id}",
                                 # maxHeight=200,  # just height of dropdown not choose option field
                                 optionHeight=35,  # height options in dropdown, not chosen options
@@ -109,9 +109,7 @@ def html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
                     dbc.Spinner(
                         dbc.Checklist(
                             options=seq_tech_options,
-                            value=[
-                                tech_dict["value"] for tech_dict in seq_tech_options
-                            ],
+                            value=[s['value'] for s in seq_tech_options if not s['disabled']],
                             id=f"seq_tech_dropdown_{s_id}",
                             labelStyle={"display": "block"},
                             style={
@@ -149,7 +147,7 @@ def html_elem_dropdown_countries(countries, c_id=0):
                     dbc.Spinner(
                         dcc.Dropdown(
                             options=countries,
-                            value=[c["value"] for c in countries],
+                            value=[c['value'] for c in countries if not c['disabled']],
                             id=f"country_dropdown_{c_id}",
                             # maxHeight=200,
                             optionHeight=35,
