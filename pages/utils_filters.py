@@ -2,10 +2,26 @@ from dash import html
 import pandas as pd
 
 
-# from tabulate import tabulate
+def filter_propertyView_2(df, seqtech_value, sample_id_set):
+    return df[
+        df["SEQ_TECH"].isin(seqtech_value)
+        & df["sample.id"].isin(sample_id_set)]
 
 
-def get_all_frequency_sorted_seqtech(propertyView):
+def filter_propertyView_3(df, seqtech_value, country_value):
+    return df[
+        (df["SEQ_TECH"].isin(seqtech_value))
+        & (df["COUNTRY"].isin(country_value))
+        ]
+
+
+def filter_variantView(df, gene_value):
+    return df[df["element.symbol"].isin(gene_value)]
+
+
+def get_all_frequency_sorted_seqtech(df_dict):
+    propertyView = pd.concat([df_dict['propertyView']['complete'], df_dict['propertyView']['partial']],
+                             ignore_index=True, axis=0)
     df_grouped_by_seqtech = (
         propertyView[["sample.id", "SEQ_TECH"]]
             .groupby(["SEQ_TECH"])
@@ -22,6 +38,23 @@ def get_all_frequency_sorted_seqtech(propertyView):
         for seqtech in sorted_seqtech
     ]
     return sorted_seqtech_dict
+
+
+def get_all_frequency_sorted_countries(df_dict):
+    propertyView = pd.concat([df_dict['propertyView']['complete'], df_dict['propertyView']['partial']],
+                             ignore_index=True, axis=0)
+    df_grouped_by_country = (
+        propertyView[["sample.id", "COUNTRY"]]
+            .groupby(["COUNTRY"])
+            .count()
+            .reset_index()
+            .sort_values(["sample.id"], ascending=False)
+    )
+    sorted_countries = df_grouped_by_country["COUNTRY"].tolist()
+    sorted_country_dict = [
+        {"label": mut, "value": mut, "disabled": False} for mut in sorted_countries
+    ]
+    return sorted_country_dict
 
 
 def get_all_frequency_sorted_mutation(world_df, color_dict):
@@ -57,19 +90,47 @@ def get_all_references(df_dict):
     return references
 
 
-def get_all_frequency_sorted_countries(propertyView):
+def get_all_frequency_sorted_countries_by_filters(df_dict,
+                                                  seqtech_value,
+                                                  complete_partial_radio,
+                                                  reference_value,
+                                                  gene_value,
+                                                  aa_nt='cds'):
+    variantView = df_dict['variantView']['complete'][reference_value][aa_nt]
+    if aa_nt == 'cds':
+        sample_id_set = set(variantView[variantView["element.symbol"].isin(gene_value)]["sample.id"])
+    else:
+        sample_id_set = set(variantView["sample.id"])
+    filtered_propertyView = filter_propertyView_2(
+        df_dict['propertyView']['complete'],
+        seqtech_value,
+        sample_id_set
+    )
+    if complete_partial_radio == 'partial':
+        variantViewP = df_dict['variantView']['partial'][reference_value][aa_nt]
+        if aa_nt == 'cds':
+            sample_id_set = sample_id_set.union(
+                set(variantViewP[variantViewP["element.symbol"].isin(gene_value)]["sample.id"]))
+        else:
+            sample_id_set = sample_id_set.union(set(variantViewP["sample.id"]))
+        filtered_propertyView2 = filter_propertyView_2(df_dict['propertyView']['partial'],
+                                                       seqtech_value,
+                                                       sample_id_set
+                                                       )
+        filtered_propertyView = pd.concat([filtered_propertyView,
+                                           filtered_propertyView2],
+                                          ignore_index=True, axis=0)
     df_grouped_by_country = (
-        propertyView[["sample.id", "COUNTRY"]]
-            .groupby(["COUNTRY"])
+        filtered_propertyView.groupby(["COUNTRY"])
             .count()
             .reset_index()
             .sort_values(["sample.id"], ascending=False)
     )
     sorted_countries = df_grouped_by_country["COUNTRY"].tolist()
-    sorted_country_dict = [
-        {"label": mut, "value": mut, "disabled": False} for mut in sorted_countries
+    country_options = [
+        {"label": c, "value": c, "disabled": False} for c in sorted_countries
     ]
-    return sorted_country_dict
+    return country_options
 
 
 def get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_dict):
@@ -82,32 +143,6 @@ def get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_di
         for gene in gene_list
     ]
     return gene_dict
-
-
-def filter_propertyView(df, seqtech_value, country_value, date_list):
-    return [df[
-                (df["SEQ_TECH"].isin(seqtech_value))
-                & (df["COUNTRY"].isin(country_value))
-                & (df["COLLECTION_DATE"].isin(date_list))
-                ]
-            ]
-
-
-def filter_propertyView_2(df, seqtech_value, sample_id_set):
-    return df[
-        df["SEQ_TECH"].isin(seqtech_value)
-        & df["sample.id"].isin(sample_id_set)]
-
-
-def filter_propertyView_3(df, seqtech_value, country_value):
-    return df[
-                (df["SEQ_TECH"].isin(seqtech_value))
-                & (df["COUNTRY"].isin(country_value))
-                ]
-
-
-def filter_variantView(df, gene_value):
-    return df[df["element.symbol"].isin(gene_value)]
 
 
 def get_frequency_sorted_mutation_by_filters(
@@ -184,60 +219,28 @@ def get_frequency_sorted_mutation_by_df(df, color_dict, mut_type="cds"):
     return sorted_mutations_dict
 
 
-def get_mutations_by_filters(variantView_dfs_1, propertyView_dfs):
-    merged_dfs = []
-    for variantView_df, propertyView_df in zip(variantView_dfs_1, propertyView_dfs):
-        merged_dfs.append(pd.merge(
-            variantView_df, propertyView_df, how="inner", on="sample.id"
-        )[["sample.id", "variant.label", "element.symbol"]])
-    return merged_dfs
-
-
-def get_all_frequency_sorted_countries_by_filters(df_dict,
-                                                  seqtech_value,
-                                                  country_options,
-                                                  complete_partial_radio,
-                                                  reference_value):
-    sample_id_set = set(df_dict['variantView']['complete'][reference_value]['cds']["sample.id"])
-    filtered_propertyView = filter_propertyView_2(df_dict['propertyView']['complete'], seqtech_value, sample_id_set)
-    if complete_partial_radio == 'partial':
-        sample_id_set = sample_id_set.union(set(df_dict['variantView']['partial'][reference_value]['cds']["sample.id"]))
-        filtered_propertyView2 = filter_propertyView_2(df_dict['propertyView']['complete'], seqtech_value,
-                                                       sample_id_set)
-        filtered_propertyView = pd.concat([filtered_propertyView,
-                                           filtered_propertyView2],
-                                          ignore_index=True, axis=0)
-
-    df_grouped_by_country = (
-        filtered_propertyView.groupby(["COUNTRY"])
-            .count()
-            .reset_index()
-            .sort_values(["sample.id"], ascending=False)
-    )
-    sorted_countries = df_grouped_by_country["COUNTRY"].tolist()
-    not_in_list = [
-        c["value"] for c in country_options if c["value"] not in sorted_countries
-    ]
-    sorted_country_dict = [
-        {"label": c, "value": c, "disabled": False} for c in sorted_countries
-    ]
-    sorted_country_dict.extend(
-        [{"label": c, "value": c, "disabled": True} for c in not_in_list]
-    )
-    return sorted_country_dict
-
-
 def get_frequency_sorted_seq_techs_by_filters(
-        df_dict, tech_options, complete_partial_radio, reference_value
+        df_dict,
+        tech_options,
+        complete_partial_radio,
+        reference_value,
+        gene_value,
+        aa_nt_radio='cds'
 ):
+    variantView = df_dict['variantView']['complete'][reference_value][aa_nt_radio]
+    if aa_nt_radio == 'cds':
+        variantView = variantView[variantView["element.symbol"].isin(gene_value)]
     df = pd.merge(
-        df_dict['variantView']['complete'][reference_value]['cds']
+        variantView
         , df_dict["propertyView"]['complete'],
         how="inner",
         on="sample.id")[["sample.id", "SEQ_TECH"]]
     if complete_partial_radio == 'partial':
+        variantView2 = df_dict['variantView']['partial'][reference_value][aa_nt_radio]
+        if aa_nt_radio == 'cds':
+            variantView2 = variantView2[variantView2["element.symbol"].isin(gene_value)]
         df2 = pd.merge(
-            df_dict['variantView']['partial'][reference_value]['cds']
+            variantView2
             , df_dict["propertyView"]['partial'],
             how="inner",
             on="sample.id")[["sample.id", "SEQ_TECH"]]
@@ -284,21 +287,6 @@ def actualize_filters(
         country_value,
         seq_tech_value
 ):
-    variantView_dfs = []
-    if triggered_id == "aa_nt_radio":
-        variantView_dfs.append(df_dict["variantView"]['complete'][reference_value][aa_nt_radio])
-        if complete_partial_radio == 'partial':
-            variantView_dfs.append(df_dict["variantView"]['partial'][reference_value][aa_nt_radio])
-
-        if aa_nt_radio == "cds":
-            gene_options = get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_dict)
-            gene_value = [i["value"] for i in gene_options]
-        elif aa_nt_radio == "source":
-            gene_options = [
-                {"value": 0, "label": "no_gene_options_for_nucleotides"}
-            ]
-            gene_value = []
-
     if triggered_id.startswith("select_all_genes"):
         if len(select_all_genes) == 1:
             gene_value = [i["value"] for i in gene_options]
@@ -311,40 +299,45 @@ def actualize_filters(
         elif len(select_all_countries) == 0:
             country_value = []
 
-    elif triggered_id.startswith("elect_all_seq_tech"):
+    elif triggered_id.startswith("select_all_seq_tech"):
         if len(select_all_seq_techs) == 1:
             seq_tech_value = [i["value"] for i in seq_tech_options]
         elif len(select_all_seq_techs) == 0:
             seq_tech_value = []
-    else:
-        variantView_dfs.append(df_dict["variantView"]['complete'][reference_value][aa_nt_radio])
-        propertyView = df_dict["propertyView"]['complete']
-        if complete_partial_radio == 'partial':
-            variantView_dfs.append(df_dict["variantView"]['partial'][reference_value][aa_nt_radio])
-            propertyView = pd.concat([propertyView, df_dict["propertyView"]['partial']],
-                                     ignore_index=True, axis=0)
 
+    # new country option
+    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"] \
+            or triggered_id.startswith(("select_all_seq_tech", "select_all_genes", "gene_dropdown", "seq_tech_dropdown")):
+        country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
+                                                                        seq_tech_value,
+                                                                        complete_partial_radio,
+                                                                        reference_value,
+                                                                        gene_value,
+                                                                        aa_nt_radio)
+        country_value = [c["value"] for c in country_options]
+
+    # new gene option
+    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"]:
         if aa_nt_radio == "cds":
             gene_options = get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_dict)
+            gene_value = [i["value"] for i in gene_options]
         elif aa_nt_radio == "source":
             gene_options = [
                 {"value": 0, "label": "no_gene_options_for_nucleotides"}
             ]
+            gene_value = []
 
-        gene_value = [g["value"] for g in gene_options]
-
-        country_options = get_all_frequency_sorted_countries(
-            propertyView
+    # new seq tech option
+    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"] \
+            or triggered_id.startswith(("gene_dropdown", "select_all_genes")):
+        seq_tech_options = get_frequency_sorted_seq_techs_by_filters(
+            df_dict,
+            seq_tech_options,
+            complete_partial_radio,
+            reference_value,
+            gene_value,
+            aa_nt_radio
         )
-        country_value = [c["value"] for c in country_options]
-
-        seq_tech_options = get_all_frequency_sorted_seqtech(propertyView)
         seq_tech_value = [s["value"] for s in seq_tech_options]
-    return (
-        gene_options,
-        gene_value,
-        country_options,
-        country_value,
-        seq_tech_options,
-        seq_tech_value,
-    )
+
+    return gene_options, gene_value, country_options, country_value, seq_tech_options, seq_tech_value,

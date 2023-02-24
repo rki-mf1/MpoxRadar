@@ -1,15 +1,17 @@
-import dash
 from dash import callback
 from dash import Input
 from dash import Output
 from dash import State
+from dash import ctx
 from dash.exceptions import PreventUpdate
 
-from pages.utils_explorer_filter import get_all_frequency_sorted_countries_by_filters, get_all_frequency_sorted_seqtech
-from pages.utils_explorer_filter import get_all_gene_dict
-from pages.utils_explorer_filter import get_frequency_sorted_mutation_by_filters
-from pages.utils_explorer_filter import get_frequency_sorted_seq_techs_by_filters
-from pages.utils_worldMap_explorer import DateSlider, WorldMap, TableFilter
+from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
+from pages.utils_filters import get_all_gene_dict
+from pages.utils_filters import get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
+from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import WorldMap
+from pages.utils_worldMap_explorer import TableFilter
 
 
 # This is the EXPLORE TOOL PART
@@ -50,7 +52,7 @@ def get_explore_callbacks(  # noqa: C901
             mut_options,
     ):
         # TODO now return top x mut without checking for mutations with same number
-        if dash.ctx.triggered_id == "select_x_frequent_mut_0":
+        if ctx.triggered_id == "select_x_frequent_mut_0":
             mut_value = [i["value"] for i in mut_options[0:select_x_mut]]
             max_select = len(mut_options)
 
@@ -97,15 +99,21 @@ def get_explore_callbacks(  # noqa: C901
     )
     def actualize_gene_filters(reference_value, select_all_genes, complete_partial_radio, gene_options):
         """
-        gene --> mut
+        gene_filter actualization triggered by: complete_partial_radio, reference_value (select all)
+        changed gene options influence mutation options
         """
-        if dash.ctx.triggered_id == "select_all_genes_0":
+        if ctx.triggered_id == "select_all_genes_0":
             if len(select_all_genes) == 1:
                 gene_value = [i["value"] for i in gene_options]
             elif len(select_all_genes) == 0:
                 gene_value = []
         else:
-            gene_options = get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_dict)
+            gene_options = get_all_gene_dict(
+                df_dict,
+                reference_value,
+                complete_partial_radio,
+                color_dict
+            )
             gene_value = [i["value"] for i in gene_options]
         return gene_options, gene_value
 
@@ -118,6 +126,7 @@ def get_explore_callbacks(  # noqa: C901
         ],
         [
             Input("reference_radio_0", "value"),
+            Input("gene_dropdown_0", "value"),
             Input("seq_tech_dropdown_0", "value"),
             Input("country_dropdown_0", "value"),
             Input("select_all_seq_tech_0", "value"),
@@ -132,6 +141,7 @@ def get_explore_callbacks(  # noqa: C901
     )
     def actualize_seqtech_and_country_filters(
             reference_value,
+            gene_value,
             seqtech_value,
             country_value,
             select_all_tech,
@@ -144,14 +154,14 @@ def get_explore_callbacks(  # noqa: C901
         seqtech changes mut & country filter; is changed by ref
         country changes mut filter; is changed by ref and seqtech (keep prior country selection)
         """
-        if dash.ctx.triggered_id == "select_all_seq_tech_0":
+        if ctx.triggered_id == "select_all_seq_tech_0":
             if len(select_all_tech) == 1:
                 seqtech_value = [
                     i["value"] for i in tech_options if not i["disabled"]
                 ]
             elif len(select_all_tech) == 0:
                 seqtech_value = []
-        elif dash.ctx.triggered_id == "select_all_countries_0":
+        elif ctx.triggered_id == "select_all_countries_0":
             if len(select_all_countries) == 1:
                 country_value = [
                     i["value"] for i in country_options if not i["disabled"]
@@ -163,7 +173,7 @@ def get_explore_callbacks(  # noqa: C901
         else:
             # seq tech
             tech_options = get_frequency_sorted_seq_techs_by_filters(
-                df_dict, tech_options, complete_partial_radio, reference_value
+                df_dict, tech_options, complete_partial_radio, reference_value, gene_value, 'cds'
             )
             seqtech_value = [
                 tech
@@ -174,9 +184,10 @@ def get_explore_callbacks(  # noqa: C901
             country_options = get_all_frequency_sorted_countries_by_filters(
                 df_dict,
                 seqtech_value,
-                country_options,
                 complete_partial_radio,
-                reference_value
+                reference_value,
+                gene_value,
+                "cds"
             )
             country_value = [
                 c["value"]
@@ -258,7 +269,7 @@ def get_explore_callbacks(  # noqa: C901
         if interval is None:
             interval = 0
         # if interval changed or slider moved:
-        if dash.ctx.triggered_id in ["selected_interval", "date_slider"]:
+        if ctx.triggered_id in ["selected_interval", "date_slider"]:
             if not drag_value:
                 return slider_value
             if len(drag_value) == 2:
@@ -280,7 +291,7 @@ def get_explore_callbacks(  # noqa: C901
             else:
                 return slider_value
         # if play button starts auto_stepper
-        if dash.ctx.triggered_id == "auto_stepper":
+        if ctx.triggered_id == "auto_stepper":
             if n_intervals == 0:
                 # raise PreventUpdate
                 return slider_value
@@ -326,7 +337,7 @@ def get_explore_callbacks(  # noqa: C901
             interval = 0
         steps = len(date_slider.date_list) - interval
         # stop stepper
-        if dash.ctx.triggered_id == "play_button":
+        if ctx.triggered_id == "play_button":
             # start stepper
             if button_icon == "fa-solid fa-circle-play fa-lg":
                 return steps, False, "fa-solid fa-circle-stop fa-lg"
@@ -424,7 +435,7 @@ def get_explore_callbacks(  # noqa: C901
             genes,
             complete_partial_radio,
     ):
-        if dash.ctx.triggered_id == "results_per_location":
+        if ctx.triggered_id == "results_per_location":
             mutations = [clickDataBoxPlot["points"][0]["label"]]
         try:
             location_name = click_data_map["points"][0]["hovertext"]

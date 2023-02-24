@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import date
 
 
-def create_table_compare(title, table_id):
+def html_table_compare(title, table_id):
     df = pd.DataFrame()
     Output_table_standard = dbc.Card(
         [
@@ -57,8 +57,7 @@ def create_table_compare(title, table_id):
     return Output_table_standard
 
 
-
-def get_html_date_picker(d_id):
+def html_date_picker(d_id):
     today = date.today()
     date_picker = dbc.Card(
         dbc.CardBody(
@@ -78,7 +77,7 @@ def get_html_date_picker(d_id):
     return date_picker
 
 
-def get_html_aa_nt_radio():
+def html_aa_nt_radio():
     item = dbc.Card(
         [
             dbc.CardBody(
@@ -92,7 +91,7 @@ def get_html_aa_nt_radio():
                             {"label": "Amino Acids", "value": "cds"},
                             {"label": "Nucleotides", "value": "source"},
                         ],
-                        value="Amino Acids",
+                        value="cds",
                         inline=True,
                         style={
                             "font-size": 20,
@@ -112,3 +111,17 @@ def get_html_aa_nt_radio():
         ],
     )
     return item
+
+
+def html_compare_button():
+    return dbc.Button(
+        [html.I(className="bi bi-file-play me-1"), "Compare"],
+        id="compare_button",
+        size="lg",
+        className="me-1",
+        color="primary",
+        style={
+            "font-weight": "bold",
+        },
+        n_clicks=0,
+    )

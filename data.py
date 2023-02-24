@@ -1,16 +1,14 @@
 import csv
+import os
+import numpy as np
+import pandas as pd
 from collections import defaultdict
 from datetime import datetime
 import multiprocessing as mp
-import os
 from time import perf_counter
 from urllib.parse import urlparse
-
-import numpy as np
-import pandas as pd
-import sqlalchemy
 from sqlalchemy import create_engine
-from tabulate import tabulate
+from sqlalchemy import exc
 
 from pages.config import CACHE_DIR
 from pages.config import DB_URL
@@ -191,7 +189,7 @@ class DataFrameLoader:
                 # FIXME: should put , doublequote=True, or
                 df.to_csv(f".cache/{table_name}.csv", index=False)
         # missing table
-        except sqlalchemy.exc.ProgrammingError:
+        except exc.ProgrammingError:
             print(f"table {table_name} not in database.")
             df = pd.DataFrame()
         print(f"Loading time {table_name}: {(perf_counter() - start):.4f} sec.")
@@ -265,6 +263,7 @@ def create_property_view(df, dummy_date="2021-12-31"):
         lambda d: datetime.strptime(d, "%Y-%m-%d").date()
     )
     df["SEQ_TECH"] = df["SEQ_TECH"].replace([np.nan, ""], "undefined")
+    df["COUNTRY"] = df["COUNTRY"].replace([np.nan, ""], "undefined")
     #  print(f"time pre-processing PropertyView final: {(perf_counter()-start)} sec.")
     #  print(tabulate(df[0:10], headers='keys', tablefmt='psql'))
     return df
@@ -348,7 +347,9 @@ def remove_seq_errors(variantViewPartial, reference_id, seq_type):
         & (variantViewPartial['element.type'] == seq_type)
         ].reset_index(drop=True)
     if seq_type == 'source':
-        df = df[~df['variant.label'].str.endswith('N')]
+        unknown_nt = ['N', 'V', 'D', 'H', 'B', 'K', 'M', 'S', 'W']
+        df = df[~df['variant.label'].str.contains('|'.join(unknown_nt))]
+    # B, Z, J not in DB, X always at the end, all undefined nucleotides translated to X
     elif seq_type == "cds":
         df = df[~df['variant.label'].str.endswith('X')]
     return df
@@ -372,7 +373,7 @@ def load_all_sql_files():
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict"):
-    #if False:
+    # if False:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))

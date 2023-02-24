@@ -211,7 +211,7 @@ def create_table_explorer(tableFilter):
     return Output_table_standard
 
 
-def get_html_elem_method_radioitems():
+def html_elem_method_radioitems():
     checklist_methode = dbc.Card(
         dbc.CardBody(
             [
@@ -230,7 +230,7 @@ def get_html_elem_method_radioitems():
     return checklist_methode
 
 
-def get_html_interval(interval=30):
+def html_interval(interval=30):
     interval_card = dbc.Card(
         dbc.CardBody(
             [
@@ -251,7 +251,7 @@ def get_html_interval(interval=30):
 
 # TODO : max for input field?
 # TODO design dropdown
-def get_html_elem_dropdown_aa_mutations(
+def html_elem_dropdown_aa_mutations(
     mutation_options, title="AA mutations: ", aa_id=0
 ):
     checklist_aa_mutations = dbc.Card(

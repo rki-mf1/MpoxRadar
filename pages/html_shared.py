@@ -3,7 +3,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 
-def get_html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
+def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
     checklist_reference = dbc.Card(
         dbc.CardBody(
             [
@@ -19,7 +19,7 @@ def get_html_elem_reference_radioitems(reference_options, start_ref_id, radio_id
     return checklist_reference
 
 
-def get_html_elem_dropdown_genes(gene_options, g_id=0):
+def html_elem_dropdown_genes(gene_options, g_id=0):
     checklist_aa_mutations = dbc.Card(
         [
             dbc.CardBody(
@@ -62,7 +62,7 @@ def get_html_elem_dropdown_genes(gene_options, g_id=0):
     return checklist_aa_mutations
 
 
-def get_html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
+def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
     checklist_aa_mutations = dbc.Card(
         [
             dbc.CardBody(
@@ -100,7 +100,7 @@ def get_html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_
     return checklist_aa_mutations
 
 
-def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
+def html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
     checklist_seq_tech = dbc.Card(
         [
             dbc.CardBody(
@@ -139,7 +139,7 @@ def get_html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
 
 
 # TODO design dropdown
-def get_html_elem_dropdown_countries(countries, c_id=0):
+def html_elem_dropdown_countries(countries, c_id=0):
     checklist_aa_mutations = dbc.Card(
         [
             dbc.CardBody(
@@ -180,7 +180,7 @@ def get_html_elem_dropdown_countries(countries, c_id=0):
     return checklist_aa_mutations
 
 
-def get_html_complete_partial_radio(tab):
+def html_complete_partial_radio(tab):
     item = dbc.Card(
         [
             dbc.CardBody(
@@ -209,3 +209,22 @@ def get_html_complete_partial_radio(tab):
         ],
     )
     return item
+
+
+def html_disclaimer_seq_errors(tool):
+    disclaimer = dcc.Markdown(
+                        "Sequencing errors are not shown. \n Amino acids mutations containing X, nucleotide mutations "
+                        "containing N, V, D, H, B, K, M, S, W are excluded.",
+                        className="me-1",
+                        style={
+                            "font-size": 20,
+                            "font-weight": "bold",
+                            "align-itmes": "center",
+                            "textAlign": "center",
+                            "color": "white",
+                            "white-space": "pre",
+                            "background-color": "#ffbd33"
+                        },
+                        id=f"disclaimer_mutation_{tool}"
+                    )
+    return disclaimer

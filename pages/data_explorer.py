@@ -13,9 +13,9 @@ from pages.utils_explorer_filter import get_all_references, get_all_frequency_so
     get_all_frequency_sorted_mutation, get_frequency_sorted_mutation_by_filters, \
     get_frequency_sorted_seq_techs_by_filters
 from pages.html_data_explorer import create_world_map_explorer, create_table_explorer, \
-    get_html_elem_reference_radioitems, get_html_elem_dropdown_aa_mutations, \
-    get_html_elem_method_radioitems, get_html_elem_checklist_seq_tech, get_html_interval, \
-    get_html_elem_dropdown_countries
+    html_elem_reference_radioitems, html_elem_dropdown_aa_mutations, \
+    html_elem_method_radioitems, html_elem_checklist_seq_tech, html_interval, \
+    html_elem_dropdown_countries
 
 
 dash.register_page(__name__, path="/DataExplorer")
@@ -40,24 +40,24 @@ layout = html.Div(
                     dbc.Row(
                         [
                             dbc.Col(
-                                [get_html_elem_reference_radioitems(all_reference_options)], width=2
+                                [html_elem_reference_radioitems(all_reference_options)], width=2
                             ),
                             dbc.Col(
-                                [get_html_elem_checklist_seq_tech(all_seq_tech_options)], width=2
+                                [html_elem_checklist_seq_tech(all_seq_tech_options)], width=2
                             ),
                             dbc.Col(
-                                [get_html_elem_dropdown_countries(all_country_options)], width=2
+                                [html_elem_dropdown_countries(all_country_options)], width=2
                             ),
                             dbc.Col(
-                                [get_html_elem_method_radioitems(),
-                                 get_html_interval()], width=2
+                                [html_elem_method_radioitems(),
+                                 html_interval()], width=2
                             ),
                         ]
                     ),
                     dbc.Row(
                         [
                             dbc.Col(
-                                [get_html_elem_dropdown_aa_mutations(all_mutation_options)], width=12
+                                [html_elem_dropdown_aa_mutations(all_mutation_options)], width=12
                             ),
                         ]
                     ),
