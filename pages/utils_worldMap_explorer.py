@@ -10,8 +10,10 @@ from plotly import graph_objects as go
 import plotly.express as px
 from scipy.stats import linregress
 
-
 # table results for filter
+from pages.utils_filters import select_variantView_dfs, select_propertyView_dfs
+
+
 class TableFilter(object):
     """
     returns df for table output: sample.name, COLLECTION_DATE, RELEASE_DATE, ISOLATE, LENGTH, SEQ_TECH, COUNTRY,
@@ -83,14 +85,19 @@ class TableFilter(object):
                                            ]["sample.id"]))
         return samples
 
-    #TODO filtering for mutations with DB strucutre impossible
+    # TODO filtering for mutations with DB strucutre impossible
     def _get_filteres_variants(self, variantView, samples):
         return variantView[variantView["sample.id"].isin(samples)]
-                    #       & variantView["variant.label"].isin(mutation_list)]
+        #       & variantView["variant.label"].isin(mutation_list)]
 
     def _combine_gene_and_mutation_label(self, df):
         df['variant.label'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
         return df
+
+    def _merge_variantView_with_propertyView(self, variantView, propertyView):
+        return pd.merge(variantView[self.variant_columns], propertyView[self.property_columns],
+                        how="left",
+                        on="sample.id")[self.merged_columns]
 
     # TODO no filtering for mutations/genes possible with current DB structure
     def get_filtered_table(
@@ -104,28 +111,25 @@ class TableFilter(object):
             #     gene_list=None,
             countries,
     ):
-        variantView_dfs = [df_dict["variantView"]['complete'][reference_id]['source'],
-                           self._combine_gene_and_mutation_label(df_dict["variantView"]['complete'][reference_id]['cds'])]
-        propertyView_dfs = [df_dict["propertyView"]["complete"]]
-        if complete_partial_radio == 'partial':
-            variantView_dfs.append(self._combine_gene_and_mutation_label(df_dict["variantView"]['partial'][reference_id]['cds']))
-            variantView_dfs.append(df_dict["variantView"]['partial'][reference_id]['source'])
-            propertyView_dfs.append(df_dict["propertyView"]["partial"])
+        variantView_dfs_cds = select_variantView_dfs(df_dict, complete_partial_radio, reference_id, 'cds')
+        variantView_dfs_source = select_variantView_dfs(df_dict, complete_partial_radio, reference_id, 'source')
+        propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
 
         samples = self._get_filtered_samples(
             propertyView_dfs, seq_tech_list, dates, countries
         )
-        variantView_dfs = [self._get_filteres_variants(variantView, samples) for variantView in
-                           variantView_dfs]
-
+        variantView_dfs_cds = [self._get_filteres_variants(variantView, samples) for variantView in
+                               variantView_dfs_cds]
+        for df in variantView_dfs_cds:
+            df['variant.label'] = df["gene::variant"]
+        variantView_dfs_source = [self._get_filteres_variants(variantView, samples) for variantView in
+                                  variantView_dfs_source]
 
         table_dfs = []
-        for i, df in enumerate(variantView_dfs):
-            j = 0 if i in [0, 1] else 1
-            table_dfs.append(
-                pd.merge(variantView_dfs[i][self.variant_columns], propertyView_dfs[j][self.property_columns],
-                         how="left",
-                         on="sample.id")[self.merged_columns])
+        for i in range(len(variantView_dfs_cds)):
+            table_dfs.append(self._merge_variantView_with_propertyView(variantView_dfs_cds[i], propertyView_dfs[i]))
+        for i in range(len(variantView_dfs_source)):
+            table_dfs.append(self._merge_variantView_with_propertyView(variantView_dfs_source[i], propertyView_dfs[i]))
         df = pd.concat(table_dfs, ignore_index=True, axis=0)
         if not df.empty:
             df = (

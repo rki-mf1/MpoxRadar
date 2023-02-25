@@ -19,6 +19,20 @@ def filter_variantView(df, gene_value):
     return df[df["element.symbol"].isin(gene_value)]
 
 
+def select_variantView_dfs(df_dict, complete_partial_radio, reference_value, aa_nt_radio):
+    variantView_dfs = [df_dict["variantView"]['complete'][reference_value][aa_nt_radio]]
+    if complete_partial_radio == 'partial':
+        variantView_dfs.append(df_dict["variantView"]['partial'][reference_value][aa_nt_radio])
+    return variantView_dfs
+
+
+def select_propertyView_dfs(df_dict, complete_partial_radio):
+    propertyView_dfs = [df_dict["propertyView"]["complete"]]
+    if complete_partial_radio == 'partial':
+        propertyView_dfs.append(df_dict["propertyView"]["partial"])
+    return propertyView_dfs
+
+
 def get_all_frequency_sorted_seqtech(df_dict):
     propertyView = pd.concat([df_dict['propertyView']['complete'], df_dict['propertyView']['partial']],
                              ignore_index=True, axis=0)
@@ -263,17 +277,6 @@ def actualize_filters(
         elif len(select_all_seq_techs) == 0:
             seq_tech_value = []
 
-    # new country option
-    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"] \
-            or triggered_id.startswith(("select_all_seq_tech", "select_all_genes", "gene_dropdown", "seq_tech_dropdown")):
-        country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
-                                                                        seq_tech_value,
-                                                                        complete_partial_radio,
-                                                                        reference_value,
-                                                                        gene_value,
-                                                                        aa_nt_radio)
-        country_value = [c["value"] for c in country_options]
-
     # new gene option
     if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"]:
         if aa_nt_radio == "cds":
@@ -297,5 +300,17 @@ def actualize_filters(
             aa_nt_radio
         )
         seq_tech_value = [s["value"] for s in seq_tech_options]
+
+    # new country option
+    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"] \
+            or triggered_id.startswith(("select_all_seq_tech", "select_all_genes", "gene_dropdown", "seq_tech_dropdown")):
+        country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
+                                                                        seq_tech_value,
+                                                                        complete_partial_radio,
+                                                                        reference_value,
+                                                                        gene_value,
+                                                                        aa_nt_radio)
+        country_value = [c["value"] for c in country_options]
+
 
     return gene_options, gene_value, country_options, country_value, seq_tech_options, seq_tech_value,

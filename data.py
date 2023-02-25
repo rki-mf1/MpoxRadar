@@ -341,7 +341,7 @@ def create_world_map_df(variantView, propertyView):
     return df
 
 
-def remove_seq_errors(variantViewPartial, reference_id, seq_type):
+def remove_seq_errors_and_add_gene_var_column(variantViewPartial, reference_id, seq_type):
     df = variantViewPartial[
         (variantViewPartial['reference.id'] == reference_id)
         & (variantViewPartial['element.type'] == seq_type)
@@ -352,6 +352,7 @@ def remove_seq_errors(variantViewPartial, reference_id, seq_type):
     # B, Z, J not in DB, X always at the end, all undefined nucleotides translated to X
     elif seq_type == "cds":
         df = df[~df['variant.label'].str.endswith('X')]
+        df['gene::variant'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
     return df
 
 
@@ -372,8 +373,8 @@ def load_all_sql_files():
     # 1. Using Pickle should only be used on 100% trusted data
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
-    if redis_manager and redis_manager.exists("df_dict"):
-    # if False:
+    #if redis_manager and redis_manager.exists("df_dict"):
+    if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
@@ -400,7 +401,7 @@ def load_all_sql_files():
         for reference_id in reference_ids:
             processed_df_dict["variantView"]["complete"][reference_id] = {}
             for seq_type in ['source', 'cds']:
-                processed_df_dict["variantView"]["complete"][reference_id][seq_type] = remove_seq_errors(
+                processed_df_dict["variantView"]["complete"][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
                     variantViewComplete, reference_id, seq_type)
         del variantViewComplete
 
@@ -410,7 +411,7 @@ def load_all_sql_files():
         for reference_id in reference_ids:
             processed_df_dict["variantView"]["partial"][reference_id] = {}
             for seq_type in ['source', 'cds']:
-                processed_df_dict["variantView"]["partial"][reference_id][seq_type] = remove_seq_errors(
+                processed_df_dict["variantView"]["partial"][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
                     variantViewPartial, reference_id, seq_type)
         del loaded_df_dict["variantView"]
         del variantViewPartial
