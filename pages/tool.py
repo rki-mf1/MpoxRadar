@@ -605,10 +605,14 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         keep="last",
         inplace=True,
     )
+    _tmp_original_df = table_df.copy()
     size_data = len(table_df)
     if size_data > 100:
         # remove mutation case = 1
         table_df = table_df[table_df["Case"] > 10]
+        # in case, the filter condition remove all samples.
+        if len(table_df) == 0:
+            table_df = _tmp_original_df.sample(frac=0.5, random_state=42)
     else:
         pass
         # remove mutation case = 1
