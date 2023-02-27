@@ -118,10 +118,10 @@ class TableFilter(object):
         samples = self._get_filtered_samples(
             propertyView_dfs, seq_tech_list, dates, countries
         )
-        variantView_dfs_cds = [self._get_filteres_variants(variantView, samples) for variantView in
+        variantView_dfs_cds = [variantView[variantView["sample.id"].isin(samples)].copy() for variantView in
                                variantView_dfs_cds]
-        for df in variantView_dfs_cds:
-            df['variant.label'] = df["gene::variant"]
+        for variantView in variantView_dfs_cds:
+            variantView["variant.label"] = variantView['gene::variant']
         variantView_dfs_source = [self._get_filteres_variants(variantView, samples) for variantView in
                                   variantView_dfs_source]
 
