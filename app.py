@@ -70,7 +70,7 @@ app.layout = dbc.Container(
             [
                 dbc.Button(
                     [html.I(className="bi bi-info-circle-fill me-2"), "About"],
-                    href="About",
+                    href="/",
                     outline=True,
                     color="primary",
                     className="me-1",

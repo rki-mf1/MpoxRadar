@@ -3,7 +3,7 @@ from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
 
-dash.register_page(__name__, path="/About")
+dash.register_page(__name__, path="/")
 
 card_style = {
     "box-shadow": "4px 4px 4px",
