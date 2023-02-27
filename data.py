@@ -102,6 +102,7 @@ needed_columns = {
         "property.name",
         "value_text",
         "value_date",
+        "value_integer"
     ],
     "variantView": [
         "sample.id",
@@ -247,7 +248,7 @@ class DataFrameLoader:
 
 
 def create_property_view(df, dummy_date="2021-12-31"):
-    #  start = perf_counter()
+    #  all dates and integer values into value_date column for unstacking
     df["value_text"] = df.apply(
         lambda row: row["value_date"]
         if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE"]
@@ -255,6 +256,13 @@ def create_property_view(df, dummy_date="2021-12-31"):
         axis=1,
     )
     df = df.drop(columns=["value_date"], axis=1)
+    df["value_text"] = df.apply(
+        lambda row: row["value_integer"]
+        if row["property.name"] in ["LENGTH"]
+        else row["value_text"],
+        axis=1,
+    )
+    df = df.drop(columns=["value_integer"], axis=1)
     c = ["sample.id", "sample.name"]
     df = df.set_index(["property.name"] + c).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
@@ -373,8 +381,8 @@ def load_all_sql_files():
     # 1. Using Pickle should only be used on 100% trusted data
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
-    #if redis_manager and redis_manager.exists("df_dict"):
-    if True:
+    if redis_manager and redis_manager.exists("df_dict"):
+    # if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))

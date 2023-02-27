@@ -33,6 +33,22 @@ def filter_propertyView(df, seqtech_value, country_value, start_date, end_date):
         ]
 
 
+def get_filtered_samples(propertyView_dfs, variantView_dfs, mut_value, gene_dropdown=None):
+    new_samples = set()
+    for i, df in enumerate(variantView_dfs):
+        samples = set(propertyView_dfs[i]["sample.id"])
+        if gene_dropdown:
+            new_samples = new_samples.union(set(df[df["sample.id"].isin(samples)
+                                           & df["variant.label"].isin(mut_value)
+                                           & df["element.symbol"].isin(gene_dropdown)
+                                           ]["sample.id"]))
+        else:
+            new_samples = new_samples.union(set(df[df["sample.id"].isin(samples)
+                                           & df["variant.label"].isin(mut_value)
+                                           ]["sample.id"]))
+    return new_samples
+
+
 def create_mutation_dfs_for_comparison(aa_nt_radio,
                                        gene_value,
                                        seqtech_value,
@@ -118,20 +134,39 @@ def create_comparison_tables(df_dict,
                                                   end_date_2)
                               for df in propertyView_dfs]
 
-    if aa_nt_radio == 'cds':
-        variantView_dfs_left_both = [df[df['variant.label'].isin(mut_value_3)
-                                        & df['element.symbol'].isin(gene_dropdown_1)] for df in variantView_dfs_left]
-        variantView_dfs_right_both = [df[df['variant.label'].isin(mut_value_3)
-                                         & df['element.symbol'].isin(gene_dropdown_2)] for df in variantView_dfs_right]
-        variantView_dfs_left = [df[df['variant.label'].isin(mut_value_1)
-                                   & df['element.symbol'].isin(gene_dropdown_1)] for df in variantView_dfs_left]
-        variantView_dfs_right = [df[df['variant.label'].isin(mut_value_2)
-                                    & df['element.symbol'].isin(gene_dropdown_2)] for df in variantView_dfs_right]
-    else:
-        variantView_dfs_left_both = [df[df['variant.label'].isin(mut_value_3)] for df in variantView_dfs_left]
-        variantView_dfs_right_both = [df[df['variant.label'].isin(mut_value_3)] for df in variantView_dfs_right]
-        variantView_dfs_left = [df[df['variant.label'].isin(mut_value_1)] for df in variantView_dfs_left]
-        variantView_dfs_right = [df[df['variant.label'].isin(mut_value_2)] for df in variantView_dfs_right]
+    if aa_nt_radio == 'source':
+        gene_dropdown_1 = None
+        gene_dropdown_2 = None
+
+    # all samples of selection (filter by mutation directly prevents complete MUT PROFILE)
+    samples_left_both = get_filtered_samples(
+        propertyView_dfs_left,
+        variantView_dfs_left,
+        mut_value_3,
+        gene_dropdown_1
+    )
+    samples_right_both = get_filtered_samples(
+        propertyView_dfs_right,
+        variantView_dfs_right,
+        mut_value_3,
+        gene_dropdown_2
+    )
+    samples_left = get_filtered_samples(
+        propertyView_dfs_left,
+        variantView_dfs_left,
+        mut_value_1,
+        gene_dropdown_1
+    )
+    samples_right = get_filtered_samples(
+        propertyView_dfs_right,
+        variantView_dfs_right,
+        mut_value_2,
+        gene_dropdown_2
+    )
+    variantView_dfs_left_both = [df[df['sample.id'].isin(samples_left_both)] for df in variantView_dfs_left]
+    variantView_dfs_right_both = [df[df['sample.id'].isin(samples_right_both)] for df in variantView_dfs_right]
+    variantView_dfs_left = [df[df['sample.id'].isin(samples_left)] for df in variantView_dfs_left]
+    variantView_dfs_right = [df[df['sample.id'].isin(samples_right)] for df in variantView_dfs_right]
 
     table_columns = [
         "sample.name",
@@ -141,6 +176,7 @@ def create_comparison_tables(df_dict,
         "COUNTRY",
         "GEO_LOCATION",
         "HOST",
+        "LENGTH",
         "reference.accession",
         "variant.label",
     ]
