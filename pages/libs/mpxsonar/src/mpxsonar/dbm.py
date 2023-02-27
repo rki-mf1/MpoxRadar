@@ -20,6 +20,7 @@ import mariadb
 import pandas as pd
 from tqdm import tqdm
 
+from mpxsonar.utils import insert_before_keyword
 from . import logging
 from .config import DB_URL
 
@@ -834,6 +835,8 @@ class sonarDBManager:
 
     def get_molecule_ids(self, reference_accession=None):
         """
+        PARAMS reference_accesion list or string
+
         Returns a dictionary with accessions as keys and respective rowids as values for
         all molecules related to a given reference
         or all references if reference_accession is None.
@@ -843,8 +846,15 @@ class sonarDBManager:
         """
 
         if reference_accession:
-            condition = "`reference.accession` = ?"
-            val = [reference_accession]
+            if not isinstance(reference_accession, list):
+                reference_accession = reference_accession.split(", ")
+
+            condition = (
+                "`reference.accession` IN ("
+                + ", ".join(["?"] * len(reference_accession))
+                + ")"
+            )
+            val = reference_accession
         else:
             # to output all
             # condition = "`reference.standard` = ?"
@@ -1506,7 +1516,6 @@ class sonarDBManager:
                 negate = True
             else:
                 negate = False
-
             # variant typing
             if match := snv_regex.match(var):
                 snv = True
@@ -1629,7 +1638,7 @@ class sonarDBManager:
 
         return sql, intersect_vals + except_vals
 
-    def query_profile(self, *vars, reference_accession=None):  # noqa: C901
+    def query_profile(self, *vars, reference_accession=""):  # noqa: C901
         iupac_nt_code = {
             "A": set("A"),
             "C": set("C"),
@@ -1807,11 +1816,12 @@ class sonarDBManager:
                 v.append(" ")
 
             # assemble sub-sql
+            # NOTE: reference_accession no need to put at negate.
             if negate:
                 except_sqls.append(base_sql + " AND ".join(c))
                 except_vals.extend(v)
             else:
-                intersect_sqls.append(base_sql + " AND ".join(c))
+                intersect_sqls.append(base_sql + " AND ".join(c) + reference_accession)
                 intersect_vals.extend(v)
 
         # assemble final sql
@@ -1894,56 +1904,7 @@ class sonarDBManager:
         # collecting sqls for metadata-based filtering
         property_sqls = []
         property_vals = []
-        # IF sublineage search is enable
-        # support: include and exclude
-        if "with_sublineage" in reserved_props:
-            _tmp_include_lin = []  # used to keep all lienages after search.
-            lineage_col = reserved_props.get("with_sublineage")
-            include_lin = properties.get(lineage_col)  # get list of given lineages
-            negate = False
-            logging.info("sublineage search is enable on %s" % include_lin)
-            while include_lin:
-                in_lin = include_lin.pop(0)
 
-                if in_lin.startswith("^"):
-                    in_lin = in_lin[1:]
-                    negate = True
-
-                # have wildcard in string which mean we have to find all lineage from wildcard query
-                # then we used the wildcard query result to find all sublineages agian.
-                if "%" in in_lin:
-                    _tobeadded_lin = self.get_list_of_lineages(in_lin)
-                    for i in _tobeadded_lin:
-
-                        # if i != in_lin: # we dont need to add same lineage agian,so we skip for the duplicate lineage.
-                        if negate:  # all lineage should add not ^
-                            i = "^" + i
-                        include_lin.append(i)  # add more lineage to find in next round.
-
-                value = self.lineage_sublineage_dict.get(
-                    in_lin, "none"
-                )  # provide a default value if the key is missing:
-                # print(value)
-                if value != "none":
-                    if negate:
-                        in_lin = "^" + in_lin
-                    _tmp_include_lin.append(in_lin)
-
-                    _list = value.split(",")
-                    for i in _list:
-                        if negate:  # all sublineage should add not^
-                            i = "^" + i
-                        include_lin.append(i)  # add more lineage to find in next round.
-                        # _tmp_include_lin.append(i)
-                        # if we don't find this wildcard so we discard it
-                else:  # None (no child)
-                    if negate:
-                        in_lin = "^" + in_lin
-                    _tmp_include_lin.append(in_lin)
-                negate = False
-
-            include_lin = _tmp_include_lin
-            properties[lineage_col] = include_lin
         if self.debug:
             logging.info(f"List all prop.:{properties}")
         # if properties are present in query
@@ -1957,36 +1918,10 @@ class sonarDBManager:
         property_sqls = " INTERSECT ".join(property_sqls)
         if self.debug:
             logging.info(f"Properties in Query: {property_sqls}")
-
-        # collecting sqls for genomic profile based filtering
-        profile_sqls = []
-        profile_vals = []
-        for profile in profiles:
-
-            sql, val = self.query_profile(
-                *profile, reference_accession=reference_accession
-            )
-            profile_sqls.append(sql)
-            profile_vals.extend(val)
-
-        if len(profiles) == 1:
-            profile_sqls = profile_sqls[0]
-        elif len(profiles) > 1:
-            profile_sqls = " UNION ".join(
-                [
-                    "SELECT * FROM (" + x + ") t" + str(i)
-                    for i, x in enumerate(profile_sqls)
-                ]
-            )
-        else:
-            profile_sqls = ""
-        if self.debug:
-            logging.info(f"Profile sqls: {profile_sqls}")
-            logging.info(f"Profile vals: {profile_vals}")
-
-        # ------------------------
+        # ----------------------------------------------
         # NOTE: Find the refID, if refID is not given,
         # this will return all refIDs that match the given profiles
+        selected_ref_ids = None
         if len(profiles) > 0:
 
             # WARN: this take only one accession ID into account at a time. *not support multiple refs.
@@ -2001,12 +1936,60 @@ class sonarDBManager:
                 ref_id_list = self.get_ref_variant_ID(profiles)
                 selected_ref_ids = ", ".join([str(x) for x in ref_id_list])
 
-            logging.info(
-                f"Found Reference ID base on given profile: {selected_ref_ids}"
-            )
-            variant_condition_stm = " AND `reference.id` IN (" + selected_ref_ids + ")"
+            logging.info(f"Found Reference ID: {selected_ref_ids}")
+            if selected_ref_ids:
+                variant_condition_stm = (
+                    " AND `reference.id` IN (" + selected_ref_ids + ")"
+                )
+            else:
+                variant_condition_stm = ""
         else:
             variant_condition_stm = ""
+
+        # collecting sqls for genomic profile based filtering
+        profile_sqls = []
+        profile_vals = []
+        for profile in profiles:
+
+            sql, val = self.query_profile(
+                *profile, reference_accession=variant_condition_stm
+            )
+
+            profile_sqls.append(sql)
+            profile_vals.extend(val)
+
+        if len(profiles) == 1:
+            # cannot put variant_condition_stm
+            profile_sqls = profile_sqls[0]
+        elif len(profiles) > 1:  # when there is an OR ops.
+            profile_sqls = " UNION ".join(
+                [
+                    "SELECT * FROM (" + x + ") t" + str(i)
+                    for i, x in enumerate(profile_sqls)
+                ]
+            )
+        else:
+            profile_sqls = ""
+
+        # ------------------------
+        # NOTE: Put the variant_condition_stm at the begin of
+        # AND `reference.id` IN (" + selected_ref_ids + ")" 1 EXCEPT
+        if variant_condition_stm == "":
+            pass
+        else:
+            # for NOT
+            if "EXCEPT" in profile_sqls:
+                # remove AND at beginning. and then append at the back.
+                _tmp_variant_condition_stm = variant_condition_stm.replace("AND", "", 1)
+                _tmp_variant_condition_stm = _tmp_variant_condition_stm + " AND"
+                profile_sqls = insert_before_keyword(
+                    profile_sqls, " 1 EXCEPT", _tmp_variant_condition_stm
+                )
+
+        if self.debug:
+            logging.info(f"Profile sqls: {profile_sqls}")
+            logging.info(f"Profile vals: {profile_vals}")
+
         # ------
         if property_sqls and profile_sqls:
             if len(profiles) > 1:
@@ -2016,16 +1999,8 @@ class sonarDBManager:
             else:
                 sample_selection_sql = property_sqls + " INTERSECT " + profile_sqls
 
-            if reference_accession:
-                sample_selection_sql = (
-                    sample_selection_sql + " " + variant_condition_stm
-                )
         elif property_sqls or profile_sqls:
             sample_selection_sql = property_sqls + profile_sqls
-            if reference_accession:
-                sample_selection_sql = (
-                    sample_selection_sql + " " + variant_condition_stm
-                )
         else:
             if "sample" in reserved_props:
                 # if 'sample' is presented we just use only samples
@@ -2040,10 +2015,6 @@ class sonarDBManager:
                     + " , ".join(samples_condition)
                     + ")"
                 )
-                if reference_accession:
-                    sample_selection_sql = (
-                        sample_selection_sql + " " + variant_condition_stm
-                    )
                 property_sqls = []
                 property_vals = []
             else:
@@ -2061,9 +2032,27 @@ class sonarDBManager:
         if self.debug:
             logging.info(f"Sample selection in sql: {sample_selection_sql}")
 
+        # NOTE: change the ref ids to accession.
+        # selected_ref_ids is str()
+
+        if selected_ref_ids is not None:
+            # change ref. from id to accession.
+            _tmpsplit = selected_ref_ids.split(", ")
+            selected_accession_ref_list = [
+                item["accession"]
+                for item in self.references
+                if str(item["id"]) in _tmpsplit
+            ]
+            reference_accession = selected_accession_ref_list
+            if self.debug:
+                print("---- new ref ----- ", reference_accession)
+
         genome_element_condition = [
             str(x) for x in self.get_element_ids(reference_accession, "source")
         ]
+        #
+        if self.debug:
+            print("---- genome_element_condition ---", genome_element_condition)
         # if enable m `molecule.symbol`, "@"
         if len(genome_element_condition) == 1:
             genome_element_condition = "`element.id` = " + genome_element_condition[0]
@@ -2105,6 +2094,8 @@ class sonarDBManager:
         else:
             cds_element_condition = ""
 
+        if self.debug:
+            print("----c ds_element_condition ---", cds_element_condition)
         # standard query
         if format == "csv" or format == "tsv":
 
@@ -2270,13 +2261,15 @@ class sonarDBManager:
             df_1 = pd.DataFrame(_1_rows)
             df_1.sort_values(by=["sample.name"], inplace=True)
             if self.debug:
-                logging.debug(df_1["sample.name"])
+                pass
+                # logging.debug(df_1["sample.name"])
             # sample.name REFERENCE_ACCESSION NUC_PROFILE AA_PROFILE
             df_2 = pd.DataFrame(_2_rows)
             df_2.sort_values(by=["sample.name"], inplace=True)
             if self.debug:
-                logging.debug(df_2.columns)
-                logging.debug(df_2["sample.name"])
+                pass
+                # logging.debug(df_2.columns)
+                # logging.debug(df_2["sample.name"])
 
             """
             merge_df = pd.merge(
