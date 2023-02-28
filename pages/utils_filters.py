@@ -278,7 +278,7 @@ def actualize_filters(
             seq_tech_value = []
 
     # new gene option
-    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"]:
+    if triggered_id.startswith(("complete_partial_radio", "aa_nt_radio", "reference_radio")):
         if aa_nt_radio == "cds":
             gene_options = get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_dict)
             gene_value = [i["value"] for i in gene_options]
@@ -289,8 +289,8 @@ def actualize_filters(
             gene_value = []
 
     # new seq tech option
-    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"] \
-            or triggered_id.startswith(("gene_dropdown", "select_all_genes")):
+    if triggered_id.startswith(("complete_partial_radio", "aa_nt_radio", "reference_radio", "gene_dropdown",
+                                "select_all_genes")):
         seq_tech_options = get_frequency_sorted_seq_techs_by_filters(
             df_dict,
             seq_tech_options,
@@ -302,8 +302,8 @@ def actualize_filters(
         seq_tech_value = [s["value"] for s in seq_tech_options]
 
     # new country option
-    if triggered_id in ["complete_partial_radio_compare", "aa_nt_radio", "reference_radio_1", "reference_radio_2"] \
-            or triggered_id.startswith(("select_all_seq_tech", "select_all_genes", "gene_dropdown", "seq_tech_dropdown")):
+    if triggered_id.startswith(("complete_partial_radio", "aa_nt_radio", "reference_radio", "gene_dropdown",
+                                "select_all_genes", "select_all_seq_tech", "seq_tech_dropdown")):
         country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
                                                                         seq_tech_value,
                                                                         complete_partial_radio,
@@ -311,7 +311,5 @@ def actualize_filters(
                                                                         gene_value,
                                                                         aa_nt_radio)
         country_value = [c["value"] for c in country_options]
-
-
     return gene_options, gene_value, country_options, country_value, seq_tech_options, seq_tech_value,
 

@@ -417,6 +417,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("seq_tech_dropdown_0", "value"),
             Input("selected_interval", "value"),
             Input("date_slider", "value"),
+            Input("gene_dropdown_0", "value"),
             Input("country_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
         ],
@@ -429,6 +430,7 @@ def get_explore_callbacks(  # noqa: C901
             seq_tech_list,
             interval,
             dates,
+            gene_values,
             countries,
             complete_partial_radio,
     ):
@@ -452,6 +454,7 @@ def get_explore_callbacks(  # noqa: C901
             seq_tech_list,
             reference_id,
             date_list,
+            gene_values,
             countries,
         )
         return table_df.to_dict("records"), [
