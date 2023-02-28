@@ -337,6 +337,8 @@ def get_explore_callbacks(  # noqa: C901
                 location_name = countries[0]
             else:
                 location_name = None
+        if location_name and location_name not in countries:
+            location_name = countries[0]
         # date from slider
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         # title text
@@ -395,6 +397,8 @@ def get_explore_callbacks(  # noqa: C901
                 location_name = countries[0]
             else:
                 location_name = None
+        if location_name and location_name not in countries:
+            location_name = countries[0]
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         world_dfs = [df_dict["world_map"]['complete'][reference_id]]
         if complete_partial_radio == 'partial':

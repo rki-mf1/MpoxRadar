@@ -139,9 +139,11 @@ tab_explored_tool = html.Div(
                             [
                                 dbc.Col(
                                     [
-                                        html_elem_method_radioitems(),
+                                        html_elem_dropdown_aa_mutations(
+                                            start_colored_mutation_options_dict
+                                        )
                                     ],
-                                    width=3,
+                                    width=6,
                                 ),
                                 dbc.Col(
                                     [
@@ -151,11 +153,9 @@ tab_explored_tool = html.Div(
                                 ),
                                 dbc.Col(
                                     [
-                                        html_elem_dropdown_aa_mutations(
-                                            start_colored_mutation_options_dict
-                                        )
+                                        html_elem_method_radioitems(),
                                     ],
-                                    width=6,
+                                    width=3,
                                 ),
                             ],
                             className="mt-2",

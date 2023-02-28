@@ -210,7 +210,6 @@ class DfsAndDetailPlot(object):
         return df
 
     def add_slope_column(self, df):
-        df.reset_index(inplace=True)
         slopes = []
         for i in range(len(df["number_sequences"])):
             dates = [(date - self.min_date).days for date in df["COLLECTION_DATE"][i]]
@@ -229,34 +228,22 @@ class DfsAndDetailPlot(object):
         returns the slope of the regression line (x:range (interval)), y:number of sequences per day in selected interval
         for choropleth map select slope with greatest increase
         """
-        # df:     location_ID | date | mutations | number_sequences
-        dfs = [(
-            filtered_df.groupby(
+        df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
+        df = (
+            df.groupby(
                 ["COUNTRY", "variant.label", "element.symbol", "COLLECTION_DATE"]
             )
-                .sum()
+                .sum(numeric_only=True)
                 .reset_index()
-        ) for filtered_df in filtered_dfs]
-        dfs = [df.groupby(["COUNTRY", "variant.label", "element.symbol"]).agg(
+              )
+
+        df = df.groupby(["COUNTRY", "variant.label", "element.symbol"]).agg(
             {
                 "number_sequences": lambda x: list(x),
                 "COLLECTION_DATE": lambda x: list(x),
             }
-        ) for df in dfs]
-        df = pd.concat(dfs, ignore_index=True, axis=0)
-        if df.empty:
-            df = pd.DataFrame(
-                [],
-                columns=[
-                    "number_sequences",
-                    "variant.label",
-                    "element.symbol",
-                    "COLLECTION_DATE",
-                    "slope",
-                ],
-            )
-        else:
-            df = self.add_slope_column(df)
+        ).reset_index()
+        df = self.add_slope_column(df)
         return df
 
     def get_df_for_scatter_plot(self, filtered_dfs):
@@ -370,23 +357,20 @@ class DfsAndDetailPlot(object):
             filtered_dfs = [self.filter_df(
                 world_df, mutations, seqtech_list, dates, [location_name], genes
             ) for world_df in self.world_dfs]
-
             df = self.get_increase_df(filtered_dfs)
-
-            df = self.drop_rows_by_value(df, 0, "slope")
         else:
             df = pd.DataFrame()
         if df.empty:
-            columns = [
-                "number_sequences",
-                "COLLECTION_DATE",
-                "slope",
-                "variant.label",
-                "element.symbol",
-            ]
-            row = [[0, "", 0, "no_mutation", "no_gene"]]
-            df = pd.concat([df, pd.DataFrame(row, columns=columns)])
-
+            df = pd.DataFrame(
+                [[0, "", 0, "no_mutation", "no_gene"]],
+                columns=[
+                    "number_sequences",
+                    "COLLECTION_DATE",
+                    "slope",
+                    "variant.label",
+                    "element.symbol",
+                ],
+            )
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
         try:
@@ -529,7 +513,6 @@ class WorldMap(DfsAndDetailPlot):
         elif method == "Increase":
             df = self.get_increase_df(filtered_dfs)
             # select max slope for each country, remove zero first to get negative slopes too
-            df = df[df["slope"] != 0]
             df = df.sort_values("slope", ascending=False).drop_duplicates(["COUNTRY"])
             column_of_interest = "slope"
 

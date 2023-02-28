@@ -189,7 +189,7 @@ def html_interval(interval=30):
     interval_card = dbc.Card(
         dbc.CardBody(
             [
-                dbc.Label("Interval: "),
+                dbc.Label("Interval (number of days): "),
                 dcc.Input(
                     id="selected_interval",
                     type="number",
