@@ -243,7 +243,6 @@ def get_compare_callbacks(  # noqa: C901
             State("gene_dropdown_1", "options"),
             State("country_dropdown_1", "options"),
             State("seq_tech_dropdown_1", "options"),
-
             State("country_dropdown_1", "value"),
 
         ],

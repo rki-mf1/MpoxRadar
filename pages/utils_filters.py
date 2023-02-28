@@ -314,3 +314,4 @@ def actualize_filters(
 
 
     return gene_options, gene_value, country_options, country_value, seq_tech_options, seq_tech_value,
+

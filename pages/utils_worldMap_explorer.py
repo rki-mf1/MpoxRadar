@@ -329,11 +329,14 @@ class DfsAndDetailPlot(object):
         """
         :return fig bar chart showing mutation information of last hovered plz
         """
-        filtered_dfs = [self.filter_df(
-            world_df, mutations, seqtech_list, dates, [location_name], genes
-        ) for world_df in self.world_dfs]
-        df = self.get_df_for_frequency_bar(filtered_dfs)
-        df = self.drop_rows_by_value(df, 0, "number_sequences")
+        if location_name:
+            filtered_dfs = [self.filter_df(
+                world_df, mutations, seqtech_list, dates, [location_name], genes
+            ) for world_df in self.world_dfs]
+            df = self.get_df_for_frequency_bar(filtered_dfs)
+            df = self.drop_rows_by_value(df, 0, "number_sequences")
+        else:
+            df= pd.DataFrame()
         if df.empty:
             df = pd.DataFrame(
                 data=[["no_mutation", "no_gene", 0]],
@@ -371,13 +374,16 @@ class DfsAndDetailPlot(object):
     def get_slope_bar_plot(
             self, dates, mutations, seqtech_list, location_name, genes
     ):
-        filtered_dfs = [self.filter_df(
-            world_df, mutations, seqtech_list, dates, [location_name], genes
-        ) for world_df in self.world_dfs]
+        if location_name:
+            filtered_dfs = [self.filter_df(
+                world_df, mutations, seqtech_list, dates, [location_name], genes
+            ) for world_df in self.world_dfs]
 
-        df = self.get_increase_df(filtered_dfs)
+            df = self.get_increase_df(filtered_dfs)
 
-        df = self.drop_rows_by_value(df, 0, "slope")
+            df = self.drop_rows_by_value(df, 0, "slope")
+        else:
+            df = pd.DataFrame()
         if df.empty:
             columns = [
                 "number_sequences",
@@ -450,23 +456,25 @@ class DfsAndDetailPlot(object):
             axis_type="lin",
     ):
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
-        filtered_dfs = [self.filter_df(
-            world_df, mutations, seqtech_list, dates, [location_name], genes
-        ) for world_df in self.world_dfs]
-        if len(dates) == 0:
-            dates = [
-                dat
-                for dat in [
-                    self.max_date - timedelta(days=x) for x in reversed(range(28))
+        if location_name:
+            filtered_dfs = [self.filter_df(
+                world_df, mutations, seqtech_list, dates, [location_name], genes
+            ) for world_df in self.world_dfs]
+            if len(dates) == 0:
+                dates = [
+                    dat
+                    for dat in [
+                        self.max_date - timedelta(days=x) for x in reversed(range(28))
+                    ]
                 ]
-            ]
-
-        df = self.get_df_for_scatter_plot(filtered_dfs)
-        # remove rows if VOC no seq in time-interval
-        for var in mutations:
-            if df[df["variant.label"] == var]["number_sequences"].sum() == 0:
-                df = df[df["variant.label"] != var]
+            df = self.get_df_for_scatter_plot(filtered_dfs)
+            # remove rows if VOC no seq in time-interval
+            for var in mutations:
+                if df[df["variant.label"] == var]["number_sequences"].sum() == 0:
+                    df = df[df["variant.label"] != var]
         # dummy dataframe for showing empty results
+        else:
+            df = pd.DataFrame()
         if df.empty:
             df = pd.DataFrame(
                 data=[[location_name, dates[-1], "no_mutations", 0, "no_gene"]],
@@ -536,7 +544,7 @@ class WorldMap(DfsAndDetailPlot):
         # df = self.drop_rows_by_value(df, 0, column_of_interest)
         if df.empty:
             df = pd.DataFrame(
-                data=[["Germany", 0]],
+                data=[["", 0]],
                 columns=[
                     "COUNTRY",
                     column_of_interest,

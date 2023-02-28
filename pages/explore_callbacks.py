@@ -5,7 +5,7 @@ from dash import State
 from dash import ctx
 from dash.exceptions import PreventUpdate
 
-from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
+from pages.utils_filters import get_all_frequency_sorted_countries_by_filters, actualize_filters
 from pages.utils_filters import get_all_gene_dict
 from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
@@ -67,13 +67,10 @@ def get_explore_callbacks(  # noqa: C901
                 color_dict
             )
             max_select = len(mut_options)
-            if select_x_mut > len(mut_options):
+            if len(mut_options) < 20:
                 select_x_mut = len(mut_options)
-            if select_x_mut == 0:
-                if len(mut_options) < 20:
-                    select_x_mut = len(mut_options)
-                else:
-                    select_x_mut = 20
+            else:
+                select_x_mut = 20
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
 
         text = (
@@ -86,115 +83,62 @@ def get_explore_callbacks(  # noqa: C901
         [
             Output("gene_dropdown_0", "options"),
             Output("gene_dropdown_0", "value"),
+            Output("country_dropdown_0", "options"),
+            Output("country_dropdown_0", "value"),
+            Output("seq_tech_dropdown_0", "options"),
+            Output("seq_tech_dropdown_0", "value"),
         ],
         [
             Input("reference_radio_0", "value"),
+            Input("select_all_seq_tech_0", "value"),
             Input("select_all_genes_0", "value"),
+            Input("select_all_countries_0", "value"),
             Input("complete_partial_radio_explore", "value"),
+            Input("seq_tech_dropdown_0", "value"),
+            Input("gene_dropdown_0", "value"),
         ],
         [
             State("gene_dropdown_0", "options"),
+            State("country_dropdown_0", "options"),
+            State("seq_tech_dropdown_0", "options"),
+            State("country_dropdown_0", "value"),
         ],
         prevent_initial_call=True,
     )
-    def actualize_gene_filters(reference_value, select_all_genes, complete_partial_radio, gene_options):
-        """
-        gene_filter actualization triggered by: complete_partial_radio, reference_value (select all)
-        changed gene options influence mutation options
-        """
-        if ctx.triggered_id == "select_all_genes_0":
-            if len(select_all_genes) == 1:
-                gene_value = [i["value"] for i in gene_options]
-            elif len(select_all_genes) == 0:
-                gene_value = []
-        else:
-            gene_options = get_all_gene_dict(
-                df_dict,
-                reference_value,
-                complete_partial_radio,
-                color_dict
-            )
-            gene_value = [i["value"] for i in gene_options]
-        return gene_options, gene_value
-
-    @callback(
-        [
-            Output("seq_tech_dropdown_0", "options"),
-            Output("seq_tech_dropdown_0", "value"),
-            Output("country_dropdown_0", "options"),
-            Output("country_dropdown_0", "value"),
-        ],
-        [
-            Input("reference_radio_0", "value"),
-            Input("gene_dropdown_0", "value"),
-            Input("seq_tech_dropdown_0", "value"),
-            Input("country_dropdown_0", "value"),
-            Input("select_all_seq_tech_0", "value"),
-            Input("select_all_countries_0", "value"),
-            Input("complete_partial_radio_explore", "value"),
-        ],
-        [
-            State("seq_tech_dropdown_0", "options"),
-            State("country_dropdown_0", "options"),
-        ],
-        prevent_initial_call=False,
-    )
-    def actualize_seqtech_and_country_filters(
+    def actualize_filters_explorer(
             reference_value,
-            gene_value,
-            seqtech_value,
-            country_value,
-            select_all_tech,
+            select_all_seq_techs,
+            select_all_genes,
             select_all_countries,
             complete_partial_radio,
-            tech_options,
+            seq_tech_value,
+            gene_value,
+            gene_options,
             country_options,
+            seq_tech_options,
+            country_value,
     ):
         """
         seqtech changes mut & country filter; is changed by ref
         country changes mut filter; is changed by ref and seqtech (keep prior country selection)
         """
-        if ctx.triggered_id == "select_all_seq_tech_0":
-            if len(select_all_tech) == 1:
-                seqtech_value = [
-                    i["value"] for i in tech_options if not i["disabled"]
-                ]
-            elif len(select_all_tech) == 0:
-                seqtech_value = []
-        elif ctx.triggered_id == "select_all_countries_0":
-            if len(select_all_countries) == 1:
-                country_value = [
-                    i["value"] for i in country_options if not i["disabled"]
-                ]
-            elif len(select_all_countries) == 0:
-                country_value = []
-        # disable options for countries and seq tech (not changing options)
-        # ref changes seqtech and country
-        else:
-            # seq tech
-            tech_options = get_frequency_sorted_seq_techs_by_filters(
-                df_dict, tech_options, complete_partial_radio, reference_value, gene_value, 'cds'
-            )
-            seqtech_value = [
-                tech
-                for tech in seqtech_value
-                if tech in [t["value"] for t in tech_options if not t["disabled"]]
-            ]
-            # countries
-            country_options = get_all_frequency_sorted_countries_by_filters(
-                df_dict,
-                seqtech_value,
-                complete_partial_radio,
-                reference_value,
-                gene_value,
-                "cds"
-            )
-            country_value = [
-                c["value"]
-                for c in country_options
-                if not c["disabled"] and c["value"] in country_value
-            ]
-        return tech_options, seqtech_value, country_options, country_value
+        return actualize_filters(
+            df_dict,
+            color_dict,
+            ctx.triggered_id,
+            'cds',
+            reference_value,
+            select_all_seq_techs,
+            select_all_genes,
+            select_all_countries,
+            complete_partial_radio,
+            gene_options,
+            country_options,
+            seq_tech_options,
+            gene_value,
+            country_value,
+            seq_tech_value
+        )
 
     # update map by change of filters or moving slider
     @callback(
@@ -368,6 +312,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("selected_interval", "value"),
             Input("gene_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
+            Input("country_dropdown_0", "value"),
             #   Input('yaxis_type', 'value')
         ],
         prevent_initial_call=True,
@@ -382,16 +327,20 @@ def get_explore_callbacks(  # noqa: C901
             dates,
             interval,
             genes,
-            complete_partial_radio
+            complete_partial_radio,
+            countries
     ):
         try:
             location_name = click_data["points"][0]["hovertext"]
         except TypeError:
-            location_name = "Germany"
+            if countries:
+                location_name = countries[0]
+            else:
+                location_name = None
         # date from slider
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         # title text
-        title_text = location_name
+        title_text = location_name if location_name else ""
         world_dfs = [df_dict["world_map"]['complete'][reference_id]]
         if complete_partial_radio == 'partial':
             world_dfs.append(df_dict["world_map"]['partial'][reference_id])
@@ -421,6 +370,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("results_per_location", "clickData"),
             Input("gene_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
+            Input("country_dropdown_0", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -434,13 +384,17 @@ def get_explore_callbacks(  # noqa: C901
             clickDataBoxPlot,
             genes,
             complete_partial_radio,
+            countries
     ):
         if ctx.triggered_id == "results_per_location":
             mutations = [clickDataBoxPlot["points"][0]["label"]]
         try:
             location_name = click_data_map["points"][0]["hovertext"]
         except TypeError:
-            location_name = "Germany"
+            if countries:
+                location_name = countries[0]
+            else:
+                location_name = None
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         world_dfs = [df_dict["world_map"]['complete'][reference_id]]
         if complete_partial_radio == 'partial':
