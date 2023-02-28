@@ -299,19 +299,19 @@ tab_compare_tool = (
                                 [
                                     html_elem_dropdown_aa_mutations_without_max(
                                         [{"value": "no_mutation"}],
-                                        title="Mutations unique for right selection",
-                                        aa_id="right",
-                                    ),
-                                ]
+                                        title="Mutations in both selections",
+                                        aa_id="both",
+                                    )
+                                ],
                             ),
                             dbc.Col(
                                 [
                                     html_elem_dropdown_aa_mutations_without_max(
                                         [{"value": "no_mutation"}],
-                                        title="Mutations in both selections",
-                                        aa_id="both",
-                                    )
-                                ],
+                                        title="Mutations unique for right selection",
+                                        aa_id="right",
+                                    ),
+                                ]
                             ),
                         ]
                     ),
@@ -321,10 +321,10 @@ tab_compare_tool = (
                                        title="Unique for left selection", tool="compare_1"
                                        ),
                             html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="Unique for right selection", tool="compare_2"
+                                       title="In both selection", tool="compare_3"
                                        ),
                             html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="In both selection", tool="compare_3"
+                                       title="Unique for right selection", tool="compare_2"
                                        ),
                         ],
                         className="mt-3",
