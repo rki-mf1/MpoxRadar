@@ -1,4 +1,3 @@
-import copy
 import datetime
 from datetime import date
 from datetime import timedelta
@@ -36,6 +35,7 @@ class TableFilter(object):
             "COUNTRY",
             "GEO_LOCATION",
             "HOST",
+            "GENOME_COMPLETENESS",
             "reference.accession",
             "NUC_PROFILE",
             "AA_PROFILE",
@@ -236,7 +236,6 @@ class DfsAndDetailPlot(object):
                 .sum(numeric_only=True)
                 .reset_index()
               )
-
         df = df.groupby(["COUNTRY", "variant.label", "element.symbol"]).agg(
             {
                 "number_sequences": lambda x: list(x),

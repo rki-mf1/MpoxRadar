@@ -26,25 +26,25 @@ def create_world_map_explorer(date_slider):
                 [
                     dbc.Row(
                         [
-                            dbc.Col(
-                                html.I(
-                                    id="play_button",
-                                    n_clicks=0,
-                                    className="fa-solid fa-circle-play fa-lg",
-                                ),
-                                width=1,
-                            ),
+                            # dbc.Col(
+                            #     html.I(
+                            #         id="play_button",
+                            #         n_clicks=0,
+                            #         className="fa-solid fa-circle-play fa-lg",
+                            #     ),
+                            #     width=1,
+                            # ),
                             dbc.Col(
                                 [
-                                    dcc.Interval(
-                                        id="auto_stepper",
-                                        # TODO this might cause the error: { message: "Circular Dependencies", html: "Error: Dependency Cycle Found: auto_stepper.n_intervals -> auto_stepper.disabled -> auto_stepper.n_intervals" }
-                                        interval=500,
-                                        # time between steps, this component will increment the counter n_intervals every interval milliseconds, 300 to fast for processing
-                                        n_intervals=0,  # Number of times the interval has passed.
-                                        max_intervals=0,
-                                        disabled=True,
-                                    ),
+                                    # dcc.Interval(
+                                    #     id="auto_stepper",
+                                    #     # TODO this might cause the error: { message: "Circular Dependencies", html: "Error: Dependency Cycle Found: auto_stepper.n_intervals -> auto_stepper.disabled -> auto_stepper.n_intervals" }
+                                    #     interval=500,
+                                    #     # time between steps, this component will increment the counter n_intervals every interval milliseconds, 300 to fast for processing
+                                    #     n_intervals=0,  # Number of times the interval has passed.
+                                    #     max_intervals=0,
+                                    #     disabled=True,
+                                    # ),
                                     dcc.RangeSlider(
                                         id="date_slider",
                                         updatemode="mouseup",
@@ -161,9 +161,6 @@ def create_world_map_explorer(date_slider):
         id="map_explorer",
     )
     return map_slider_and_detail_plots
-
-
-
 
 
 def html_elem_method_radioitems():

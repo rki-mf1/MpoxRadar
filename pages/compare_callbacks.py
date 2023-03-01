@@ -31,6 +31,9 @@ def get_compare_callbacks(  # noqa: C901
         ],
         [
             Input("compare_button", "n_clicks"),
+            Input("select_all_mutations_left", "value"),
+            Input("select_all_mutations_right", "value"),
+            Input("select_all_mutations_both", "value"),
         ],
         [
             State("gene_dropdown_1", "value"),
@@ -47,12 +50,21 @@ def get_compare_callbacks(  # noqa: C901
             State("date_picker_range_2", "end_date"),
             State("aa_nt_radio", "value"),
             State("complete_partial_radio_compare", "value"),
+            State("mutation_dropdown_left", "options"),
+            State("mutation_dropdown_right", "options"),
+            State("mutation_dropdown_both", "options"),
+            State("mutation_dropdown_left", "value"),
+            State("mutation_dropdown_right", "value"),
+            State("mutation_dropdown_both", "value"),
         ],
         prevent_initial_call=True,
     )
     @cache.memoize()
     def actualize_mutation_filter(
             compare_button,
+            select_all_mutations_left,
+            select_all_mutations_right,
+            select_all_mutations_both,
             gene_value_1,
             gene_value_2,
             reference_value_1,
@@ -67,70 +79,95 @@ def get_compare_callbacks(  # noqa: C901
             end_date_2,
             aa_nt_radio,
             complete_partial_radio,
+            mut_options_left,
+            mut_options_right,
+            mut_options_both,
+            mut_value_left,
+            mut_value_right,
+            mut_value_both
     ):
-        variantView_dfs_left = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_1, aa_nt_radio)
-        variantView_dfs_right = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_2, aa_nt_radio)
-        propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
+        if ctx.triggered_id == "select_all_mutations_left":
+            if len(select_all_mutations_left) == 1:
+                mut_value_left = [i["value"] for i in mut_options_left]
+            elif len(select_all_mutations_left) == 0:
+                mut_value_left = []
+        elif ctx.triggered_id == "select_all_mutations_right":
+            if len(select_all_mutations_right) == 1:
+                mut_value_right = [i["value"] for i in mut_options_right]
+            elif len(select_all_mutations_right) == 0:
+                mut_value_right = []
+        elif ctx.triggered_id == "select_all_mutations_both":
+            if len(select_all_mutations_both) == 1:
+                mut_value_both = [i["value"] for i in mut_options_both]
+            elif len(select_all_mutations_both) == 0:
+                mut_value_both = []
+        else:
+            variantView_dfs_left = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_1, aa_nt_radio)
+            variantView_dfs_right = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_2, aa_nt_radio)
+            propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
 
-        # LEFT OPTIONS
-        df_mutations_1 = create_mutation_dfs_for_comparison(aa_nt_radio,
-                                                            gene_value_1,
-                                                            seqtech_value_1,
-                                                            country_value_1,
-                                                            start_date_1,
-                                                            end_date_1,
-                                                            variantView_dfs_left,
-                                                            propertyView_dfs)
-        # RIGHT OPTIONS
-        df_mutations_2 = create_mutation_dfs_for_comparison(aa_nt_radio,
-                                                            gene_value_2,
-                                                            seqtech_value_2,
-                                                            country_value_2,
-                                                            start_date_2,
-                                                            end_date_2,
-                                                            variantView_dfs_right,
-                                                            propertyView_dfs)
+            # LEFT OPTIONS
+            df_mutations_1 = create_mutation_dfs_for_comparison(aa_nt_radio,
+                                                                gene_value_1,
+                                                                seqtech_value_1,
+                                                                country_value_1,
+                                                                start_date_1,
+                                                                end_date_1,
+                                                                variantView_dfs_left,
+                                                                propertyView_dfs)
+            # RIGHT OPTIONS
+            df_mutations_2 = create_mutation_dfs_for_comparison(aa_nt_radio,
+                                                                gene_value_2,
+                                                                seqtech_value_2,
+                                                                country_value_2,
+                                                                start_date_2,
+                                                                end_date_2,
+                                                                variantView_dfs_right,
+                                                                propertyView_dfs)
 
-        # DIFFERENCES
-        gene_mutations_df_merge = pd.merge(
-            df_mutations_1[["variant.label", "element.symbol"]],
-            df_mutations_2[["variant.label", "element.symbol"]],
-            how="outer",
-            indicator=True,
-            on=["variant.label", "element.symbol"],
-        )
-        gene_mutations_df_left = gene_mutations_df_merge[
-            gene_mutations_df_merge["_merge"] == "left_only"
-            ][["variant.label", "element.symbol"]]
-        gene_mutations_df_right = gene_mutations_df_merge[
-            gene_mutations_df_merge["_merge"] == "right_only"
-            ][["variant.label", "element.symbol"]]
-        gene_mutations_df_inner = gene_mutations_df_merge[
-            gene_mutations_df_merge["_merge"] == "both"
-            ][["variant.label", "element.symbol"]]
-        mut_options_1 = get_frequency_sorted_mutation_by_df(
-            gene_mutations_df_left, color_dict, aa_nt_radio
-        )
-        mut_options_2 = get_frequency_sorted_mutation_by_df(
-            gene_mutations_df_right, color_dict, aa_nt_radio
-        )
-        mut_options_3 = get_frequency_sorted_mutation_by_df(
-            gene_mutations_df_inner, color_dict, aa_nt_radio
-        )
+            # DIFFERENCES
+            gene_mutations_df_merge = pd.merge(
+                df_mutations_1[["variant.label", "element.symbol"]],
+                df_mutations_2[["variant.label", "element.symbol"]],
+                how="outer",
+                indicator=True,
+                on=["variant.label", "element.symbol"],
+            )
+            gene_mutations_df_left = gene_mutations_df_merge[
+                gene_mutations_df_merge["_merge"] == "left_only"
+                ][["variant.label", "element.symbol"]]
+            gene_mutations_df_right = gene_mutations_df_merge[
+                gene_mutations_df_merge["_merge"] == "right_only"
+                ][["variant.label", "element.symbol"]]
+            gene_mutations_df_inner = gene_mutations_df_merge[
+                gene_mutations_df_merge["_merge"] == "both"
+                ][["variant.label", "element.symbol"]]
+            mut_options_left = get_frequency_sorted_mutation_by_df(
+                gene_mutations_df_left, color_dict, aa_nt_radio
+            )
+            mut_options_right = get_frequency_sorted_mutation_by_df(
+                gene_mutations_df_right, color_dict, aa_nt_radio
+            )
+            mut_options_both = get_frequency_sorted_mutation_by_df(
+                gene_mutations_df_inner, color_dict, aa_nt_radio
+            )
+            mut_value_left = [v["value"] for v in mut_options_left]
+            mut_value_right = [v["value"] for v in mut_options_right]
+            mut_value_both = [v["value"] for v in mut_options_both]
 
-        text_1 = f"Unique number of mutations in left selection: {len(mut_options_1)}"
-        text_2 = f"Unique number of mutations in right selection: {len(mut_options_2)}"
-        text_3 = f"Number of mutations in both selections: {len(mut_options_3)}"
+        text_1 = f"Unique number of mutations in left selection: {len(mut_options_left)}"
+        text_2 = f"Unique number of mutations in right selection: {len(mut_options_right)}"
+        text_3 = f"Number of mutations in both selections: {len(mut_options_both)}"
 
         return (
-            mut_options_1,
-            [v["value"] for v in mut_options_1],
+            mut_options_left,
+            mut_value_left,
             text_1,
-            mut_options_2,
-            [v["value"] for v in mut_options_2],
+            mut_options_right,
+            mut_value_right,
             text_2,
-            mut_options_3,
-            [v["value"] for v in mut_options_3],
+            mut_options_both,
+            mut_value_both,
             text_3,
         )
 

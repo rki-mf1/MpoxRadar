@@ -3,6 +3,7 @@ from dash import html
 from dash import dash_table
 import dash_bootstrap_components as dbc
 
+
 def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
     checklist_reference = dbc.Card(
         dbc.CardBody(
@@ -89,10 +90,17 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
             ),
             dbc.CardFooter(
                 dbc.Row(
-                    dbc.Label(
-                        "Number mutations",
-                        id=f"max_nb_txt_{aa_id}",
-                    ),
+                    [
+                        dbc.Label(
+                            "Number mutations",
+                            id=f"max_nb_txt_{aa_id}",
+                        ),
+                        dcc.Checklist(
+                            id=f"select_all_mutations_{aa_id}",
+                            options=[{"label": "Select All", "value": 1}],
+                            value=[1],
+                        ),
+                    ]
                 ),
             ),
         ]
@@ -211,20 +219,20 @@ def html_complete_partial_radio(tab):
 
 def html_disclaimer_seq_errors(tool):
     disclaimer = dcc.Markdown(
-                        "Sequencing errors are not shown. \n Amino acids mutations containing X, nucleotide mutations "
-                        "containing N, V, D, H, B, K, M, S, W are excluded.",
-                        className="me-1",
-                        style={
-                            "font-size": 20,
-                            "font-weight": "bold",
-                            "align-itmes": "center",
-                            "textAlign": "center",
-                            "color": "white",
-                            "white-space": "pre",
-                            "background-color": "#ffbd33"
-                        },
-                        id=f"disclaimer_mutation_{tool}"
-                    )
+        "Sequencing errors are not shown. \n Amino acids mutations containing X, nucleotide mutations "
+        "containing N, V, D, H, B, K, M, S, W are excluded.",
+        className="me-1",
+        style={
+            "font-size": 20,
+            "font-weight": "bold",
+            "align-itmes": "center",
+            "textAlign": "center",
+            "color": "white",
+            "white-space": "pre",
+            "background-color": "#ffbd33"
+        },
+        id=f"disclaimer_mutation_{tool}"
+    )
     return disclaimer
 
 

@@ -177,6 +177,7 @@ def create_comparison_tables(df_dict,
         "GEO_LOCATION",
         "HOST",
         "LENGTH",
+        "GENOME_COMPLETENESS",
         "reference.accession",
         "variant.label",
     ]

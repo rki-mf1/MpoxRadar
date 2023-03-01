@@ -5,10 +5,8 @@ from dash import State
 from dash import ctx
 from dash.exceptions import PreventUpdate
 
-from pages.utils_filters import get_all_frequency_sorted_countries_by_filters, actualize_filters
-from pages.utils_filters import get_all_gene_dict
+from pages.utils_filters import actualize_filters
 from pages.utils_filters import get_frequency_sorted_mutation_by_filters
-from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import WorldMap
 from pages.utils_worldMap_explorer import TableFilter
@@ -197,14 +195,18 @@ def get_explore_callbacks(  # noqa: C901
         [
             Input("date_slider", "drag_value"),
             Input("selected_interval", "value"),
-            Input("auto_stepper", "n_intervals"),
+         #   Input("auto_stepper", "n_intervals"),
         ],
         [
             State("date_slider", "value"),
         ],
         prevent_initial_call=True,
     )
-    def update_slider_interval(drag_value, interval, n_intervals, slider_value):
+    def update_slider_interval(
+            drag_value,
+            interval,
+           # n_intervals,
+            slider_value):
         """
         slider moved by user drag, changed location of slider with drag_value
         OR
@@ -235,64 +237,64 @@ def get_explore_callbacks(  # noqa: C901
             else:
                 return slider_value
         # if play button starts auto_stepper
-        if ctx.triggered_id == "auto_stepper":
-            if n_intervals == 0:
-                # raise PreventUpdate
-                return slider_value
-            if interval is None:
-                interval = 7
-            if n_intervals + interval >= len(date_slider.date_list):
-                first_date = DateSlider.unix_time_millis(
-                    date_slider.date_list[-interval]
-                )
-                second_date = DateSlider.unix_time_millis(date_slider.date_list[-1])
-            else:
-                first_date = DateSlider.unix_time_millis(
-                    date_slider.date_list[n_intervals - 1]
-                )
-                second_date = DateSlider.unix_time_millis(
-                    date_slider.date_list[n_intervals + interval - 1]
-                )  # first_date + interval*86400
-            return [first_date, second_date]
-
-    @callback(
-        [
-            Output("auto_stepper", "max_intervals"),
-            Output("auto_stepper", "disabled"),
-            Output("play_button", "className"),
-        ],
-        [
-            Input("play_button", "n_clicks"),
-            Input("auto_stepper", "n_intervals"),
-        ],
-        [State("selected_interval", "value"), State("play_button", "className")],
-        prevent_initial_call=True,
-    )
-    def stepper_control(n_clicks, n_intervals, interval, button_icon):
-        """
-        stop and start auto-stepper (disabled value), returns play or stop icon for button
-        interval: increment the counter n_intervals every interval milliseconds.
-        disabled (boolean; optional): If True, the counter will no longer update.
-        n_intervals (number; default 0): Number of times the interval has passed.
-        max_intervals (number; default -1): Number of times the interval will be fired. If -1, then the interval has no limit
-        (the default) and if 0 then the interval stops running.
-        """
-        if interval is None:
-            interval = 0
-        steps = len(date_slider.date_list) - interval
-        # stop stepper
-        if ctx.triggered_id == "play_button":
-            # start stepper
-            if button_icon == "fa-solid fa-circle-play fa-lg":
-                return steps, False, "fa-solid fa-circle-stop fa-lg"
-            # pause stepper
-            elif button_icon == "fa-solid fa-circle-stop fa-lg":
-                return steps, True, "fa-solid fa-circle-play fa-lg"
-        else:
-            if n_intervals == steps:
-                return 0, True, "fa-solid fa-circle-play fa-lg"
-            else:
-                raise PreventUpdate
+        # if ctx.triggered_id == "auto_stepper":
+        #     if n_intervals == 0:
+        #         # raise PreventUpdate
+        #         return slider_value
+        #     if interval is None:
+        #         interval = 7
+        #     if n_intervals + interval >= len(date_slider.date_list):
+        #         first_date = DateSlider.unix_time_millis(
+        #             date_slider.date_list[-interval]
+        #         )
+        #         second_date = DateSlider.unix_time_millis(date_slider.date_list[-1])
+        #     else:
+        #         first_date = DateSlider.unix_time_millis(
+        #             date_slider.date_list[n_intervals - 1]
+        #         )
+        #         second_date = DateSlider.unix_time_millis(
+        #             date_slider.date_list[n_intervals + interval - 1]
+        #         )  # first_date + interval*86400
+        #     return [first_date, second_date]
+    #
+    # @callback(
+    #     [
+    #         Output("auto_stepper", "max_intervals"),
+    #         Output("auto_stepper", "disabled"),
+    #         Output("play_button", "className"),
+    #     ],
+    #     [
+    #         Input("play_button", "n_clicks"),
+    #         Input("auto_stepper", "n_intervals"),
+    #     ],
+    #     [State("selected_interval", "value"), State("play_button", "className")],
+    #     prevent_initial_call=True,
+    # )
+    # def stepper_control(n_clicks, n_intervals, interval, button_icon):
+    #     """
+    #     stop and start auto-stepper (disabled value), returns play or stop icon for button
+    #     interval: increment the counter n_intervals every interval milliseconds.
+    #     disabled (boolean; optional): If True, the counter will no longer update.
+    #     n_intervals (number; default 0): Number of times the interval has passed.
+    #     max_intervals (number; default -1): Number of times the interval will be fired. If -1, then the interval has no limit
+    #     (the default) and if 0 then the interval stops running.
+    #     """
+    #     if interval is None:
+    #         interval = 0
+    #     steps = len(date_slider.date_list) - interval
+    #     # stop stepper
+    #     if ctx.triggered_id == "play_button":
+    #         # start stepper
+    #         if button_icon == "fa-solid fa-circle-play fa-lg":
+    #             return steps, False, "fa-solid fa-circle-stop fa-lg"
+    #         # pause stepper
+    #         elif button_icon == "fa-solid fa-circle-stop fa-lg":
+    #             return steps, True, "fa-solid fa-circle-play fa-lg"
+    #     else:
+    #         if n_intervals == steps:
+    #             return 0, True, "fa-solid fa-circle-play fa-lg"
+    #         else:
+    #             raise PreventUpdate
 
         # update plots
 
