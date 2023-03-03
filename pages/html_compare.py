@@ -14,7 +14,7 @@ def html_date_picker(d_id):
                     id=f"date_picker_range_{d_id}",
                     start_date="2022-01-01",
                     end_date=today,
-                    min_date_allowed=date(2022, 1, 1),
+                    min_date_allowed=date(1960, 1, 1),
                     max_date_allowed=today,
                     initial_visible_month=date(2022, 1, 1),
                 ),

@@ -135,7 +135,8 @@ def get_explore_callbacks(  # noqa: C901
             seq_tech_options,
             gene_value,
             country_value,
-            seq_tech_value
+            seq_tech_value,
+            min_date="2022-01-01"
         )
 
     # update map by change of filters or moving slider
@@ -332,14 +333,13 @@ def get_explore_callbacks(  # noqa: C901
             complete_partial_radio,
             countries
     ):
+        location_name = None
         try:
             location_name = click_data["points"][0]["hovertext"]
         except TypeError:
             if countries:
                 location_name = countries[0]
-            else:
-                location_name = None
-        if location_name and location_name not in countries:
+        if location_name and location_name not in countries and countries:
             location_name = countries[0]
         # date from slider
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
@@ -379,7 +379,7 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=True,
     )
     def update_lower_plot(
-            click_data_map,
+            click_data,
             mutations,
             reference_id,
             seqtech_list,
@@ -392,14 +392,13 @@ def get_explore_callbacks(  # noqa: C901
     ):
         if ctx.triggered_id == "results_per_location":
             mutations = [clickDataBoxPlot["points"][0]["label"]]
+        location_name = None
         try:
-            location_name = click_data_map["points"][0]["hovertext"]
+            location_name = click_data["points"][0]["hovertext"]
         except TypeError:
             if countries:
                 location_name = countries[0]
-            else:
-                location_name = None
-        if location_name and location_name not in countries:
+        if location_name and location_name not in countries and countries:
             location_name = countries[0]
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         world_dfs = [df_dict["world_map"]['complete'][reference_id]]

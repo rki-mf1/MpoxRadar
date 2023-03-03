@@ -220,7 +220,7 @@ def html_complete_partial_radio(tab):
 def html_disclaimer_seq_errors(tool):
     disclaimer = dcc.Markdown(
         "Sequencing errors are not shown. \n Amino acids mutations containing X, nucleotide mutations "
-        "containing N, V, D, H, B, K, M, S, W are excluded.",
+        "containing N are excluded.",
         className="me-1",
         style={
             "font-size": 20,

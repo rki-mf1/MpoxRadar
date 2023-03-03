@@ -266,12 +266,14 @@ def create_property_view(df, dummy_date="2021-12-31"):
     c = ["sample.id", "sample.name"]
     df = df.set_index(["property.name"] + c).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
-    df["COLLECTION_DATE"] = df[["COLLECTION_DATE"]].fillna(dummy_date)
+    df.RELEASE_DATE.fillna(dummy_date, inplace=True)
+    df.COLLECTION_DATE.fillna(df.RELEASE_DATE, inplace=True)
     df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
         lambda d: datetime.strptime(d, "%Y-%m-%d").date()
     )
     df["SEQ_TECH"] = df["SEQ_TECH"].replace([np.nan, ""], "undefined")
     df["COUNTRY"] = df["COUNTRY"].replace([np.nan, ""], "undefined")
+    df["LENGTH"] = df["LENGTH"].astype(float).astype("Int64")
     #  print(f"time pre-processing PropertyView final: {(perf_counter()-start)} sec.")
     #  print(tabulate(df[0:10], headers='keys', tablefmt='psql'))
     return df
@@ -302,7 +304,7 @@ def create_world_map_df(variantView, propertyView):
     df = pd.merge(
         variantView[["sample.id", "variant.label", "element.symbol"]],
         propertyView[["sample.id", "COUNTRY", "COLLECTION_DATE", "SEQ_TECH"]],
-        how="left",
+        how="inner",
         on="sample.id",
     )[
         [
@@ -345,7 +347,7 @@ def create_world_map_df(variantView, propertyView):
         ]
     ]
     # TODO: first combine tables and remove then?
-    df = remove_x_appearing_variants(df, 1)
+    # df = remove_x_appearing_variants(df, 1)
     return df
 
 
@@ -356,11 +358,11 @@ def remove_seq_errors_and_add_gene_var_column(variantViewPartial, reference_id, 
         ].reset_index(drop=True)
     if seq_type == 'source':
         unknown_nt = ['N', 'V', 'D', 'H', 'B', 'K', 'M', 'S', 'W']
-        df = df[~df['variant.label'].str.contains('|'.join(unknown_nt))]
+        df = df[~df['variant.label'].str.contains('N')]
     # B, Z, J not in DB, X always at the end, all undefined nucleotides translated to X
     elif seq_type == "cds":
         df = df[~df['variant.label'].str.endswith('X')]
-        df['gene::variant'] = df['element.symbol'].astype(str) + "::" + df['variant.label']
+        df['gene:variant'] = df['element.symbol'].astype(str) + ":" + df['variant.label']
     return df
 
 

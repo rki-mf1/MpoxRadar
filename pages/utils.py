@@ -69,6 +69,7 @@ def get_color_dict(df_dict):
             j = i % 24
             color_dict[gene] = color_schemes[j]
     color_dict["no_gene"] = "grey"
+    color_dict["unchanged"] = "grey"
     return color_dict
 
 

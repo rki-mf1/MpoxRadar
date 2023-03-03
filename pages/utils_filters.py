@@ -1,11 +1,20 @@
+from datetime import datetime
+
 from dash import html
 import pandas as pd
 
 
-def filter_propertyView_2(df, seqtech_value, sample_id_set):
-    return df[
+def filter_propertyView_2(df, seqtech_value, sample_id_set, min_date=None):
+    if min_date:
+        df = df[
+            df["SEQ_TECH"].isin(seqtech_value)
+            & df["sample.id"].isin(sample_id_set)
+            & (df["COLLECTION_DATE"] >= datetime.strptime(min_date, "%Y-%m-%d").date())]
+    else:
+        df = df[
         df["SEQ_TECH"].isin(seqtech_value)
         & df["sample.id"].isin(sample_id_set)]
+    return df
 
 
 def filter_propertyView_3(df, seqtech_value, country_value):
@@ -67,16 +76,19 @@ def get_all_frequency_sorted_countries_by_filters(df_dict,
                                                   complete_partial_radio,
                                                   reference_value,
                                                   gene_value,
-                                                  aa_nt='cds'):
+                                                  aa_nt='cds',
+                                                  min_date=None):
     variantView = df_dict['variantView']['complete'][reference_value][aa_nt]
     if aa_nt == 'cds':
         sample_id_set = set(variantView[variantView["element.symbol"].isin(gene_value)]["sample.id"])
     else:
         sample_id_set = set(variantView["sample.id"])
+
     filtered_propertyView = filter_propertyView_2(
         df_dict['propertyView']['complete'],
         seqtech_value,
-        sample_id_set
+        sample_id_set,
+        min_date
     )
     if complete_partial_radio == 'partial':
         variantViewP = df_dict['variantView']['partial'][reference_value][aa_nt]
@@ -197,23 +209,31 @@ def get_frequency_sorted_seq_techs_by_filters(
         complete_partial_radio,
         reference_value,
         gene_value,
-        aa_nt_radio='cds'
+        aa_nt_radio='cds',
+        min_date=None
 ):
     variantView = df_dict['variantView']['complete'][reference_value][aa_nt_radio]
     if aa_nt_radio == 'cds':
         variantView = variantView[variantView["element.symbol"].isin(gene_value)]
+    propertyView = df_dict["propertyView"]['complete']
+    if min_date:
+        propertyView = propertyView[(propertyView['COLLECTION_DATE'] >=
+                                    datetime.strptime(min_date, "%Y-%m-%d").date())]
     df = pd.merge(
-        variantView
-        , df_dict["propertyView"]['complete'],
+        variantView, propertyView,
         how="inner",
         on="sample.id")[["sample.id", "SEQ_TECH"]]
+
     if complete_partial_radio == 'partial':
         variantView2 = df_dict['variantView']['partial'][reference_value][aa_nt_radio]
         if aa_nt_radio == 'cds':
             variantView2 = variantView2[variantView2["element.symbol"].isin(gene_value)]
+        propertyView2 = df_dict["propertyView"]['partial']
+        if min_date:
+            propertyView2 = propertyView2[(propertyView2['COLLECTION_DATE'] >=
+                                          datetime.strptime(min_date, "%Y-%m-%d").date())]
         df2 = pd.merge(
-            variantView2
-            , df_dict["propertyView"]['partial'],
+            variantView2, propertyView2,
             how="inner",
             on="sample.id")[["sample.id", "SEQ_TECH"]]
         df = pd.concat([df, df2], ignore_index=True, axis=0)
@@ -257,7 +277,8 @@ def actualize_filters(
         seq_tech_options,
         gene_value,
         country_value,
-        seq_tech_value
+        seq_tech_value,
+        min_date=None
 ):
     if triggered_id.startswith("select_all_genes"):
         if len(select_all_genes) == 1:
@@ -297,7 +318,8 @@ def actualize_filters(
             complete_partial_radio,
             reference_value,
             gene_value,
-            aa_nt_radio
+            aa_nt_radio,
+            min_date
         )
         seq_tech_value = [s["value"] for s in seq_tech_options]
 
@@ -309,7 +331,7 @@ def actualize_filters(
                                                                         complete_partial_radio,
                                                                         reference_value,
                                                                         gene_value,
-                                                                        aa_nt_radio)
+                                                                        aa_nt_radio,
+                                                                        min_date)
         country_value = [c["value"] for c in country_options]
     return gene_options, gene_value, country_options, country_value, seq_tech_options, seq_tech_value,
-

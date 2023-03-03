@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from datetime import date
 from datetime import timedelta
 import math
@@ -27,6 +27,8 @@ class TableFilter(object):
         super(TableFilter, self).__init__()
         self.table_columns = [
             "sample.name",
+            "NUC_PROFILE",
+            "AA_PROFILE",
             "COLLECTION_DATE",
             "RELEASE_DATE",
             "ISOLATE",
@@ -37,8 +39,6 @@ class TableFilter(object):
             "HOST",
             "GENOME_COMPLETENESS",
             "reference.accession",
-            "NUC_PROFILE",
-            "AA_PROFILE",
         ]
 
     def _get_filtered_samples(self, propertyView_dfs, variantView_dfs, seq_tech_list, dates, countries, mut_value,
@@ -62,17 +62,17 @@ class TableFilter(object):
 
     def combine_labels_by_sample(self, df, aa_nt):
         if aa_nt == "cds":
-            cols = ["reference.id", "reference.accession", "sample.name", "sample.id", "gene::variant"]
+            cols = ["reference.id", "reference.accession", "sample.name", "sample.id", "gene:variant"]
             df = df[cols]
             df = (
                 df.groupby(
                     cols[0:-1],
                     dropna=False,
                     group_keys=True
-                )["gene::variant"]
+                )["gene:variant"]
                     .apply(lambda x: ",".join([str(y) for y in set(x)]))
                     .reset_index()
-                    .rename(columns={"gene::variant": "AA_PROFILE"})
+                    .rename(columns={"gene:variant": "AA_PROFILE"})
             )
 
         elif aa_nt == "source":
@@ -141,6 +141,7 @@ class TableFilter(object):
                 [],
                 columns=[self.table_columns]
             )
+        df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
         return df
 
 
@@ -149,7 +150,7 @@ class DfsAndDetailPlot(object):
         super(DfsAndDetailPlot, self).__init__()
         dates = sorted(list({i for s in [set(df["COLLECTION_DATE"]) for df in world_dfs] for i in s}))
         # self.min_date = dates[0]
-        self.min_date = datetime.datetime.strptime(
+        self.min_date = datetime.strptime(
             "2022-01-01", "%Y-%m-%d"
         ).date()
         self.max_date = dates[-1]
@@ -181,6 +182,7 @@ class DfsAndDetailPlot(object):
     ):
         # TODO exist ' in mpx too?
         mutations = [var[1:-1] if "`" in var else var for var in mutations]
+        pd.set_option('display.max_columns', None)
         df = df[
             df["COLLECTION_DATE"].isin(dates)
             & df["SEQ_TECH"].isin(seq_tech_list)
@@ -235,7 +237,7 @@ class DfsAndDetailPlot(object):
             )
                 .sum(numeric_only=True)
                 .reset_index()
-              )
+        )
         df = df.groupby(["COUNTRY", "variant.label", "element.symbol"]).agg(
             {
                 "number_sequences": lambda x: list(x),
@@ -278,6 +280,9 @@ class DfsAndDetailPlot(object):
         return tickvals_date, ticktext_date
 
     def create_frequency_plot(self, df):
+        """
+        param df: COUNTRY variant.label element.symbol  number_sequences
+        """
         fig = go.Figure()
         for gene in df["element.symbol"].unique():
             df_g = df[df["element.symbol"] == gene]
@@ -501,13 +506,18 @@ class WorldMap(DfsAndDetailPlot):
         filtered_dfs = [self.filter_df(
             world_df, mutations, seq_tech_list, dates, countries, genes
         ) for world_df in self.world_dfs]
+
         if method == "Frequency":
-            dfs = [
-                filtered_df.groupby(["COUNTRY"])
-                    .sum(numeric_only=True)
-                    .reset_index()
-                for filtered_df in filtered_dfs]
-            df = pd.concat(dfs, ignore_index=True, axis=0)
+            df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
+            countries = []
+            number_sequences = []
+            for name, group in df.groupby(["COUNTRY"]):
+                sample_set = {item for sublist in [sample.split(',') for sample in group["sample_id_list"].unique()] for
+                              item in sublist}
+                countries.append(name)
+                number_sequences.append(len(sample_set))
+            df = pd.DataFrame(list(zip(countries, number_sequences)),
+                              columns=['COUNTRY', 'number_sequences'])
             column_of_interest = "number_sequences"
         elif method == "Increase":
             df = self.get_increase_df(filtered_dfs)
@@ -626,7 +636,7 @@ class DateSlider:
         param dates: propertyView["COLLECTION_DATE"], type 'datetime.date' (YYYY, M, D)
         """
         # TODO min date = 1978, max 2202-07-01
-        self.min_date = datetime.datetime.strptime(
+        self.min_date = datetime.strptime(
             "2022-01-01", "%Y-%m-%d"
         ).date()  # min(dates)
         self.max_date = max(dates)

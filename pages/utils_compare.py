@@ -73,27 +73,31 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
 
 
 def combine_labels_by_sample(df, aa_nt_radio):
+    cols = list(df.columns)
     if not df.empty:
         if aa_nt_radio == "cds":
+            cols.remove("gene:variant")
             df = (
                 df.groupby(
-                    list(df.columns)[:-1],
+                    cols,
                     dropna=False,
-                )["gene::variant"]
+                )["gene:variant"]
                     .apply(lambda x: ",".join([str(y) for y in set(x)]))
                     .reset_index()
-                    .rename(columns={"gene::variant": "AA_PROFILE"})
-            )
+                    .rename(columns={"gene:variant": "AA_PROFILE"})
+            )[['sample.name', "AA_PROFILE"]+cols[1:]]
         elif aa_nt_radio == "source":
+            cols.remove("variant.label")
             df = (
                 df.groupby(
-                    list(df.columns)[:-1],
+                    cols,
                     dropna=False,
                 )["variant.label"]
                     .apply(lambda x: ",".join([str(y) for y in set(x)]))
                     .reset_index()
                     .rename(columns={"variant.label": "NUC_PROFILE"})
-            )
+            )[['sample.name', "NUC_PROFILE"]+cols[1:]]
+    df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
     return df
 
 
@@ -116,6 +120,7 @@ def create_comparison_tables(df_dict,
                              gene_dropdown_2,
                              mut_value_3
                              ):
+
     variantView_dfs_left = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_1, aa_nt_radio)
     variantView_dfs_right = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_2, aa_nt_radio)
     propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
@@ -137,6 +142,7 @@ def create_comparison_tables(df_dict,
     if aa_nt_radio == 'source':
         gene_dropdown_1 = None
         gene_dropdown_2 = None
+
 
     # all samples of selection (filter by mutation directly prevents complete MUT PROFILE)
     samples_left_both = get_filtered_samples(
@@ -163,6 +169,7 @@ def create_comparison_tables(df_dict,
         mut_value_2,
         gene_dropdown_2
     )
+
     variantView_dfs_left_both = [df[df['sample.id'].isin(samples_left_both)] for df in variantView_dfs_left]
     variantView_dfs_right_both = [df[df['sample.id'].isin(samples_right_both)] for df in variantView_dfs_right]
     variantView_dfs_left = [df[df['sample.id'].isin(samples_left)] for df in variantView_dfs_left]
@@ -170,6 +177,7 @@ def create_comparison_tables(df_dict,
 
     table_columns = [
         "sample.name",
+        "variant.label",
         "COLLECTION_DATE",
         "ISOLATE",
         "SEQ_TECH",
@@ -179,11 +187,10 @@ def create_comparison_tables(df_dict,
         "LENGTH",
         "GENOME_COMPLETENESS",
         "reference.accession",
-        "variant.label",
     ]
     if aa_nt_radio == 'cds':
-        table_columns.pop()
-        table_columns.append("gene::variant")
+        table_columns[1] = "gene:variant"
+
     table_df_1 = pd.concat(
         [
             merge_tables(variantView_dfs_left[i], propertyView_dfs_left[i])

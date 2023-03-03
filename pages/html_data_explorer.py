@@ -12,11 +12,11 @@ def create_world_map_explorer(date_slider):
         [
             html.H3("Output result from filter options", style={"textAlign": "center"}),
             html.H4("Mutation counts based on filters"),
-            dbc.FormText(
-                "Note, mutations only occurring once are removed from the map and plots below to allow for an overview. "
-                "Those are still included in the table of results.",
-                color="primary",
-            ),
+            # dbc.FormText(
+            #     "Note, mutations only occurring once are removed from the map and plots below to allow for an overview. "
+            #     "Those are still included in the table of results.",
+            #     color="primary",
+            # ),
             dbc.Spinner(
                 dcc.Graph(animate=False, id="world_map_explorer"),
                 color="primary",
