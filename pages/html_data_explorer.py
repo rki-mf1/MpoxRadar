@@ -82,13 +82,14 @@ def create_world_map_explorer(date_slider):
     map_chart_header = html.Div(
         [
             html.H4(
-                "Detailed look at the sequences with the chosen mutations for the selected country"
+                "Detailed look at the sequences with the chosen mutations for the selected country", id="chosen_location"
             ),
-            html.H5(id="chosen_location"),
             dbc.FormText(
-                "Please click on a country you are interested in on the global map above to see detail plots for that country.",
+                "Please click on a country you are interested in on the global map above to see detail plots for that country.\n",
                 color="primary",
             ),
+            html.H5(),
+            html.H5(id="sequence_information"),
         ]
     )
 
@@ -97,7 +98,7 @@ def create_world_map_explorer(date_slider):
             [
                 html.Div(
                     [
-                        html.H6(id="header_upper_plot"),
+                        html.H5(id="header_upper_plot"),
                         dbc.Spinner(
                             dcc.Graph(id="results_per_location"),
                             color="primary",
@@ -107,7 +108,7 @@ def create_world_map_explorer(date_slider):
                 ),
                 html.Div(
                     [
-                        html.H6("Mutation Development", id="header_lower_plot"),
+                        html.H5("Mutation Development", id="header_lower_plot"),
                         dbc.Spinner(
                             dcc.Graph(id="mutation_development"),
                             color="primary",

@@ -177,12 +177,30 @@ class DfsAndDetailPlot(object):
         else:
             return len(seq_set)
 
+    def get_nb_flitered_seq(self, seq_tech_list, dates, countries, genes, mutations):
+        samples_1 = set()
+        samples_2 = set()
+        for world_df in self.world_dfs:
+            df = world_df[
+                    world_df["COLLECTION_DATE"].isin(dates)
+                    & world_df["SEQ_TECH"].isin(seq_tech_list)
+                    & world_df["COUNTRY"].isin(countries)
+                    & world_df["element.symbol"].isin(genes)
+                    ].copy()
+            df.sample_id_list = df.sample_id_list.map(lambda x: x.split(','))
+            df2 = df[df['variant.label'].isin(mutations)]
+
+            for sample_list in df['sample_id_list'].tolist():
+                samples_1.update(sample_list)
+            for sample_list in df2['sample_id_list'].tolist():
+                samples_2.update(sample_list)
+        return len(samples_1), len(samples_2)
+
     def filter_df(
             self, df, mutations, seq_tech_list, dates, countries, genes
     ):
         # TODO exist ' in mpx too?
         mutations = [var[1:-1] if "`" in var else var for var in mutations]
-        pd.set_option('display.max_columns', None)
         df = df[
             df["COLLECTION_DATE"].isin(dates)
             & df["SEQ_TECH"].isin(seq_tech_list)
@@ -511,7 +529,7 @@ class WorldMap(DfsAndDetailPlot):
             df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
             countries = []
             number_sequences = []
-            for name, group in df.groupby(["COUNTRY"]):
+            for name, group in df.groupby("COUNTRY"):
                 sample_set = {item for sublist in [sample.split(',') for sample in group["sample_id_list"].unique()] for
                               item in sublist}
                 countries.append(name)

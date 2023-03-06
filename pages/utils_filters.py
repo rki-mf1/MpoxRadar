@@ -148,13 +148,13 @@ def get_frequency_sorted_mutation_by_filters(
                                on="sample.id")[
             ["sample.id", "variant.label", "element.symbol"]]
         merged_df = pd.concat([merged_df, merged_df_2], ignore_index=True, axis=0)
-
     df_grouped_by_mutation = (
         merged_df.groupby(["variant.label", "element.symbol"])
             .count()
             .reset_index()
             .sort_values(["sample.id"], ascending=False)
     )
+    # column sample.id now with number of sequences per mutation | gene
     sorted_mutations_dict = [
         {
             "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),

@@ -304,6 +304,7 @@ def get_explore_callbacks(  # noqa: C901
             Output("results_per_location", "figure"),
             Output("chosen_location", "children"),
             Output("header_upper_plot", "children"),
+            Output("sequence_information", "children")
         ],
         [
             Input("world_map_explorer", "clickData"),
@@ -344,11 +345,17 @@ def get_explore_callbacks(  # noqa: C901
         # date from slider
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         # title text
-        title_text = location_name if location_name else ""
+        country = location_name if location_name else ""
+        title_text = f"Detailed look at the sequences with the chosen mutations for the selected country: {country}"
         world_dfs = [df_dict["world_map"]['complete'][reference_id]]
         if complete_partial_radio == 'partial':
             world_dfs.append(df_dict["world_map"]['partial'][reference_id])
         world_map = WorldMap(world_dfs, color_dict, location_coordinates)
+        number_selected_sequences, seq_with_mut = world_map.get_nb_flitered_seq(seqtech_list, date_list, [location_name],
+                                                                                genes, mutations)
+        info_header = f"Number Sequences with selected genes, sequencing technologies for country {location_name} " \
+                      f"between {date_list[0]} - {date_list[-1]}: {number_selected_sequences} of which {seq_with_mut} " \
+                      f"sequences carry at least one of the selected mutations "
         # 1. plot
         if method == "Increase":
             fig = world_map.get_slope_bar_plot(
@@ -359,8 +366,8 @@ def get_explore_callbacks(  # noqa: C901
             fig = world_map.get_frequency_bar_chart(
                 mutations, seqtech_list, date_list, location_name, genes
             )
-            plot_header = "Number Sequences"
-        return fig, title_text, plot_header
+            plot_header = f"Number Sequences"
+        return fig, title_text, plot_header, info_header
 
     @callback(
         Output("mutation_development", "figure"),
