@@ -646,7 +646,11 @@ def main(args):  # noqa: C901
             if args.out_column != "all":
                 out_column = args.out_column.strip()
                 out_column_list = out_column.split(",")
-                check = all(item in dbm.properties for item in out_column_list)
+                _all_avi_columns = list(dbm.properties.keys())
+                check = all(
+                    item in _all_avi_columns + ["NUC_PROFILE", "AA_PROFILE"]
+                    for item in out_column_list
+                )
                 if check:
                     # sample.name is fixed
                     valid_output_column = out_column_list + ["sample.name"]

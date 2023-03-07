@@ -12,15 +12,18 @@ import argparse
 import datetime
 import logging
 import os
+import random
 import sys
 import time
 import traceback
 from urllib.error import HTTPError
+from urllib.parse import urlparse
 
 from Bio import Entrez
 from Bio import SeqIO
 import dateparser
 from dotenv import load_dotenv
+import mariadb
 
 load_dotenv()
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
@@ -34,11 +37,39 @@ IGNORE_LIST = [
     "OX044338.1",
     "OX009124.1",
     "NC_003310.1",  # from 1996
+    "8HG1_T",
+    "8HG1_P",
 ]
 
 Entrez.api_key = os.getenv("NCBI_API_KEY", "")
 Entrez.tool = os.getenv("NCBI_TOOL", "")
 Entrez.email = os.getenv("NCBI_EMAIL", "")  # Always tell NCBI who you are
+URI = urlparse(os.getenv("DB_URL", ""))
+# connection parameters
+
+
+def get_existing_sample_list():
+
+    database = URI.path.replace("/", "")
+    conn_params = {
+        "user": URI.username,
+        "password": URI.password,
+        "host": URI.hostname,
+        "port": URI.port,
+        "database": database,
+    }
+    # Establish a connection
+    connection = mariadb.connect(**conn_params)
+    cursor = connection.cursor()
+    # retrieve data
+    cursor.execute("SELECT name FROM sample;")
+    # print content
+    db_sample_list = [item[0] for item in cursor.fetchall()]
+
+    # free resources
+    cursor.close()
+    connection.close()
+    return db_sample_list
 
 
 def download(save_path):  # noqa: C901
@@ -62,7 +93,7 @@ def download(save_path):  # noqa: C901
 
             record = Entrez.read(handle)
             total_count = record["Count"]
-            logging.info("Total sample to download: %s " % (total_count))
+            logging.info("All samples are found: %s " % (total_count))
 
             handle = Entrez.esearch(
                 db=DB,
@@ -73,16 +104,23 @@ def download(save_path):  # noqa: C901
             )
             record = Entrez.read(handle)
             # setup cache
-            time.sleep(1)
+            time.sleep(random.randint(3, 6))
             # print(record)
             id_list = record["IdList"]
+            db_sample_list = get_existing_sample_list()
+            id_list = list(set(id_list) - set(db_sample_list))
+            total_count = len(id_list)
+
+            logging.info("Remaining samples after check: %s " % (total_count))
             search_results = Entrez.read(Entrez.epost(DB, id=",".join(id_list)))
             webenv = search_results["WebEnv"]
             query_key = search_results["QueryKey"]
-            time.sleep(1)
+
             success = True
         except Exception as e:
             logging.error("Error at %s", "getting ID", exc_info=e)
+            logging.info("Reties to reconnect...")
+            time.sleep(random.randint(10, 20))
     handle.close()
     if attempt == 3 and not success:
         return False
@@ -91,6 +129,7 @@ def download(save_path):  # noqa: C901
         file_log_handler = open(os.path.join(save_path, ".download.log"), "w+")
     else:
         file_log_handler = open(os.path.join(save_path, ".download.log"), "r+")
+
     try:
         _start = int(file_log_handler.read())
         logging.info(f"Resume previous download: start at {_start}")
@@ -126,15 +165,16 @@ def download(save_path):  # noqa: C901
                 if 500 <= err.code <= 599:
                     logging.warning(f"Received error from server {err}")
                     logging.warning("Attempt {attempt} of 3")
-                    time.sleep(5)
+                    time.sleep(random.randint(30, 60))
                 if 400 == err.code:
                     logging.warning(f"Received error from server {err}")
                     logging.warning("Attempt {attempt} of 3")
-                    time.sleep(5)
+                    time.sleep(random.randint(30, 60))
                 else:
                     raise
             except Exception as e:
                 logging.error("Error at %s", "download sample", exc_info=e)
+                time.sleep(random.randint(3, 6))
 
         if attempt == 3 and not success:
             fetch_handle.close()
@@ -151,7 +191,7 @@ def download(save_path):  # noqa: C901
         file_log_handler.seek(0)
         file_log_handler.write(str(end))
         file_log_handler.truncate()
-        time.sleep(2)
+        time.sleep(random.randint(3, 6))
 
     with open(os.path.join(save_path, ".download.success"), "w") as f:
         f.writelines("done")
@@ -315,7 +355,7 @@ def run(args):
             logging.StreamHandler(),
         ],
     )
-    logging.info("Script version: 1")
+    logging.info("Script version: 1.1")
     logging.info("Save output to:" + SAVE_PATH)
 
     save_download_path = os.path.join(SAVE_PATH, "GB")
