@@ -1,14 +1,14 @@
 import csv
-from datetime import datetime
-import multiprocessing as mp
 import os
-from time import perf_counter
-from urllib.parse import urlparse
-
 import numpy as np
 import pandas as pd
-import sqlalchemy
+from collections import defaultdict
+from datetime import datetime
+import multiprocessing as mp
+from time import perf_counter
+from urllib.parse import urlparse
 from sqlalchemy import create_engine
+from sqlalchemy import exc
 
 from pages.config import CACHE_DIR
 from pages.config import DB_URL
@@ -16,7 +16,7 @@ from pages.config import redis_manager
 from pages.utils import load_Cpickle
 from pages.utils import write_Cpickle
 
-tables = ["propertyView", "variantView", "referenceView"]
+tables = ["propertyView", "variantView"]
 
 # pandas normally uses python strings, which have about 50 bytes overhead. that's catastrophic!
 stringType = "string[pyarrow]"
@@ -102,6 +102,7 @@ needed_columns = {
         "property.name",
         "value_text",
         "value_date",
+        "value_integer"
     ],
     "variantView": [
         "sample.id",
@@ -114,13 +115,6 @@ needed_columns = {
         #  "variant.parent_id"
         "element.type",
         "element.symbol",
-    ],
-    "referenceView": [
-        "reference.id",
-        "element.type",
-        "element.symbol",
-        "element.start",
-        "element.end",
     ],
 }
 
@@ -196,7 +190,7 @@ class DataFrameLoader:
                 # FIXME: should put , doublequote=True, or
                 df.to_csv(f".cache/{table_name}.csv", index=False)
         # missing table
-        except sqlalchemy.exc.ProgrammingError:
+        except exc.ProgrammingError:
             print(f"table {table_name} not in database.")
             df = pd.DataFrame()
         print(f"Loading time {table_name}: {(perf_counter() - start):.4f} sec.")
@@ -254,7 +248,7 @@ class DataFrameLoader:
 
 
 def create_property_view(df, dummy_date="2021-12-31"):
-    #  start = perf_counter()
+    #  all dates and integer values into value_date column for unstacking
     df["value_text"] = df.apply(
         lambda row: row["value_date"]
         if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE"]
@@ -262,53 +256,186 @@ def create_property_view(df, dummy_date="2021-12-31"):
         axis=1,
     )
     df = df.drop(columns=["value_date"], axis=1)
+    df["value_text"] = df.apply(
+        lambda row: row["value_integer"]
+        if row["property.name"] in ["LENGTH"]
+        else row["value_text"],
+        axis=1,
+    )
+    df = df.drop(columns=["value_integer"], axis=1)
     c = ["sample.id", "sample.name"]
     df = df.set_index(["property.name"] + c).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
-    df["COLLECTION_DATE"] = df[["COLLECTION_DATE"]].fillna(dummy_date)
+    df.RELEASE_DATE.fillna(dummy_date, inplace=True)
+    df.COLLECTION_DATE.fillna(df.RELEASE_DATE, inplace=True)
     df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
         lambda d: datetime.strptime(d, "%Y-%m-%d").date()
     )
     df["SEQ_TECH"] = df["SEQ_TECH"].replace([np.nan, ""], "undefined")
+    df["COUNTRY"] = df["COUNTRY"].replace([np.nan, ""], "undefined")
+    df["LENGTH"] = df["LENGTH"].astype(float).astype("Int64")
     #  print(f"time pre-processing PropertyView final: {(perf_counter()-start)} sec.")
-    #  print(print(tabulate(df[0:10], headers='keys', tablefmt='psql')))
+    #  print(tabulate(df[0:10], headers='keys', tablefmt='psql'))
     return df
 
 
-def create_variant_view(df):
+def create_variant_view(df, propertyViewSamples):
     df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
     df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
+    df = df[df['sample.id'].isin(propertyViewSamples)]
     return df
 
 
-def create_reference_view(df):
-    """
-    reference.id, element.type, element.symbol, element.start, element.end
-    """
-    df = df[(df["element.type"] == "cds")]
+def remove_x_appearing_variants(world_df, nb=1):
+    df2 = (
+        world_df.groupby(["variant.label"])
+            .sum(numeric_only=True)
+            .reset_index()
+    )
+    variants_to_remove = df2[df2["number_sequences"] <= nb][
+        "variant.label"
+    ].tolist()
+    if variants_to_remove:
+        world_df = world_df[~world_df["variant.label"].isin(variants_to_remove)]
+    return world_df
+
+
+def create_world_map_df(variantView, propertyView):
+    df = pd.merge(
+        variantView[["sample.id", "variant.label", "element.symbol"]],
+        propertyView[["sample.id", "COUNTRY", "COLLECTION_DATE", "SEQ_TECH"]],
+        how="inner",
+        on="sample.id",
+    )[
+        [
+            "sample.id",
+            "COUNTRY",
+            "COLLECTION_DATE",
+            "variant.label",
+            "SEQ_TECH",
+            "element.symbol",
+        ]
+    ]
+    # 4. location_ID, date, amino_acid --> concat all strain_ids into one comma separated string list and count
+    df = (
+        df.groupby(
+            [
+                "COUNTRY",
+                "COLLECTION_DATE",
+                "variant.label",
+                "SEQ_TECH",
+                "element.symbol",
+            ],
+            dropna=False,
+        )["sample.id"]
+            .apply(lambda x: ",".join([str(y) for y in set(x)]))
+            .reset_index(name="sample_id_list")
+    )
+    # 5. add sequence count
+    df["number_sequences"] = df[
+        "sample_id_list"
+    ].apply(lambda x: len(x.split(",")))
+    df = df[
+        [
+            "COUNTRY",
+            "COLLECTION_DATE",
+            "SEQ_TECH",
+            "sample_id_list",
+            "variant.label",
+            "number_sequences",
+            "element.symbol",
+        ]
+    ]
+    # TODO: first combine tables and remove then?
+    # df = remove_x_appearing_variants(df, 1)
+    return df
+
+
+def remove_seq_errors_and_add_gene_var_column(variantViewPartial, reference_id, seq_type):
+    df = variantViewPartial[
+        (variantViewPartial['reference.id'] == reference_id)
+        & (variantViewPartial['element.type'] == seq_type)
+        ].reset_index(drop=True)
+    if seq_type == 'source':
+        unknown_nt = ['N', 'V', 'D', 'H', 'B', 'K', 'M', 'S', 'W']
+        df = df[~df['variant.label'].str.contains('N')]
+    # B, Z, J not in DB, X always at the end, all undefined nucleotides translated to X
+    elif seq_type == "cds":
+        df = df[~df['variant.label'].str.endswith('X')]
+        df['gene:variant'] = df['element.symbol'].astype(str) + ":" + df['variant.label']
     return df
 
 
 def load_all_sql_files():
+    """
+    to handle big db size: split into multiple tables in processed_df_dict:
+    processed_df_dict["propertyView"]["complete" OR "partial"]
+    processed_df_dict["variantView"]["complete" OR "partial"][reference_id][seq_type]
+    size complete cds = 49408 + 16832 + 40119 = 106.359
+    size complete source = 155070 + 79278 + 137596 = 371.944
+    size partial cds = 306693 + 304234 + 312285 = 923.212 (x7)
+    size partial source = 2123599 + 2078227 + 2114735 = 6.316.561 (x17)
+    """
     loader = DataFrameLoader()
 
     # NOTE:
+    # TODO automated update of pickle file with new database
     # 1. Using Pickle should only be used on 100% trusted data
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict"):
+    # if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
-        df_dict = load_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"))
+        processed_df_dict = load_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"))
     else:
         # PROBLEM: query for variantView tooo long.
         print("Load data from database...")
-        df_dict = loader.load_from_sql_db()
-        df_dict["propertyView"] = create_property_view(df_dict["propertyView"])
-        df_dict["variantView"] = create_variant_view(df_dict["variantView"])
-        df_dict["referenceView"] = create_reference_view(df_dict["referenceView"])
+        loaded_df_dict = loader.load_from_sql_db()
+        processed_df_dict = defaultdict(dict)
         print("Data preprocessing...")
+        propertyView = create_property_view(loaded_df_dict["propertyView"])
+        processed_df_dict["propertyView"]["complete"] = propertyView[
+            propertyView["GENOME_COMPLETENESS"] == 'complete'].reset_index(drop=True)
+        processed_df_dict["propertyView"]["partial"] = propertyView[
+            propertyView["GENOME_COMPLETENESS"] == 'partial'].reset_index(drop=True)
+        del loaded_df_dict["propertyView"]
+        del propertyView
+
+        variantViewComplete = create_variant_view(loaded_df_dict["variantView"],
+                                                  processed_df_dict["propertyView"]["complete"]['sample.id'])
+        processed_df_dict["variantView"]["complete"] = {}
+        # TODO why NaN in reference --> database error?
+        reference_ids = [int(ref) for ref in variantViewComplete['reference.id'].dropna().unique()]
+        for reference_id in reference_ids:
+            processed_df_dict["variantView"]["complete"][reference_id] = {}
+            for seq_type in ['source', 'cds']:
+                processed_df_dict["variantView"]["complete"][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
+                    variantViewComplete, reference_id, seq_type)
+        del variantViewComplete
+
+        variantViewPartial = create_variant_view(loaded_df_dict["variantView"],
+                                                 processed_df_dict["propertyView"]["partial"]['sample.id'])
+        processed_df_dict["variantView"]["partial"] = {}
+        for reference_id in reference_ids:
+            processed_df_dict["variantView"]["partial"][reference_id] = {}
+            for seq_type in ['source', 'cds']:
+                processed_df_dict["variantView"]["partial"][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
+                    variantViewPartial, reference_id, seq_type)
+        del loaded_df_dict["variantView"]
+        del variantViewPartial
+
+        processed_df_dict["world_map"]["complete"] = {}
+        processed_df_dict["world_map"]["partial"] = {}
+        for reference_id in reference_ids:
+            processed_df_dict["world_map"]["complete"][reference_id] = create_world_map_df(
+                processed_df_dict["variantView"]["complete"][reference_id]["cds"],
+                processed_df_dict["propertyView"]["complete"])
+            processed_df_dict["world_map"]["partial"][reference_id] = create_world_map_df(
+                processed_df_dict["variantView"]["partial"][reference_id]["cds"],
+                processed_df_dict["propertyView"]["partial"])
+
         if redis_manager:
             print("Create a new cache")
             # NOTE: set pickle cache, however the limitation of redis
@@ -324,11 +451,11 @@ def load_all_sql_files():
 
             # HACK: 2. Using Cpickle only
             # 30 secs, 419 MB
-            write_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"), df_dict)
+            write_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"), processed_df_dict)
             redis_manager.set("df_dict", 1, ex=3600 * 23)
 
             # df_dict["propertyView"].to_pickle(".cache/propertyView.pkl")
             # df_dict["variantView"].to_pickle(".cache/variantView.pkl")
             # df_dict["referenceView"].to_pickle(".cache/referenceView.pkl")
 
-    return df_dict
+    return processed_df_dict
