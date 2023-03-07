@@ -7,8 +7,9 @@
 git checkout dev
 git pull
 ```
+
 2. Please consider setting a variable in the .env file and use config.py to load the environment variable.
-Sometimes we don't need to update MPXSonar code for all query purposes; if some functions are not related to MPXSonar or some query can easily be implemented, please use DB manager (interface) to communicate to the database instance.
+Sometimes we don't need to update MPoxSonar code for all query purposes; if some functions are not related to MPoxSonar or some query can easily be implemented, please use DB manager (interface class) to communicate to the database instance.
 
 ## If you don't install dependencies yet
 
@@ -31,15 +32,15 @@ you have to fix it manually according to the error message; otherwise, you will 
 When you're finished with the changes, create a pull request, also known as a PR.
 + Don't forget to link PR to the issue if you are solving one.
 
-# Add/Update MPXsonar
+# Add/Update MPoxSonar
 
-## First time add MPXsonar
-Add MPXsonar repository into this respository like
+## First time add MPoxSonar
+Add MPoxSonar repository into this respository like
 ```
 git subtree add --prefix pages/libs/mpxsonar https://github.com/rki-mf1/MpoxSonar dev --squash
 ```
 
-## Pull new MPXsonar commits
+## Pull new MPoxSonar commits
 Pull any new updates to the subtree from the remote.
 ```
 git subtree pull --prefix pages/libs/mpxsonar https://github.com/rki-mf1/MpoxSonar dev --squash
@@ -51,4 +52,4 @@ If you make a change to anything in subtree the commit will be stored in the MPX
 git subtree push --prefix pages/libs/mpxsonar https://github.com/rki-mf1/MpoxSonar dev
 ```
 
-Note: Normally, we don't update the MPXsonar from the MPXRadar-frontend site, but it can happen occasionally. Hence, please consider updating the code from MPXsonar and then using `subtree pull` to update the code.
+Note: Normally, we don't update the MPoxSonar from the MPoxRadar frontend site, but it can happen occasionally. Hence, please consider updating the code from MPoxSonar and then using `subtree pull` to update the code.

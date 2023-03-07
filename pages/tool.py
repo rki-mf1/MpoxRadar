@@ -18,30 +18,30 @@ import plotly.graph_objects as go
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
+from pages.html_compare import html_aa_nt_radio
 from pages.html_compare import html_compare_button
+from pages.html_compare import html_date_picker
+from pages.html_data_explorer import create_world_map_explorer
+from pages.html_data_explorer import html_elem_dropdown_aa_mutations
+from pages.html_data_explorer import html_elem_method_radioitems
+from pages.html_data_explorer import html_interval
 from pages.html_shared import html_complete_partial_radio
 from pages.html_shared import html_disclaimer_seq_errors
-from pages.html_shared import html_table
-from pages.html_data_explorer import create_world_map_explorer
-from pages.html_compare import html_aa_nt_radio
-from pages.html_compare import html_date_picker
 from pages.html_shared import html_elem_checklist_seq_tech
-from pages.html_data_explorer import html_elem_dropdown_aa_mutations
 from pages.html_shared import html_elem_dropdown_aa_mutations_without_max
 from pages.html_shared import html_elem_dropdown_countries
 from pages.html_shared import html_elem_dropdown_genes
-from pages.html_data_explorer import html_elem_method_radioitems
 from pages.html_shared import html_elem_reference_radioitems
-from pages.html_data_explorer import html_interval
+from pages.html_shared import html_table
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
-from pages.utils_filters import  get_frequency_sorted_seq_techs_by_filters
-from pages.utils_filters import  get_all_frequency_sorted_countries_by_filters
-from pages.utils_filters import  get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
 from pages.utils_filters import get_all_frequency_sorted_seqtech
 from pages.utils_filters import get_all_gene_dict
 from pages.utils_filters import get_all_references
+from pages.utils_filters import get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import TableFilter
 from .app_controller import get_freq_mutation
@@ -53,33 +53,39 @@ from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
 
 df_dict = load_all_sql_files()
-date_slider = DateSlider(df_dict["propertyView"]['complete']["COLLECTION_DATE"].tolist())
+date_slider = DateSlider(
+    df_dict["propertyView"]["complete"]["COLLECTION_DATE"].tolist()
+)
 table_explorer = TableFilter()
 color_dict = get_color_dict(df_dict)
 
 # initialize explore tool
-start_cond_ref_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
+start_cond_ref_id = sorted(list(df_dict["variantView"]["complete"].keys()))[0]
 start_cond_complete = "complete"
 start_cond_aa_nt = "cds"
 all_reference_options = get_all_references(df_dict)
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict)
-start_all_gene_dict = get_all_gene_dict(df_dict, start_cond_ref_id, start_cond_complete, color_dict)
-start_all_gene_value = [s['value'] for s in start_all_gene_dict]
+start_all_gene_dict = get_all_gene_dict(
+    df_dict, start_cond_ref_id, start_cond_complete, color_dict
+)
+start_all_gene_value = [s["value"] for s in start_all_gene_dict]
 start_seq_tech_dict = get_frequency_sorted_seq_techs_by_filters(
     df_dict,
     all_seq_tech_options,
     start_cond_complete,
     start_cond_ref_id,
     start_all_gene_value,
-    start_cond_aa_nt
+    start_cond_aa_nt,
 )
-start_seq_tech_values = [s['value'] for s in start_seq_tech_dict if not s['disabled']]
-start_country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
-                                                                      start_seq_tech_values,
-                                                                      start_cond_complete,
-                                                                      start_cond_ref_id,
-                                                                      start_all_gene_value,
-                                                                      start_cond_aa_nt)
+start_seq_tech_values = [s["value"] for s in start_seq_tech_dict if not s["disabled"]]
+start_country_options = get_all_frequency_sorted_countries_by_filters(
+    df_dict,
+    start_seq_tech_values,
+    start_cond_complete,
+    start_cond_ref_id,
+    start_all_gene_value,
+    start_cond_aa_nt,
+)
 
 start_colored_mutation_options_dict = get_frequency_sorted_mutation_by_filters(
     df_dict,
@@ -88,7 +94,7 @@ start_colored_mutation_options_dict = get_frequency_sorted_mutation_by_filters(
     start_all_gene_value,
     start_cond_complete,
     start_cond_ref_id,
-    color_dict
+    color_dict,
 )
 
 logging_radar.info("Prebuilt cache is complete.")
@@ -102,7 +108,10 @@ tab_explored_tool = html.Div(
                 html.Div(
                     [
                         dbc.Row(html.H2("Filter Panel", style={"textAlign": "center"})),
-                        dbc.Row(html_complete_partial_radio('explore')),
+                        dbc.Row(
+                            dbc.Col(html_complete_partial_radio("explore")),
+                            className="mb-2",
+                        ),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -162,11 +171,18 @@ tab_explored_tool = html.Div(
                         ),
                     ],
                 ),
-                html_disclaimer_seq_errors('explorer'),
+                dbc.Row(
+                    dbc.Col(html_disclaimer_seq_errors("explorer")), className="mt-2"
+                ),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
-                html.Div(html_table(pd.DataFrame(columns=tableFilter.table_columns),
-                                    "Properties of filtered samples.", 'explorer')),
+                html.Div(
+                    html_table(
+                        pd.DataFrame(columns=tableFilter.table_columns),
+                        "Properties of filtered samples.",
+                        "explorer",
+                    )
+                ),
             ],
             id="div_elem_standard",
             className="mt-2",
@@ -181,7 +197,7 @@ tab_compare_tool = (
                 [
                     dbc.Row(
                         [
-                            dbc.Row(html_complete_partial_radio('compare')),
+                            dbc.Row(html_complete_partial_radio("compare")),
                             dbc.Row(html_aa_nt_radio()),
                             dbc.Col(
                                 [
@@ -198,7 +214,9 @@ tab_compare_tool = (
                                     ),
                                     html.Div(
                                         html_elem_reference_radioitems(
-                                            all_reference_options, start_cond_ref_id, radio_id=1
+                                            all_reference_options,
+                                            start_cond_ref_id,
+                                            radio_id=1,
                                         ),
                                         className="mt-1",
                                     ),
@@ -240,7 +258,9 @@ tab_compare_tool = (
                                     ),
                                     html.Div(
                                         html_elem_reference_radioitems(
-                                            all_reference_options, start_cond_ref_id, radio_id=2
+                                            all_reference_options,
+                                            start_cond_ref_id,
+                                            radio_id=2,
                                         ),
                                         className="mt-1",
                                     ),
@@ -271,17 +291,13 @@ tab_compare_tool = (
                         ]
                     ),
                     html.Br(),
-                    dbc.Row(
-                        [
-                            html_compare_button()
-                        ]
-                    ),
+                    dbc.Row([html_compare_button()]),
                 ],
                 className="mt-2",
             ),
             html.Hr(),
-            dbc.Row(html.H2("Output Section", style={"textAlign": "center"})),
-            html_disclaimer_seq_errors('compare'),
+            dbc.Row(dbc.Col(html.H2("Output Section", style={"textAlign": "center"}))),
+            dbc.Row(dbc.Col(html_disclaimer_seq_errors("compare"))),
             html.Div(
                 [
                     dbc.Row(
@@ -317,15 +333,21 @@ tab_compare_tool = (
                     ),
                     dbc.Row(
                         [
-                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="Unique for left selection", tool="compare_1"
-                                       ),
-                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="In both selection", tool="compare_3"
-                                       ),
-                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="Unique for right selection", tool="compare_2"
-                                       ),
+                            html_table(
+                                pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                                title="Unique for left selection",
+                                tool="compare_1",
+                            ),
+                            html_table(
+                                pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                                title="In both selection",
+                                tool="compare_3",
+                            ),
+                            html_table(
+                                pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                                title="Unique for right selection",
+                                tool="compare_2",
+                            ),
                         ],
                         className="mt-3",
                     ),
@@ -409,8 +431,8 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
     # convert to list of string.
     ouput_df[column_profile] = (
         ouput_df[column_profile]
-            .str.split(",")
-            .map(lambda elements: [e.strip() for e in elements])
+        .str.split(",")
+        .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     ouput_df = ouput_df.explode(column_profile)
@@ -604,8 +626,8 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     # convert to list of string.
     table_df[column_profile] = (
         table_df[column_profile]
-            .str.split(",")
-            .map(lambda elements: [e.strip() for e in elements])
+        .str.split(",")
+        .map(lambda elements: [e.strip() for e in elements])
     )
     # explode the column_profile
     table_df = table_df.explode(column_profile)
@@ -641,7 +663,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
     table_df["mutation_list"] = (
-            table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
     )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(
@@ -766,12 +788,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 """
 
 # This is the EXPLORE TOOL PART
-get_explore_callbacks(
-    df_dict,
-    date_slider,
-    color_dict,
-    location_coordinates
-)
+get_explore_callbacks(df_dict, date_slider, color_dict, location_coordinates)
 
 # COMPARE PART
 get_compare_callbacks(df_dict, color_dict)

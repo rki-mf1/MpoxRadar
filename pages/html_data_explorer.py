@@ -203,9 +203,7 @@ def html_interval(interval=30):
 
 # TODO : max for input field?
 # TODO design dropdown
-def html_elem_dropdown_aa_mutations(
-    mutation_options, title="AA mutations: ", aa_id=0
-):
+def html_elem_dropdown_aa_mutations(mutation_options, title="AA mutations: ", aa_id=0):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
             [

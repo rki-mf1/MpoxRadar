@@ -55,8 +55,8 @@ class sonarBasicsChild(sonarBasics):
             if format == "csv" or format == "tsv":
                 # cursor => list of dict
                 df = pd.DataFrame(cursor)
-                if "IMPORTED" in df.columns and "MODIFIED" in df.columns:
-                    df.drop(["IMPORTED", "MODIFIED"], axis=1, inplace=True)
+                if "MODIFIED" in df.columns:
+                    df.drop(["MODIFIED"], axis=1, inplace=True)
                 # print(df)
                 if len(df) == 0:
                     output = "*** no match ***"

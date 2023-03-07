@@ -4,10 +4,10 @@ from datetime import timedelta
 import os
 import re
 from re import finditer
-import plotly.express as px
 
 import _pickle as cPickle
 import pandas as pd
+import plotly.express as px
 
 from pages.DBManager import DBManager
 
@@ -61,11 +61,17 @@ def get_color_dict(df_dict):
     """
     color_dict = {}
     color_schemes = px.colors.qualitative.Dark24
-    reference_ids = set(df_dict["variantView"]["complete"].keys()).union(set(df_dict["variantView"]["partial"].keys()))
+    reference_ids = set(df_dict["variantView"]["complete"].keys()).union(
+        set(df_dict["variantView"]["partial"].keys())
+    )
     for k, reference_id in enumerate(list(reference_ids)):
         # add color per ref (element.symbol for nucleotides)
         color_dict[reference_id] = px.colors.qualitative.D3[k]
-        for i, (gene, gene_df) in enumerate(df_dict["variantView"]["complete"][reference_id]["cds"].groupby("element.symbol")):
+        for i, (gene, gene_df) in enumerate(
+            df_dict["variantView"]["complete"][reference_id]["cds"].groupby(
+                "element.symbol"
+            )
+        ):
             j = i % 24
             color_dict[gene] = color_schemes[j]
     color_dict["no_gene"] = "grey"
