@@ -112,13 +112,13 @@ Right now we can start application by using below command.
 python app.py
 ```
 
-⚠️Attention⚠️: These installation/run steps are for a straightforward setup to start the application; however, you should consider only some steps on the production server. The specifics of the setup process may vary depending on the software and the production environment. Following best practices and industry standards is essential to ensure a secure, reliable, and maintainable production environment.
+## Note
 
-Please do not hesitate to contact us if you require support.❤️
+1. ⚠️Attention⚠️: These installation/run steps are for a straightforward setup to start the application; however, you should consider only some steps on the production server. The specifics of the setup process may vary depending on the software and the production environment. Following best practices and industry standards is essential to ensure a secure, reliable, and maintainable production environment. Please do not hesitate to contact us if you require support.❤️
+
+2. Currently, we use the caching system to keep data for 23 hours. If the restarting application has been made after 23 hours, it will build the new cache for the next 23 hours. You can remove the cache via the Redis command and restart the web application if needed.
 
 ----
-
-# Note
 
 ## Contributors
 
