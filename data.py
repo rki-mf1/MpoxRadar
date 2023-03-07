@@ -288,15 +288,15 @@ def create_variant_view(df, propertyViewSamples):
 
 def remove_x_appearing_variants(world_df, nb=1):
     df2 = (
-        world_df.groupby(["variant.label"])
+        world_df.groupby(["gene:variant"])
             .sum(numeric_only=True)
             .reset_index()
     )
     variants_to_remove = df2[df2["number_sequences"] <= nb][
-        "variant.label"
+        "gene:variant"
     ].tolist()
     if variants_to_remove:
-        world_df = world_df[~world_df["variant.label"].isin(variants_to_remove)]
+        world_df = world_df[~world_df["gene:variant"].isin(variants_to_remove)]
     return world_df
 
 
@@ -335,6 +335,7 @@ def create_world_map_df(variantView, propertyView):
     df["number_sequences"] = df[
         "sample_id_list"
     ].apply(lambda x: len(x.split(",")))
+    df["gene:variant"] = df['element.symbol'].astype(str) + ":" + df['variant.label']
     df = df[
         [
             "COUNTRY",
@@ -344,6 +345,7 @@ def create_world_map_df(variantView, propertyView):
             "variant.label",
             "number_sequences",
             "element.symbol",
+            "gene:variant"
         ]
     ]
     # TODO: first combine tables and remove then?
@@ -384,7 +386,7 @@ def load_all_sql_files():
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict"):
-    # if True:
+    #if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))

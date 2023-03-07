@@ -6,10 +6,15 @@ from pages.utils_filters import select_propertyView_dfs
 from pages.utils_worldMap_explorer import DateSlider
 
 
-def merge_df(variantView, propertyView):
-    return pd.merge(
-        variantView, propertyView, how="inner", on="sample.id"
-    )[["sample.id", "variant.label", "element.symbol"]]
+def merge_df(variantView, propertyView, aa_nt_radio):
+    if aa_nt_radio == "cds":
+        return pd.merge(
+            variantView, propertyView, how="inner", on="sample.id"
+        )[["sample.id", "variant.label", "element.symbol", "gene:variant"]]
+    else:
+        return pd.merge(
+            variantView, propertyView, how="inner", on="sample.id"
+        )[["sample.id", "variant.label"]]
 
 
 def merge_tables(variantView, propertyView):
@@ -33,20 +38,26 @@ def filter_propertyView(df, seqtech_value, country_value, start_date, end_date):
         ]
 
 
-def get_filtered_samples(propertyView_dfs, variantView_dfs, mut_value, gene_dropdown=None):
+def get_filtered_samples(propertyView_dfs, variantView_dfs, mut_value, aa_nt_radio):
     new_samples = set()
     for i, df in enumerate(variantView_dfs):
         samples = set(propertyView_dfs[i]["sample.id"])
-        if gene_dropdown:
+        if aa_nt_radio == 'cds':
             new_samples = new_samples.union(set(df[df["sample.id"].isin(samples)
-                                           & df["variant.label"].isin(mut_value)
-                                           & df["element.symbol"].isin(gene_dropdown)
+                                           & df["gene:variant"].isin(mut_value)
                                            ]["sample.id"]))
         else:
             new_samples = new_samples.union(set(df[df["sample.id"].isin(samples)
                                            & df["variant.label"].isin(mut_value)
                                            ]["sample.id"]))
     return new_samples
+
+
+def select_min_x_frequent_mut(mut_options,
+                              min_nb_freq):
+    df = pd.DataFrame.from_records(mut_options)
+    df = df[df['freq'] >= min_nb_freq]
+    return df['value']
 
 
 def create_mutation_dfs_for_comparison(aa_nt_radio,
@@ -56,7 +67,8 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
                                        start_date,
                                        end_date,
                                        variantView_dfs,
-                                       propertyView_dfs):
+                                       propertyView_dfs,
+                                       min_nb_freq):
     if aa_nt_radio == 'cds':
         variantView_dfs = [df[df["element.symbol"].isin(gene_value)] for df in variantView_dfs]
 
@@ -65,9 +77,7 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
 
     merged_dfs = []
     for i, variantView in enumerate(variantView_dfs):
-        merged_dfs.append(merge_df(variantView,
-                                   propertyView_dfs[i]))
-
+        merged_dfs.append(merge_df(variantView, propertyView_dfs[i], aa_nt_radio))
     df_mutations = pd.concat(merged_dfs, ignore_index=True, axis=0)
     return df_mutations
 
@@ -105,26 +115,21 @@ def create_comparison_tables(df_dict,
                              complete_partial_radio,
                              aa_nt_radio,
                              mut_value_1,
-                             reference_value_1,
+                             reference_value,
                              seqtech_value_1,
                              country_value_1,
                              start_date_1,
                              end_date_1,
-                             gene_dropdown_1,
                              mut_value_2,
-                             reference_value_2,
                              seqtech_value_2,
                              country_value_2,
                              start_date_2,
                              end_date_2,
-                             gene_dropdown_2,
                              mut_value_3
                              ):
 
-    variantView_dfs_left = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_1, aa_nt_radio)
-    variantView_dfs_right = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_2, aa_nt_radio)
+    variantView_dfs = select_variantView_dfs(df_dict, complete_partial_radio, reference_value, aa_nt_radio)
     propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
-
     propertyView_dfs_left = [filter_propertyView(df,
                                                  seqtech_value_1,
                                                  country_value_1,
@@ -139,42 +144,39 @@ def create_comparison_tables(df_dict,
                                                   end_date_2)
                               for df in propertyView_dfs]
 
-    if aa_nt_radio == 'source':
-        gene_dropdown_1 = None
-        gene_dropdown_2 = None
-
-
     # all samples of selection (filter by mutation directly prevents complete MUT PROFILE)
     samples_left_both = get_filtered_samples(
         propertyView_dfs_left,
-        variantView_dfs_left,
+        variantView_dfs,
         mut_value_3,
-        gene_dropdown_1
+        aa_nt_radio
     )
+
     samples_right_both = get_filtered_samples(
         propertyView_dfs_right,
-        variantView_dfs_right,
+        variantView_dfs,
         mut_value_3,
-        gene_dropdown_2
+        aa_nt_radio
     )
+
+    samples_both = samples_left_both.union(samples_right_both)
+
     samples_left = get_filtered_samples(
         propertyView_dfs_left,
-        variantView_dfs_left,
+        variantView_dfs,
         mut_value_1,
-        gene_dropdown_1
+        aa_nt_radio
     )
     samples_right = get_filtered_samples(
         propertyView_dfs_right,
-        variantView_dfs_right,
+        variantView_dfs,
         mut_value_2,
-        gene_dropdown_2
+        aa_nt_radio
     )
 
-    variantView_dfs_left_both = [df[df['sample.id'].isin(samples_left_both)] for df in variantView_dfs_left]
-    variantView_dfs_right_both = [df[df['sample.id'].isin(samples_right_both)] for df in variantView_dfs_right]
-    variantView_dfs_left = [df[df['sample.id'].isin(samples_left)] for df in variantView_dfs_left]
-    variantView_dfs_right = [df[df['sample.id'].isin(samples_right)] for df in variantView_dfs_right]
-
+    variantView_dfs_both = [df[df['sample.id'].isin(samples_both)] for df in variantView_dfs]
+    variantView_dfs_left = [df[df['sample.id'].isin(samples_left)] for df in variantView_dfs]
+    variantView_dfs_right = [df[df['sample.id'].isin(samples_right)] for df in variantView_dfs]
     table_columns = [
         "sample.name",
         "variant.label",
@@ -190,7 +192,6 @@ def create_comparison_tables(df_dict,
     ]
     if aa_nt_radio == 'cds':
         table_columns[1] = "gene:variant"
-
     table_df_1 = pd.concat(
         [
             merge_tables(variantView_dfs_left[i], propertyView_dfs_left[i])
@@ -205,12 +206,12 @@ def create_comparison_tables(df_dict,
         ignore_index=True, axis=0)[table_columns]
     table_df_3 = pd.concat(
         [
-            merge_tables(variantView_dfs_left_both[i], propertyView_dfs_left[i])
-            for i in range(len(variantView_dfs_left_both))
+            merge_tables(variantView_dfs_both[i], propertyView_dfs_left[i])
+            for i in range(len(variantView_dfs_both))
         ] +
         [
-            merge_tables(variantView_dfs_right_both[i], propertyView_dfs_right[i])
-            for i in range(len(variantView_dfs_right_both))
+            merge_tables(variantView_dfs_both[i], propertyView_dfs_right[i])
+            for i in range(len(variantView_dfs_both))
         ],
         ignore_index=True, axis=0)[table_columns]
 

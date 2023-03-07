@@ -82,7 +82,8 @@ def create_world_map_explorer(date_slider):
     map_chart_header = html.Div(
         [
             html.H4(
-                "Detailed look at the sequences with the chosen mutations for the selected country", id="chosen_location"
+                "Detailed look at the sequences with the chosen mutations for the selected country",
+                id="chosen_location"
             ),
             dbc.FormText(
                 "Please click on a country you are interested in on the global map above to see detail plots for that country.\n",
@@ -205,7 +206,7 @@ def html_interval(interval=30):
 # TODO : max for input field?
 # TODO design dropdown
 def html_elem_dropdown_aa_mutations(
-    mutation_options, title="AA mutations: ", aa_id=0
+        mutation_options, nb_shown_options, title="AA mutations: ", elem_id=0
 ):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
@@ -216,9 +217,9 @@ def html_elem_dropdown_aa_mutations(
                     dcc.Dropdown(
                         options=mutation_options,
                         value=[
-                            mut_dict["value"] for mut_dict in mutation_options[0:20]
+                            mut_dict["value"] for mut_dict in mutation_options[0:nb_shown_options]
                         ],
-                        id=f"mutation_dropdown_{aa_id}",
+                        id=f"mutation_dropdown_{elem_id}",
                         # maxHeight=300,
                         optionHeight=50,
                         multi=True,
@@ -227,23 +228,41 @@ def html_elem_dropdown_aa_mutations(
                     color="danger",
                     type="grow",
                 ),
+                dbc.Row(
+                    [
+                        dbc.Label(
+                            f"Select x most frequent sequences. Maximum number of mutations: "
+                            f"{len(mutation_options)}",
+                            id=f"max_nb_txt_{elem_id}",
+                        ),
+                        dcc.Input(
+                            id=f"select_x_frequent_mut_{elem_id}",
+                            type="number",
+                            placeholder=20,
+                            value=20,
+                            className="input_field",
+                            min=1,
+                            max=len(mutation_options),
+                        ), ]),
                 html.Br(),
-                dbc.Label(
-                    f"Select x most frequent sequences. Maximum number of non-unique mutations: "
-                    f"{len(mutation_options)}",
-                    id=f"max_nb_txt_{aa_id}",
+                dbc.Row(
+                    [
+                        dbc.Label(
+                            "Min number of mutation frequency",
+                            id=f"min_nb_freq_{elem_id}",
+                        ),
+                        html.Br(),
+                        dcc.Input(
+                            id=f"select_min_nb_frequent_mut_{elem_id}",
+                            type="number",
+                            placeholder=1,
+                            value=1,
+                            className="input_field",
+                            min=1,
+                            #  max=len(mutation_options),
+                        ),
+                    ]
                 ),
-                html.Br(),
-                dcc.Input(
-                    id=f"select_x_frequent_mut_{aa_id}",
-                    type="number",
-                    placeholder=20,
-                    value=20,
-                    className="input_field",
-                    min=1,
-                    max=len(mutation_options),
-                ),
-                html.Br(),
             ],
             style={
                 "overflow-y": "auto",

@@ -6,7 +6,7 @@ from dash import ctx
 import pandas as pd
 
 from pages.config import cache
-from pages.utils_compare import create_mutation_dfs_for_comparison
+from pages.utils_compare import create_mutation_dfs_for_comparison, select_min_x_frequent_mut
 from pages.utils_compare import select_variantView_dfs
 from pages.utils_compare import select_propertyView_dfs
 from pages.utils_compare import create_comparison_tables
@@ -28,12 +28,21 @@ def get_compare_callbacks(  # noqa: C901
             Output("mutation_dropdown_both", "options"),
             Output("mutation_dropdown_both", "value"),
             Output("max_nb_txt_both", "children"),
+            Output("select_min_nb_frequent_mut_left", "max"),
+            Output("select_min_nb_frequent_mut_right", "max"),
+            Output("select_min_nb_frequent_mut_both", "max"),
+            Output("min_nb_freq_left", "children"),
+            Output("min_nb_freq_right", "children"),
+            Output("min_nb_freq_both", "children")
         ],
         [
             Input("compare_button", "n_clicks"),
             Input("select_all_mutations_left", "value"),
             Input("select_all_mutations_right", "value"),
             Input("select_all_mutations_both", "value"),
+            Input("select_min_nb_frequent_mut_left", "value"),
+            Input("select_min_nb_frequent_mut_right", "value"),
+            Input("select_min_nb_frequent_mut_both", "value"),
         ],
         [
             State("gene_dropdown_1", "value"),
@@ -41,7 +50,6 @@ def get_compare_callbacks(  # noqa: C901
             State("reference_radio_1", "value"),
             State("seq_tech_dropdown_1", "value"),
             State("country_dropdown_1", "value"),
-            State("reference_radio_2", "value"),
             State("seq_tech_dropdown_2", "value"),
             State("country_dropdown_2", "value"),
             State("date_picker_range_1", "start_date"),
@@ -56,6 +64,9 @@ def get_compare_callbacks(  # noqa: C901
             State("mutation_dropdown_left", "value"),
             State("mutation_dropdown_right", "value"),
             State("mutation_dropdown_both", "value"),
+            State("select_min_nb_frequent_mut_left", "max"),
+            State("select_min_nb_frequent_mut_right", "max"),
+            State("select_min_nb_frequent_mut_both", "max"),
         ],
         prevent_initial_call=True,
     )
@@ -65,12 +76,14 @@ def get_compare_callbacks(  # noqa: C901
             select_all_mutations_left,
             select_all_mutations_right,
             select_all_mutations_both,
+            min_nb_freq_left,
+            min_nb_freq_right,
+            min_nb_freq_both,
             gene_value_1,
             gene_value_2,
-            reference_value_1,
+            reference_value,
             seqtech_value_1,
             country_value_1,
-            reference_value_2,
             seqtech_value_2,
             country_value_2,
             start_date_1,
@@ -84,8 +97,16 @@ def get_compare_callbacks(  # noqa: C901
             mut_options_both,
             mut_value_left,
             mut_value_right,
-            mut_value_both
+            mut_value_both,
+            max_freq_nb_left,
+            max_freq_nb_right,
+            max_freq_nb_both
     ):
+        if aa_nt_radio == "cds":
+            variant_columns = ["gene:variant", "element.symbol"]
+        else:
+            variant_columns = ["variant.label"]
+
         if ctx.triggered_id == "select_all_mutations_left":
             if len(select_all_mutations_left) == 1:
                 mut_value_left = [i["value"] for i in mut_options_left]
@@ -101,9 +122,19 @@ def get_compare_callbacks(  # noqa: C901
                 mut_value_both = [i["value"] for i in mut_options_both]
             elif len(select_all_mutations_both) == 0:
                 mut_value_both = []
+        elif ctx.triggered_id == "select_min_nb_frequent_mut_left":
+            mut_value_left = select_min_x_frequent_mut(mut_options_left,
+                                                       min_nb_freq_left)
+        elif ctx.triggered_id == "select_min_nb_frequent_mut_right":
+            mut_value_right = select_min_x_frequent_mut(mut_options_right,
+                                                        min_nb_freq_right)
+        elif ctx.triggered_id == "select_min_nb_frequent_mut_both":
+            mut_value_both = select_min_x_frequent_mut(mut_options_both,
+                                                       min_nb_freq_both)
+
         else:
-            variantView_dfs_left = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_1, aa_nt_radio)
-            variantView_dfs_right = select_variantView_dfs(df_dict, complete_partial_radio, reference_value_2, aa_nt_radio)
+            variantView_dfs = select_variantView_dfs(df_dict, complete_partial_radio, reference_value,
+                                                     aa_nt_radio)
             propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
 
             # LEFT OPTIONS
@@ -113,8 +144,10 @@ def get_compare_callbacks(  # noqa: C901
                                                                 country_value_1,
                                                                 start_date_1,
                                                                 end_date_1,
-                                                                variantView_dfs_left,
-                                                                propertyView_dfs)
+                                                                variantView_dfs,
+                                                                propertyView_dfs,
+                                                                1)
+            df_mutations_1 = df_mutations_1[['sample.id'] + variant_columns]
             # RIGHT OPTIONS
             df_mutations_2 = create_mutation_dfs_for_comparison(aa_nt_radio,
                                                                 gene_value_2,
@@ -122,43 +155,45 @@ def get_compare_callbacks(  # noqa: C901
                                                                 country_value_2,
                                                                 start_date_2,
                                                                 end_date_2,
-                                                                variantView_dfs_right,
-                                                                propertyView_dfs)
+                                                                variantView_dfs,
+                                                                propertyView_dfs,
+                                                                1)
+            df_mutations_2 = df_mutations_2[['sample.id'] + variant_columns]
 
             # DIFFERENCES
-            gene_mutations_df_merge = pd.merge(
-                df_mutations_1[["variant.label", "element.symbol"]],
-                df_mutations_2[["variant.label", "element.symbol"]],
-                how="outer",
-                indicator=True,
-                on=["variant.label", "element.symbol"],
-            )
-            gene_mutations_df_left = gene_mutations_df_merge[
-                gene_mutations_df_merge["_merge"] == "left_only"
-                ][["variant.label", "element.symbol"]]
-            gene_mutations_df_right = gene_mutations_df_merge[
-                gene_mutations_df_merge["_merge"] == "right_only"
-                ][["variant.label", "element.symbol"]]
-            gene_mutations_df_inner = gene_mutations_df_merge[
-                gene_mutations_df_merge["_merge"] == "both"
-                ][["variant.label", "element.symbol"]]
-            mut_options_left = get_frequency_sorted_mutation_by_df(
-                gene_mutations_df_left, color_dict, aa_nt_radio
-            )
-            mut_options_right = get_frequency_sorted_mutation_by_df(
-                gene_mutations_df_right, color_dict, aa_nt_radio
-            )
-            mut_options_both = get_frequency_sorted_mutation_by_df(
-                gene_mutations_df_inner, color_dict, aa_nt_radio
+            mut_left = set(df_mutations_1[variant_columns[0]]) - set(df_mutations_2[variant_columns[0]])
+            gene_mutations_df_left = df_mutations_1[df_mutations_1[variant_columns[0]].isin(mut_left)]
+            mut_options_left, max_freq_nb_left = get_frequency_sorted_mutation_by_df(
+                gene_mutations_df_left, color_dict, variant_columns, aa_nt_radio
             )
             mut_value_left = [v["value"] for v in mut_options_left]
+
+            mut_right = set(df_mutations_2[variant_columns[0]]) - set(df_mutations_1[variant_columns[0]])
+            gene_mutations_df_right = df_mutations_2[df_mutations_2[variant_columns[0]].isin(mut_right)]
+            mut_options_right, max_freq_nb_right = get_frequency_sorted_mutation_by_df(
+                gene_mutations_df_right, color_dict, variant_columns, aa_nt_radio
+            )
             mut_value_right = [v["value"] for v in mut_options_right]
+
+            mut_both = set(df_mutations_2[variant_columns[0]]) & set(df_mutations_1[variant_columns[0]])
+            gene_mutations_df_both = pd.concat(
+                [
+                    df_mutations_1[df_mutations_1[variant_columns[0]].isin(mut_both)],
+                    df_mutations_2[df_mutations_2[variant_columns[0]].isin(mut_both)]
+                ],
+                ignore_index=True, axis=0
+            )
+            mut_options_both, max_freq_nb_both = get_frequency_sorted_mutation_by_df(
+                gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
+            )
             mut_value_both = [v["value"] for v in mut_options_both]
 
         text_1 = f"Unique number of mutations in left selection: {len(mut_options_left)}"
         text_2 = f"Unique number of mutations in right selection: {len(mut_options_right)}"
         text_3 = f"Number of mutations in both selections: {len(mut_options_both)}"
-
+        text_freq_1 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_left}"
+        text_freq_2 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_right}"
+        text_freq_3 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_both}"
         return (
             mut_options_left,
             mut_value_left,
@@ -169,6 +204,12 @@ def get_compare_callbacks(  # noqa: C901
             mut_options_both,
             mut_value_both,
             text_3,
+            max_freq_nb_left,
+            max_freq_nb_right,
+            max_freq_nb_both,
+            text_freq_1,
+            text_freq_2,
+            text_freq_3,
         )
 
     @callback(
@@ -189,15 +230,12 @@ def get_compare_callbacks(  # noqa: C901
             State("reference_radio_1", "value"),
             State("seq_tech_dropdown_1", "value"),
             State("country_dropdown_1", "value"),
-            State("reference_radio_2", "value"),
             State("seq_tech_dropdown_2", "value"),
             State("country_dropdown_2", "value"),
             State("date_picker_range_1", "start_date"),
             State("date_picker_range_1", "end_date"),
             State("date_picker_range_2", "start_date"),
             State("date_picker_range_2", "end_date"),
-            State("gene_dropdown_1", "value"),
-            State("gene_dropdown_2", "value"),
             State("aa_nt_radio", "value"),
             State("complete_partial_radio_compare", "value"),
         ],
@@ -205,42 +243,36 @@ def get_compare_callbacks(  # noqa: C901
     )
     @cache.memoize()
     def actualize_tables(
-            mut_value_1,
-            mut_value_2,
-            mut_value_3,
-            reference_value_1,
+            mut_value_left,
+            mut_value_right,
+            mut_value_both,
+            reference_value,
             seqtech_value_1,
             country_value_1,
-            reference_value_2,
             seqtech_value_2,
             country_value_2,
             start_date_1,
             end_date_1,
             start_date_2,
             end_date_2,
-            gene_dropdown_1,
-            gene_dropdown_2,
             aa_nt_radio,
             complete_partial_radio,
     ):
         table_df_1, table_df_2, table_df_3 = create_comparison_tables(df_dict,
                                                                       complete_partial_radio,
                                                                       aa_nt_radio,
-                                                                      mut_value_1,
-                                                                      reference_value_1,
+                                                                      mut_value_left,
+                                                                      reference_value,
                                                                       seqtech_value_1,
                                                                       country_value_1,
                                                                       start_date_1,
                                                                       end_date_1,
-                                                                      gene_dropdown_1,
-                                                                      mut_value_2,
-                                                                      reference_value_2,
+                                                                      mut_value_right,
                                                                       seqtech_value_2,
                                                                       country_value_2,
                                                                       start_date_2,
                                                                       end_date_2,
-                                                                      gene_dropdown_2,
-                                                                      mut_value_3
+                                                                      mut_value_both
                                                                       )
         table_df_1_records = table_df_1.to_dict("records")
         table_df_2_records = table_df_2.to_dict("records")
@@ -337,7 +369,7 @@ def get_compare_callbacks(  # noqa: C901
         ],
         [
             Input("aa_nt_radio", "value"),
-            Input("reference_radio_2", "value"),
+            Input("reference_radio_1", "value"),
             Input("select_all_seq_tech_2", "value"),
             Input("select_all_genes_2", "value"),
             Input("select_all_countries_2", "value"),

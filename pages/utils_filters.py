@@ -130,10 +130,18 @@ def get_all_gene_dict(df_dict, reference_value, complete_partial_radio, color_di
 
 
 def get_frequency_sorted_mutation_by_filters(
-        df_dict, seqtech_value, country_value, gene_value, complete_partial_radio, reference_value, color_dict
+        df_dict,
+        seqtech_value,
+        country_value,
+        gene_value,
+        complete_partial_radio,
+        reference_value,
+        color_dict,
+        min_nb_freq=1
 ):
     filtered_propertyView = filter_propertyView_3(df_dict["propertyView"]['complete'], seqtech_value, country_value)
     filtered_variantView = filter_variantView(df_dict['variantView']['complete'][reference_value]['cds'], gene_value)
+
     merged_df = pd.merge(filtered_propertyView, filtered_variantView,
                          how="inner",
                          on="sample.id")[
@@ -154,11 +162,17 @@ def get_frequency_sorted_mutation_by_filters(
             .reset_index()
             .sort_values(["sample.id"], ascending=False)
     )
+    if not df_grouped_by_mutation.empty:
+        max_nb_freq = df_grouped_by_mutation.iloc[0, -1]
+        df_grouped_by_mutation = df_grouped_by_mutation[df_grouped_by_mutation["sample.id"] >= min_nb_freq]
+    else:
+        max_nb_freq = 0
     # column sample.id now with number of sequences per mutation | gene
+
     sorted_mutations_dict = [
         {
-            "label": html.Span(gene_mut[1], style={"color": color_dict[gene_mut[0]]}),
-            "value": gene_mut[1],
+            "label": html.Span(f"{gene_mut[0]}:{gene_mut[1]}", style={"color": color_dict[gene_mut[0]]}),
+            "value": f"{gene_mut[0]}:{gene_mut[1]}",
         }
         for gene_mut in list(
             zip(
@@ -167,18 +181,22 @@ def get_frequency_sorted_mutation_by_filters(
             )
         )
     ]
-    return sorted_mutations_dict
+    return sorted_mutations_dict, max_nb_freq
 
 
-def get_frequency_sorted_mutation_by_df(df, color_dict, mut_type="cds"):
+def get_frequency_sorted_mutation_by_df(df, color_dict, variant_columns, mut_type):
     df = (
-        df.groupby(df.columns.tolist())
+        df.groupby(variant_columns)
             .size()
             .reset_index()
             .rename(columns={0: "count"})
     )
-    df_grouped_by_mutation = df.sort_values(["count"], ascending=False)
 
+    df.sort_values(["count"], ascending=False, inplace=True, ignore_index=True)
+    if not df.empty:
+        max_freq_nb = df.iloc[0, -1]
+    else:
+        max_freq_nb = 0
     if mut_type == "cds":
         sorted_mutations_dict = [
             {
@@ -186,21 +204,28 @@ def get_frequency_sorted_mutation_by_df(df, color_dict, mut_type="cds"):
                     gene_mut[1], style={"color": color_dict[gene_mut[0]]}
                 ),
                 "value": gene_mut[1],
+                "freq": gene_mut[2],
             }
             for gene_mut in list(
                 zip(
-                    df_grouped_by_mutation["element.symbol"],
-                    df_grouped_by_mutation["variant.label"],
+                    df["element.symbol"],
+                    df["gene:variant"],
+                    df["count"],
                 )
             )
         ]
     else:
         sorted_mutations_dict = [
-            {"label": gene_mut, "value": gene_mut}
-            for gene_mut in list(df_grouped_by_mutation["variant.label"])
+            {"label": gene_mut[0], "value": gene_mut[0], "freq": gene_mut[1]}
+            for gene_mut in list(
+                zip(
+                    df["variant.label"],
+                    df["count"],
+                )
+            )
         ]
 
-    return sorted_mutations_dict
+    return sorted_mutations_dict, max_freq_nb
 
 
 def get_frequency_sorted_seq_techs_by_filters(

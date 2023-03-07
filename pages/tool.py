@@ -61,6 +61,8 @@ color_dict = get_color_dict(df_dict)
 start_cond_ref_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
 start_cond_complete = "complete"
 start_cond_aa_nt = "cds"
+start_cond_min_freq = 1
+start_cond_len_shown_mut = 20
 all_reference_options = get_all_references(df_dict)
 all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict)
 start_all_gene_dict = get_all_gene_dict(df_dict, start_cond_ref_id, start_cond_complete, color_dict)
@@ -81,16 +83,19 @@ start_country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
                                                                       start_all_gene_value,
                                                                       start_cond_aa_nt)
 
-start_colored_mutation_options_dict = get_frequency_sorted_mutation_by_filters(
+start_country_value = [i["value"] for i in start_country_options]
+start_colored_mutation_options_dict, max_nb_freq = get_frequency_sorted_mutation_by_filters(
     df_dict,
     start_seq_tech_values,
-    start_country_options,
+    start_country_value,
     start_all_gene_value,
     start_cond_complete,
     start_cond_ref_id,
-    color_dict
+    color_dict,
+    start_cond_min_freq
 )
-
+nb_shown_options = len(start_colored_mutation_options_dict) if len(start_colored_mutation_options_dict) \
+                                                               < start_cond_len_shown_mut else start_cond_len_shown_mut
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 tableFilter = TableFilter()
@@ -140,7 +145,7 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         html_elem_dropdown_aa_mutations(
-                                            start_colored_mutation_options_dict
+                                            start_colored_mutation_options_dict, nb_shown_options
                                         )
                                     ],
                                     width=6,
@@ -183,6 +188,9 @@ tab_compare_tool = (
                         [
                             dbc.Row(html_complete_partial_radio('compare')),
                             dbc.Row(html_aa_nt_radio()),
+                            dbc.Row(html_elem_reference_radioitems(
+                                all_reference_options, start_cond_ref_id, radio_id=1
+                            ),),
                             dbc.Col(
                                 [
                                     dbc.Row(
@@ -195,12 +203,6 @@ tab_compare_tool = (
                                                 },
                                             )
                                         ]
-                                    ),
-                                    html.Div(
-                                        html_elem_reference_radioitems(
-                                            all_reference_options, start_cond_ref_id, radio_id=1
-                                        ),
-                                        className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_genes(
@@ -237,12 +239,6 @@ tab_compare_tool = (
                                                 "margin-top": 20,
                                             },
                                         )
-                                    ),
-                                    html.Div(
-                                        html_elem_reference_radioitems(
-                                            all_reference_options, start_cond_ref_id, radio_id=2
-                                        ),
-                                        className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_genes(
@@ -291,7 +287,7 @@ tab_compare_tool = (
                                     html_elem_dropdown_aa_mutations_without_max(
                                         [{"value": "no_mutation"}],
                                         title="Mutations unique for left selection",
-                                        aa_id="left",
+                                        elem_id="left",
                                     ),
                                 ]
                             ),
@@ -300,7 +296,7 @@ tab_compare_tool = (
                                     html_elem_dropdown_aa_mutations_without_max(
                                         [{"value": "no_mutation"}],
                                         title="Mutations in both selections",
-                                        aa_id="both",
+                                        elem_id="both",
                                     )
                                 ],
                             ),
@@ -309,7 +305,7 @@ tab_compare_tool = (
                                     html_elem_dropdown_aa_mutations_without_max(
                                         [{"value": "no_mutation"}],
                                         title="Mutations unique for right selection",
-                                        aa_id="right",
+                                        elem_id="right",
                                     ),
                                 ]
                             ),
@@ -318,13 +314,13 @@ tab_compare_tool = (
                     dbc.Row(
                         [
                             html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="Unique for left selection", tool="compare_1"
+                                       title="Samples with mutations unique for left selection", tool="compare_1"
                                        ),
                             html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="In both selection", tool="compare_3"
+                                       title="Samples with mutations contained in both selections", tool="compare_3"
                                        ),
                             html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
-                                       title="Unique for right selection", tool="compare_2"
+                                       title="Samples with mutations unique for right selection", tool="compare_2"
                                        ),
                         ],
                         className="mt-3",

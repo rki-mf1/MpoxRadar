@@ -13,6 +13,11 @@ def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
                     options=reference_options,
                     value=start_ref_id,
                     id=f"reference_radio_{radio_id}",
+                    style={
+                        "font-size": 20,
+                        "align-itmes": "center",
+                        "margin": "auto"
+                    },
                 ),
             ]
         )
@@ -63,7 +68,7 @@ def html_elem_dropdown_genes(gene_options, g_id=0):
     return checklist_aa_mutations
 
 
-def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
+def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id):
     checklist_aa_mutations = dbc.Card(
         [
             dbc.CardBody(
@@ -76,7 +81,7 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
                             value=[
                                 mut_dict["value"] for mut_dict in mutation_options[0:20]
                             ],
-                            id=f"mutation_dropdown_{aa_id}",
+                            id=f"mutation_dropdown_{elem_id}",
                             optionHeight=50,
                             multi=True,
                             searchable=True,
@@ -88,20 +93,41 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, aa_id):
                 ],
                 style={"overflow-y": "auto", "maxHeight": 300, "minHeight": 200},
             ),
-            dbc.CardFooter(
+            dbc.CardFooter([
                 dbc.Row(
                     [
                         dbc.Label(
                             "Number mutations",
-                            id=f"max_nb_txt_{aa_id}",
+                            id=f"max_nb_txt_{elem_id}",
                         ),
                         dcc.Checklist(
-                            id=f"select_all_mutations_{aa_id}",
+                            id=f"select_all_mutations_{elem_id}",
                             options=[{"label": "Select All", "value": 1}],
                             value=[1],
                         ),
                     ]
                 ),
+                html.Br(),
+                dbc.Row(
+                    [
+                        dbc.Label(
+                            "Min number of mutation frequency",
+                            id=f"min_nb_freq_{elem_id}",
+                        ),
+                        html.Br(),
+                        dcc.Input(
+                            id=f"select_min_nb_frequent_mut_{elem_id}",
+                            type="number",
+                            placeholder=1,
+                            value=1,
+                            className="input_field",
+                            min=1,
+                          #  max=len(mutation_options),
+                        ),
+                        html.Br(),
+                    ]
+                ),
+                ]
             ),
         ]
     )
