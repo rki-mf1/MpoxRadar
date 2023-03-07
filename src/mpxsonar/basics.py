@@ -465,7 +465,7 @@ class sonarBasics(object):
         # importing sequences
         if fasta:
             cache.add_fasta(*fasta, propdict=properties)
-            aligner = sonarAligner(outdir=cachedir)
+            aligner = sonarAligner(cache_outdir=cachedir)
             l = len(cache._samplefiles_to_profile)
             # start alignment
             with WorkerPool(n_jobs=threads, start_method="fork") as pool, tqdm(
