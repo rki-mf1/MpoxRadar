@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mpxradar-frontend"
-version = "0.3.5"
+version = "0.3.7"
 description = "MonkeyPoxRadar"
 authors = ["Kunaphas.Kong <kunaphas.kon@gmail.com>"]
 

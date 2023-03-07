@@ -4,6 +4,7 @@
 # Kunaphas (RKI,HPI, kunaphas.kon@gmail.com)
 
 from collections import defaultdict
+import datetime
 import itertools
 import os
 import pkgutil
@@ -23,6 +24,7 @@ from tqdm import tqdm
 from .utils import insert_before_keyword
 from . import logging
 from .config import DB_URL
+from .utils import insert_before_keyword
 
 sys.path.insert(1, "..")
 
@@ -517,6 +519,17 @@ class sonarDBManager:
         for pname in self.properties:
             if not self.properties[pname]["standard"] is None:
                 self.insert_property(sid, pname, self.properties[pname]["standard"])
+
+        # check if it was already exist or not.
+        row = self.check_property_IMPORTDATE(sid=sid)
+        if row is None:
+            # add INSERTED DATE
+            value = datetime.date.today()
+            self.insert_property(sid, "IMPORTED", value)
+        else:
+            pass
+            # print("PASS")
+
         return sid
 
     def delete_alignment(self, seqhash=None, element_id=None):
@@ -1129,6 +1142,15 @@ class sonarDBManager:
         self.cursor.execute(sql, [element_id])
         row = self.cursor.fetchone()
         return None if row is None else row["sequence"]
+
+    def check_property_IMPORTDATE(self, sid=None):
+        row = None
+        if sid:
+            sql = "SELECT property_id FROM sample2property WHERE sample_id = ? AND property_id= 1;"
+            self.cursor.execute(sql, [sid])
+            row = self.cursor.fetchone()
+
+        return row
 
     def extract_sequence(
         self, element_id=None, translation_table=None, molecule_id=None
@@ -2367,7 +2389,7 @@ class sonarDBManager:
 
     @staticmethod
     def optimize(dbfile):
-        logging.WARNING(
+        logging.warning(
             "Currently, we don't support this command through our application yet."
         )
         logging.info(

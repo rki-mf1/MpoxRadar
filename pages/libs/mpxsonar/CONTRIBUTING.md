@@ -1,4 +1,4 @@
-# Welcome to the covsonar contributing guide <!-- omit in toc -->
+# Welcome to the mpoxsonar contributing guide <!-- omit in toc -->
 
 In this guide you will get an overview of the contribution workflow from setting up a development environment, testing your changes, submitting a pull request and performing a release.
 
@@ -6,15 +6,15 @@ Use the table of contents icon on the top left corner of this document to get to
 
 ## TLDR; I want to start hacking now!
 
-Clone the repo, and the you can run these commands from within the `covsonar/` directory:
+Clone the repo, and the you can run these commands from within the `mpoxsonar/` directory:
 
 ```sh
-mamba create -n covsonar-dev python=3.10 poetry fortran-compiler nox pre-commit emboss=6.6.0
-mamba activate covsonar-dev  # needs to be activated for the following commands to work
+mamba create -n mpoxsonar-dev python=3.10 poetry fortran-compiler nox pre-commit emboss=6.6.0
+mamba activate mpoxsonar-dev  # needs to be activated for the following commands to work
 git config blame.ignoreRevsFile .git-blame-ignore-revs  # ignore black reformatting when doing git blame
 pre-commit install  # install pre-commit hooks for formatting and linting
-poetry install  # install current source of covsonar and its dependencies
-poetry run covsonar <args>  # run covsonar
+poetry install  # install current source of mpoxsonar and its dependencies
+poetry run sonar <args>  # run sonar
 nox  # run linting and pytest tests (add -r to reuse previously built environments)
 nox -rs zimports black  # auto format imports and code
 ```
@@ -25,37 +25,37 @@ To get an overview of the project itself, read the [README](README.md).
 
 ## Getting started
 
-covsonar is written in Python and tries to follow the excellent packaging guidelines ["Hypermodern Python" by Claudio Jolowicz](https://cjolowicz.github.io/posts/hypermodern-python-01-setup/). Nevertheless, there are some places where covsonar differs from those guidelines, and we have tried to outline those differences here wherever relevant. The main differences are caused by most work on covsonar happening in an environment where administrator access is not available (a shared Linux HPC), and also because we want our package to be installable via [conda](https://docs.conda.io/en/latest/index.html) or [mamba](https://github.com/mamba-org/mamba), from the [bioconda](https://bioconda.github.io/) channel in particular.
+mpoxsonar is written in Python and tries to follow the excellent packaging guidelines ["Hypermodern Python" by Claudio Jolowicz](https://cjolowicz.github.io/posts/hypermodern-python-01-setup/). Nevertheless, there are some places where mpoxsonar differs from those guidelines, and we have tried to outline those differences here wherever relevant. The main differences are caused by most work on mpoxsonar happening in an environment where administrator access is not available (a shared Linux HPC), and also because we want our package to be installable via [conda](https://docs.conda.io/en/latest/index.html) or [mamba](https://github.com/mamba-org/mamba), from the [bioconda](https://bioconda.github.io/) channel in particular.
 
 ### Setting up your development tools
 
-Some tooling needs to be set up before you can work on covsonar. To install this we use mamba, a faster replacement for the conda package manager, and place them in their own environment:
+Some tooling needs to be set up before you can work on mpoxsonar. To install this we use mamba, a faster replacement for the conda package manager, and place them in their own environment:
 
 ```sh
-mamba create -n covsonar-dev python=3 poetry fortran-compiler nox pre-commit
+mamba create -n mpoxsonar-dev python=3 poetry fortran-compiler nox pre-commit
 ```
 
 Then when you want to work on the project, or at the very least if you want to use poetry commands or run tests, you need to switch to this environment:
 
 ```sh
-mamba activate covsonar-dev
+mamba activate mpoxsonar-dev
 ```
 
-The rest of this document assumes that you have the covsonar-dev environment active.
+The rest of this document assumes that you have the mpoxsonar-dev environment active.
 
-Once you have that environment installed and activated, you can run covsonar:
+Once you have that environment installed and activated, you can run mpoxsonar:
 
 ```sh
-poetry run covsonar --help
+poetry run sonar --help
 ```
 
 ### Installing the package
 
-As you're developing, you can install what you have developed using poetry install into your covsonar-dev conda environment:
+As you're developing, you can install what you have developed using poetry install into your mpoxsonar-dev conda environment:
 
 ```sh
 poetry install
-covsonar --version
+sonar --version
 ```
 
 ### Testing
@@ -154,13 +154,13 @@ $ poetry env info
 Virtualenv
 Python:         3.10.4
 Implementation: CPython
-Path:           /home/<redacted>/.conda/envs/covsonar-dev
+Path:           /home/<redacted>/.conda/envs/mpoxsonar-dev
 Valid:          True
 
 System
 Platform: linux
 OS:       posix
-Python:   /home/<redacted>/.conda/envs/covsonar-dev
+Python:   /home/<redacted>/.conda/envs/mpoxsonar-dev
 ```
 
 If you decide to rename your conda development environment or have multiple projects and decide to use multiple conda environments, then you might have to switch the environment that poetry is using. This can be done by running the commands:
