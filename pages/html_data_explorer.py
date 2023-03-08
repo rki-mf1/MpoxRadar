@@ -259,7 +259,6 @@ def html_elem_dropdown_aa_mutations(
                             value=1,
                             className="input_field",
                             min=1,
-                            #  max=len(mutation_options),
                         ),
                     ]
                 ),

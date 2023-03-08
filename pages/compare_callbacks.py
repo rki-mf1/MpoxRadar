@@ -216,6 +216,7 @@ def get_compare_callbacks(  # noqa: C901
             Output(component_id="table_compare_2", component_property="columns"),
             Output(component_id="table_compare_3", component_property="data"),
             Output(component_id="table_compare_3", component_property="columns"),
+            Output('compare_shared_dict', 'data')
         ],
         [
             Input("mutation_dropdown_left", "value"),
@@ -255,28 +256,31 @@ def get_compare_callbacks(  # noqa: C901
             aa_nt_radio,
             complete_partial_radio,
     ):
-        table_df_1, table_df_2, table_df_3 = create_comparison_tables(df_dict,
-                                                                      complete_partial_radio,
-                                                                      aa_nt_radio,
-                                                                      mut_value_left,
-                                                                      reference_value,
-                                                                      seqtech_value_1,
-                                                                      country_value_1,
-                                                                      start_date_1,
-                                                                      end_date_1,
-                                                                      mut_value_right,
-                                                                      seqtech_value_2,
-                                                                      country_value_2,
-                                                                      start_date_2,
-                                                                      end_date_2,
-                                                                      mut_value_both
-                                                                      )
+        table_df_1, table_df_2, table_df_3, variantView_df_both = create_comparison_tables(df_dict,
+                                                                                           complete_partial_radio,
+                                                                                           aa_nt_radio,
+                                                                                           mut_value_left,
+                                                                                           reference_value,
+                                                                                           seqtech_value_1,
+                                                                                           country_value_1,
+                                                                                           start_date_1,
+                                                                                           end_date_1,
+                                                                                           mut_value_right,
+                                                                                           seqtech_value_2,
+                                                                                           country_value_2,
+                                                                                           start_date_2,
+                                                                                           end_date_2,
+                                                                                           mut_value_both
+                                                                                           )
         table_df_1_records = table_df_1.to_dict("records")
         table_df_2_records = table_df_2.to_dict("records")
         table_df_3_records = table_df_3.to_dict("records")
         column_names_1 = [{"name": i, "id": i} for i in table_df_1.columns]
         column_names_2 = [{"name": i, "id": i} for i in table_df_2.columns]
         column_names_3 = [{"name": i, "id": i} for i in table_df_3.columns]
+
+        variantView_df_both_json = variantView_df_both.to_json(date_format='iso', orient='split')
+
         return (
             table_df_1_records,
             column_names_1,
@@ -284,6 +288,7 @@ def get_compare_callbacks(  # noqa: C901
             column_names_2,
             table_df_3_records,
             column_names_3,
+            variantView_df_both_json
         )
 
     @callback(
@@ -297,7 +302,7 @@ def get_compare_callbacks(  # noqa: C901
             Input("mutation_dropdown_both", "value"),
             Input("mutation_dropdown_left", "options"),
             Input("mutation_dropdown_right", "options"),
-            Input("mutation_dropdown_both", "options"),
+            Input('compare_shared_dict', 'data')
 
         ],
         [
@@ -312,7 +317,7 @@ def get_compare_callbacks(  # noqa: C901
             mut_value_both,
             mut_options_left,
             mut_options_right,
-            mut_options_both,
+            variantView_df_both_json,
             aa_nt_radio
     ):
         if aa_nt_radio == 'cds':
@@ -325,11 +330,14 @@ def get_compare_callbacks(  # noqa: C901
         df_right = pd.DataFrame.from_records(mut_options_right, columns=['value', 'freq'])
         df_right = df_right[df_right['value'].isin(mut_value_right)]
 
-        df_both = pd.DataFrame.from_records(mut_options_both, columns=['value', 'freq'])
-        df_both = df_both[df_both['value'].isin(mut_value_both)]
+        df_both = pd.read_json(variantView_df_both_json, orient='split')
+        df_both = df_both[df_both[table_cols[0]].isin(mut_value_both)]
+       # df_both = pd.DataFrame.from_records(mut_options_both, columns=['value', 'freq'])
+       # df_both = df_both[df_both['value'].isin(mut_value_both)]
 
         table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
-        table_df.columns = [table_cols[0] + ' left', "#seq l", table_cols[0] + ' shared', "#seq s", table_cols[0] + ' right', "#seq r",]
+        table_df.columns = [table_cols[0] + ' left', "#seq l", table_cols[0] + ' shared', "#seq s-l", "#seq s-r",
+                            table_cols[0] + ' right', "#seq r", ]
         table_df_records = table_df.to_dict("records")
 
         column_names = [{"name": i, "id": i} for i in table_df.columns]
@@ -338,7 +346,6 @@ def get_compare_callbacks(  # noqa: C901
             table_df_records,
             column_names,
         )
-
 
     @callback(
         [

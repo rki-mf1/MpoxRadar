@@ -128,6 +128,7 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                 ),
             ]
             ),
+            dcc.Store(id='compare_shared_dict'),
         ]
     )
     return checklist_aa_mutations

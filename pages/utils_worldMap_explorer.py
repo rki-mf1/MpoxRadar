@@ -496,7 +496,10 @@ class WorldMap(DfsAndDetailPlot):
     def __init__(self, world_dfs, color_dict, location_coordinates):
         """
         creates df for maps and map figures
-
+        param world_dfs: list of dfs, [partial_df] OR  [partial AND complete df]
+                df.columns = COUNTRY,COLLECTION_DATE,SEQ_TECH,sample_id_list,variant.label,number_sequences,element.symbol,gene:variant
+                column types: str, str, datetime.date, str, str, str, int, str, str
+                sample_id_list: comma seperated sample ids e.g. "3,45,67" or "3"
         """
         super(WorldMap, self).__init__(world_dfs, color_dict, location_coordinates)
 
@@ -510,6 +513,9 @@ class WorldMap(DfsAndDetailPlot):
         :param method: 'Frequency' or 'Increase' (from dropdown left menu)
         :param dates: all selected dates in interval (date slider)
         :param countries: list of selected countries
+        return frequency OR increase  df: frequency_df.columns = COUNTRY,number_sequences,ISO_Code
+                                         increase_df.columns = COUNTRY,slope,ISO_Code
+
         """
         if countries is None:
             countries = []
