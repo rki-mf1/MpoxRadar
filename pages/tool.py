@@ -150,18 +150,15 @@ tab_explored_tool = html.Div(
                                             start_colored_mutation_options_dict, nb_shown_options
                                         )
                                     ],
-                                    width=6,
+                                    width=9,
                                 ),
                                 dbc.Col(
                                     [
                                         html_interval(),
-                                    ],
-                                    width=3,
-                                ),
-                                dbc.Col(
-                                    [
+                                        html.Br(),
                                         html_elem_method_radioitems(),
                                     ],
+                                    align="center",
                                     width=3,
                                 ),
                             ],
@@ -169,7 +166,7 @@ tab_explored_tool = html.Div(
                         ),
                     ],
                 ),
-                html_disclaimer_seq_errors('explorer'),
+                html_disclaimer_seq_errors('explorer', only_cds=True),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
                 html.Div(html_table(pd.DataFrame(columns=TableFilter().table_columns),

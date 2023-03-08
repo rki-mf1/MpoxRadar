@@ -28,9 +28,6 @@ def get_compare_callbacks(  # noqa: C901
             Output("mutation_dropdown_both", "options"),
             Output("mutation_dropdown_both", "value"),
             Output("max_nb_txt_both", "children"),
-            Output("select_min_nb_frequent_mut_left", "max"),
-            Output("select_min_nb_frequent_mut_right", "max"),
-            Output("select_min_nb_frequent_mut_both", "max"),
             Output("min_nb_freq_left", "children"),
             Output("min_nb_freq_right", "children"),
             Output("min_nb_freq_both", "children")
@@ -64,9 +61,9 @@ def get_compare_callbacks(  # noqa: C901
             State("mutation_dropdown_left", "value"),
             State("mutation_dropdown_right", "value"),
             State("mutation_dropdown_both", "value"),
-            State("select_min_nb_frequent_mut_left", "max"),
-            State("select_min_nb_frequent_mut_right", "max"),
-            State("select_min_nb_frequent_mut_both", "max"),
+            State("min_nb_freq_left", "children"),
+            State("min_nb_freq_right", "children"),
+            State("min_nb_freq_both", "children"),
         ],
         prevent_initial_call=True,
     )
@@ -98,9 +95,10 @@ def get_compare_callbacks(  # noqa: C901
             mut_value_left,
             mut_value_right,
             mut_value_both,
-            max_freq_nb_left,
-            max_freq_nb_right,
-            max_freq_nb_both
+            text_freq_1,
+            text_freq_2,
+            text_freq_3,
+
     ):
         if aa_nt_radio == "cds":
             variant_columns = ["gene:variant", "element.symbol"]
@@ -187,13 +185,14 @@ def get_compare_callbacks(  # noqa: C901
                 gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
             )
             mut_value_both = [v["value"] for v in mut_options_both]
+            text_freq_1 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_left}"
+            text_freq_2 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_right}"
+            text_freq_3 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_both}"
 
         text_1 = f"Unique number of mutations in left selection: {len(mut_options_left)}"
         text_2 = f"Unique number of mutations in right selection: {len(mut_options_right)}"
         text_3 = f"Number of mutations in both selections: {len(mut_options_both)}"
-        text_freq_1 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_left}"
-        text_freq_2 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_right}"
-        text_freq_3 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_both}"
+
         return (
             mut_options_left,
             mut_value_left,
@@ -204,9 +203,6 @@ def get_compare_callbacks(  # noqa: C901
             mut_options_both,
             mut_value_both,
             text_3,
-            max_freq_nb_left,
-            max_freq_nb_right,
-            max_freq_nb_both,
             text_freq_1,
             text_freq_2,
             text_freq_3,
@@ -334,8 +330,6 @@ def get_compare_callbacks(  # noqa: C901
 
         table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
         table_df.columns = [table_cols[0] + ' left', "#seq l", table_cols[0] + ' shared', "#seq s", table_cols[0] + ' right', "#seq r",]
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
         table_df_records = table_df.to_dict("records")
 
         column_names = [{"name": i, "id": i} for i in table_df.columns]

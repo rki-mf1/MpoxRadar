@@ -26,7 +26,6 @@ def get_explore_callbacks(  # noqa: C901
             Output("max_nb_txt_0", "children"),
             Output("select_x_frequent_mut_0", "max"),
             Output("select_x_frequent_mut_0", "value"),
-            Output("select_min_nb_frequent_mut_0", "max"),
             Output("select_min_nb_frequent_mut_0", "value"),
             Output("min_nb_freq_0", "children")
         ],
@@ -41,7 +40,7 @@ def get_explore_callbacks(  # noqa: C901
         ],
         [
             State("mutation_dropdown_0", "options"),
-            State("min_nb_freq_0", "max"),
+            State("min_nb_freq_0", "children")
         ],
         prevent_initial_call=False,
     )
@@ -54,7 +53,7 @@ def get_explore_callbacks(  # noqa: C901
             complete_partial_radio,
             min_nb_freq,
             mut_options,
-            max_nb_freq
+            text_freq
     ):
         # TODO now return top x mut without checking for mutations with same number
         if ctx.triggered_id == "select_x_frequent_mut_0":
@@ -82,12 +81,13 @@ def get_explore_callbacks(  # noqa: C901
                 min_nb_freq = max_nb_freq
             if min_nb_freq == 0 and max_nb_freq>0:
                 min_nb_freq = 1
+            text_freq = f"Select minimum number of mutation frequency. Maximum frequency: {max_nb_freq}"
         text_nb_mut = (
             f"Select x most frequent sequences. Maximum number of mutations with chosen "
             f"filter options: {len(mut_options)}"
         )
-        text_freq = f"Select minimum number of mutation frequency. Maximum frequency: {max_nb_freq}"
-        return mut_options, mut_value, text_nb_mut, max_select, select_x_mut, max_nb_freq, min_nb_freq, text_freq
+
+        return mut_options, mut_value, text_nb_mut, max_select, select_x_mut, min_nb_freq, text_freq
 
     @callback(
         [
@@ -362,9 +362,9 @@ def get_explore_callbacks(  # noqa: C901
         world_map = WorldMap(world_dfs, color_dict, location_coordinates)
         number_selected_sequences, seq_with_mut = world_map.get_nb_filtered_seq(seqtech_list, date_list, [location_name],
                                                                                 genes, mutations)
-        info_header = f"Number Sequences with selected genes, sequencing technologies for country {location_name} " \
-                      f"between {date_list[0]} - {date_list[-1]}: {number_selected_sequences} of which {seq_with_mut} " \
-                      f"sequences carry at least one of the selected mutations "
+        info_header = f"Number sequences for country {location_name} and selected properties  between " \
+                      f"{date_list[0]} - {date_list[-1]}: {number_selected_sequences} " \
+                      f"of which {seq_with_mut} sequences carry at least one of the selected mutations."
         # 1. plot
         if method == "Increase":
             fig = world_map.get_slope_bar_plot(

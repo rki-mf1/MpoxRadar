@@ -184,7 +184,7 @@ class DfsAndDetailPlot(object):
                     & world_df["element.symbol"].isin(genes)
                     ].copy()
             df.sample_id_list = df.sample_id_list.map(lambda x: x.split(','))
-            df2 = df[df['variant.label'].isin(mutations)]
+            df2 = df[df['gene:variant'].isin(mutations)]
 
             for sample_list in df['sample_id_list'].tolist():
                 samples_1.update(sample_list)

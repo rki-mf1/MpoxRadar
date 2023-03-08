@@ -122,7 +122,6 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                             value=1,
                             className="input_field",
                             min=1,
-                            #  max=len(mutation_options),
                         ),
                         html.Br(),
                     ]
@@ -244,10 +243,12 @@ def html_complete_partial_radio(tab):
     return item
 
 
-def html_disclaimer_seq_errors(tool):
+def html_disclaimer_seq_errors(tool, only_cds=False):
+    t = ""
+    if not only_cds:
+        t = ", nucleotide mutations containing N"
     disclaimer = dcc.Markdown(
-        "Sequencing errors are not shown. \n Amino acids mutations containing X, nucleotide mutations "
-        "containing N are excluded.",
+        f"Sequencing errors are not shown. \n Amino acids mutations containing X{t} are excluded.",
         className="me-1",
         style={
             "font-size": 20,
