@@ -53,8 +53,7 @@ def get_filtered_samples(propertyView_dfs, variantView_dfs, mut_value, aa_nt_rad
     return new_samples
 
 
-def select_min_x_frequent_mut(mut_options,
-                              min_nb_freq):
+def select_min_x_frequent_mut(mut_options, min_nb_freq):
     df = pd.DataFrame.from_records(mut_options)
     df = df[df['freq'] >= min_nb_freq]
     return df['value']

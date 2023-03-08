@@ -3,7 +3,7 @@ import shlex
 import time
 
 import dash
-from dash import callback
+from dash import callback, dcc
 from dash import html
 from dash import Input
 from dash import no_update
@@ -19,7 +19,7 @@ from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
 from pages.html_compare import html_compare_button
-from pages.html_shared import html_complete_partial_radio
+from pages.html_shared import html_complete_partial_radio, small_table
 from pages.html_shared import html_disclaimer_seq_errors
 from pages.html_shared import html_table
 from pages.html_data_explorer import create_world_map_explorer
@@ -36,9 +36,9 @@ from pages.html_data_explorer import html_interval
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
-from pages.utils_filters import  get_frequency_sorted_seq_techs_by_filters
-from pages.utils_filters import  get_all_frequency_sorted_countries_by_filters
-from pages.utils_filters import  get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
+from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
+from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_filters import get_all_frequency_sorted_seqtech
 from pages.utils_filters import get_all_gene_dict
 from pages.utils_filters import get_all_references
@@ -98,7 +98,9 @@ nb_shown_options = len(start_colored_mutation_options_dict) if len(start_colored
                                                                < start_cond_len_shown_mut else start_cond_len_shown_mut
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
-tableFilter = TableFilter()
+compare_columns = TableFilter().table_columns
+compare_columns.remove("NUC_PROFILE")
+compare_overview_columns = ["unique left", "#seq l", "shared", "#seq s", "unique right", "#seq r"]
 
 tab_explored_tool = html.Div(
     [
@@ -170,7 +172,7 @@ tab_explored_tool = html.Div(
                 html_disclaimer_seq_errors('explorer'),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
-                html.Div(html_table(pd.DataFrame(columns=tableFilter.table_columns),
+                html.Div(html_table(pd.DataFrame(columns=TableFilter().table_columns),
                                     "Properties of filtered samples.", 'explorer')),
             ],
             id="div_elem_standard",
@@ -190,7 +192,7 @@ tab_compare_tool = (
                             dbc.Row(html_aa_nt_radio()),
                             dbc.Row(html_elem_reference_radioitems(
                                 all_reference_options, start_cond_ref_id, radio_id=1
-                            ),),
+                            ), ),
                             dbc.Col(
                                 [
                                     dbc.Row(
@@ -312,14 +314,21 @@ tab_compare_tool = (
                         ]
                     ),
                     dbc.Row(
+                        small_table(pd.DataFrame(columns=compare_overview_columns),
+                                    title="Overview Table",
+                                    tool="compare_0"
+                                    ),
+                        className="mt-3",
+                    ),
+                    dbc.Row(
                         [
-                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                            html_table(pd.DataFrame(columns=compare_columns),
                                        title="Samples with mutations unique for left selection", tool="compare_1"
                                        ),
-                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                            html_table(pd.DataFrame(columns=compare_columns),
                                        title="Samples with mutations contained in both selections", tool="compare_3"
                                        ),
-                            html_table(pd.DataFrame(columns=tableFilter.table_columns[0:-1]),
+                            html_table(pd.DataFrame(columns=compare_columns),
                                        title="Samples with mutations unique for right selection", tool="compare_2"
                                        ),
                         ],

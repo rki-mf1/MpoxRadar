@@ -122,12 +122,12 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                             value=1,
                             className="input_field",
                             min=1,
-                          #  max=len(mutation_options),
+                            #  max=len(mutation_options),
                         ),
                         html.Br(),
                     ]
                 ),
-                ]
+            ]
             ),
         ]
     )
@@ -233,6 +233,7 @@ def html_complete_partial_radio(tab):
                             "font-weight": "bold",
                             "align-itmes": "center",
                             "textAlign": "center",
+                            'overflowX': 'auto'
                         },
                         id=f"complete_partial_radio_{tab}",
                     ),
@@ -286,7 +287,7 @@ def html_table(df, title, tool):
                                             "height": "auto",
                                             "lineHeight": "15px",
                                             # all three widths are needed
-                                            "minWidth": "50px",
+                                            "minWidth": "100%",
                                             "width": "400px",
                                             "maxWidth": "750px",
                                         },
@@ -304,5 +305,48 @@ def html_table(df, title, tool):
         ],
         body=True,
         className="mx-1 my-1",
+    )
+    return Output_table_standard
+
+
+def small_table(df, title, tool):
+    Output_table_standard = (
+        dbc.Col(
+            xs=12, sm=12, md=3, lg=3, xl=3,  # This sets the column width for different screen sizes
+        ),
+        dbc.Col(
+            dbc.Card(
+                [
+                    html.H3(title),
+                    dash_table.DataTable(
+                        data=df.to_dict("records"),
+                        columns=[
+                            {"name": i, "id": i} for i in df.columns
+                        ],
+                        id=f"table_{tool}",
+                        page_current=0,
+                        page_size=5,
+                        style_data={
+                            "whiteSpace": "normal",
+                            "height": "auto",
+                            "lineHeight": "15px",
+                            # all three widths are needed
+                            "minWidth": "100%",
+                            "width": "400px",
+                            "maxWidth": "750px",
+                        },
+                        style_cell={"fontSize": 12},
+                        style_table={"overflowX": "auto"},
+                        export_format="csv",
+                    ),
+                ],
+                body=True,
+                className="mx-1 my-1",
+            ),
+            xs=12, sm=12, md=7, lg=7, xl=7,  # This sets the column width for different screen sizes
+        ),
+        dbc.Col(
+            xs=12, sm=12, md=2, lg=2, xl=2,
+        ),
     )
     return Output_table_standard

@@ -225,6 +225,7 @@ def get_compare_callbacks(  # noqa: C901
             Input("mutation_dropdown_left", "value"),
             Input("mutation_dropdown_right", "value"),
             Input("mutation_dropdown_both", "value"),
+
         ],
         [
             State("reference_radio_1", "value"),
@@ -288,6 +289,62 @@ def get_compare_callbacks(  # noqa: C901
             table_df_3_records,
             column_names_3,
         )
+
+    @callback(
+        [
+            Output(component_id="table_compare_0", component_property="data"),
+            Output(component_id="table_compare_0", component_property="columns"),
+        ],
+        [
+            Input("mutation_dropdown_left", "value"),
+            Input("mutation_dropdown_right", "value"),
+            Input("mutation_dropdown_both", "value"),
+            Input("mutation_dropdown_left", "options"),
+            Input("mutation_dropdown_right", "options"),
+            Input("mutation_dropdown_both", "options"),
+
+        ],
+        [
+            State("aa_nt_radio", "value"),
+        ],
+        prevent_initial_call=True,
+    )
+    @cache.memoize()
+    def actualize_overview_table(
+            mut_value_left,
+            mut_value_right,
+            mut_value_both,
+            mut_options_left,
+            mut_options_right,
+            mut_options_both,
+            aa_nt_radio
+    ):
+        if aa_nt_radio == 'cds':
+            table_cols = ["gene:variant", "freq"]
+        else:
+            table_cols = ["variant.label", "freq"]
+        df_left = pd.DataFrame.from_records(mut_options_left, columns=['value', 'freq'])
+        df_left = df_left[df_left['value'].isin(mut_value_left)]
+
+        df_right = pd.DataFrame.from_records(mut_options_right, columns=['value', 'freq'])
+        df_right = df_right[df_right['value'].isin(mut_value_right)]
+
+        df_both = pd.DataFrame.from_records(mut_options_both, columns=['value', 'freq'])
+        df_both = df_both[df_both['value'].isin(mut_value_both)]
+
+        table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
+        table_df.columns = [table_cols[0] + ' left', "#seq l", table_cols[0] + ' shared', "#seq s", table_cols[0] + ' right', "#seq r",]
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_rows', None)
+        table_df_records = table_df.to_dict("records")
+
+        column_names = [{"name": i, "id": i} for i in table_df.columns]
+
+        return (
+            table_df_records,
+            column_names,
+        )
+
 
     @callback(
         [
