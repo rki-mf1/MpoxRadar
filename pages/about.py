@@ -406,9 +406,13 @@ layout = html.Div(
                             """
                                 MpoxRadar: a worldwide Mpox genomic surveillance dashboard
                                 Ferdous Nasri, Alice Wittig, Kunaphas Kongkitimanon, Jorge Sánchez Cortés, Annika Brinkmann, Andreas Nitsche, Anna-Juliane Schmachtenberg, Bernhard Y. Renard, Stephan Fuchs
-                                bioRxiv 2023.02.03.526935; doi: https://doi.org/10.1101/2023.02.03.526935 
-                            """,
-                        ]
+                                bioRxiv 2023.02.03.526935;(""",
+                                dcc.Link(
+                                    html.A("doi: https://doi.org/10.1101/2023.02.03.526935 "),
+                                    href="https://www.biorxiv.org/content/10.1101/2023.02.03.526935v1",
+                                    target="_blank",
+                                ),
+                        ]          
                     ),
                     html.Br(),
                     html.H2(children="Acknowledgements:"),
