@@ -91,8 +91,22 @@ layout = html.Div(
                                     className="mb-2",
                                     style=card_style,
                             ),
-                            """For more information on the tool, we re-direct you to our paper (below under "How to cite?"), and to our GitHub README pages (below under "Link to code"). 
-                            """,
+                            """
+                            For more information on the tool, we re-direct you to our paper (below under "How to cite?"), and to our GitHub README pages (below under "Link to code").
+                            We have described the functionalities of our tools in detail in the """,
+                            dcc.Link(
+                                html.A("help page"),
+                                href=("https://mpoxradar.net/Help"),
+                                target="_blank",
+                            ),
+                            " and provide exemplified ways of how to use our page with step-by-step guides available on the ",
+                            dcc.Link(
+                                html.A("GitHub wiki"),
+                                href=("https://github.com/rki-mf1/MpoxRadar/wiki"),
+                                target="_blank",
+                            ),
+                            ". ",
+                            
                         ]
                     ),
                     html.Br(),
