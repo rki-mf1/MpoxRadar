@@ -400,6 +400,17 @@ layout = html.Div(
                         ]
                     ),
                     html.Br(),
+                    html.H2(children="How to cite?"),
+                    html.Div(
+                        [
+                            """
+                                MpoxRadar: a worldwide Mpox genomic surveillance dashboard
+                                Ferdous Nasri, Alice Wittig, Kunaphas Kongkitimanon, Jorge Sánchez Cortés, Annika Brinkmann, Andreas Nitsche, Anna-Juliane Schmachtenberg, Bernhard Y. Renard, Stephan Fuchs
+                                bioRxiv 2023.02.03.526935; doi: https://doi.org/10.1101/2023.02.03.526935 
+                            """,
+                        ]
+                    ),
+                    html.Br(),
                     html.H2(children="Acknowledgements:"),
                     html.Div(
                         [
