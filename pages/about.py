@@ -1,4 +1,4 @@
-import dash
+rimport dash
 from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
@@ -42,7 +42,57 @@ layout = html.Div(
                                 href="https://github.com/rki-mf1/covsonar",
                                 target="_blank",
                             ),
-                            """ - a database framework developed at the RKI for SARS-CoV-2.""",
+                            """ - a database framework developed at the RKI for SARS-CoV-2. below is a graphical abstract of our work.""",
+                            dbc.Card(
+                                        [
+                                            dbc.CardImg(
+                                                src="assets/graphicalAbstract.png",
+                                                top=True,
+                                                style=img_style,
+                                                className="align-self-center mt-2",
+                                            ),
+                                            dbc.CardBody(
+                                                [
+                                                    html.P(
+                                                        "Graphical Abstract."
+                                                    ),
+                                                ]
+                                            ),
+                                        ],
+                                        className="mb-2",
+                                        style=card_style,
+                                    ),
+                        ]
+                    ),
+                    html.Br(),
+                    html.H2(children="What is this?"),
+                    html.Div(
+                        [
+                            """With this web server, we provide tools to explore and comapre metadat from Mpox sequences available from our data sources (listed below).
+                            Furthermore, we provide an advanced tool for more detailed searches. The chosen data using our tools is visualised and presented in downloadable tables.
+                            As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed, aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users. Below is a simplified overview of our tool: 
+                            """,
+                            dbc.Card(
+                                    [
+                                        dbc.CardImg(
+                                            src="assets/mpoxOverview.png",
+                                            top=True,
+                                            style=img_style,
+                                            className="align-self-center mt-2",
+                                        ),
+                                        dbc.CardBody(
+                                            [
+                                                html.P(
+                                                    "Simplified Technical Overview."
+                                                ),
+                                            ]
+                                        ),
+                                    ],
+                                    className="mb-2",
+                                    style=card_style,
+                            ),
+                            """For more information on the tool, we re-direct you to our paper (below under "How to cite?"), and to our GitHub README pages (below under "Link to code"). 
+                            """,
                         ]
                     ),
                     html.Br(),
