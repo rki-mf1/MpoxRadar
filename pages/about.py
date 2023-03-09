@@ -22,7 +22,7 @@ layout = html.Div(
                     html.Div(
                         [
                             """
-                        Mpox is an infectious disease caused by a smallpox virus, recently spreading in multiple countries with over 83,000 cases and declared a global emergency by the World Health Organization """,
+                        MonkeyPox (Mpox) is an infectious disease caused by a smallpox virus, recently spreading in multiple countries with over 86,000 cases and declared a global emergency by the World Health Organization """,
                             dcc.Link(
                                 html.A("[1]"),
                                 href="https://worldhealthorg.shinyapps.io/mpx_global/",
@@ -260,8 +260,44 @@ layout = html.Div(
                                             style=card_style,
                                         ),
                                     ),
-                                    dbc.Col(),
-                                    dbc.Col(),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            [
+                                                dbc.CardImg(
+                                                    src="assets/AB.png",
+                                                    top=True,
+                                                    style=img_style,
+                                                    className="align-self-center mt-2",
+                                                ),
+                                                dbc.CardBody(
+                                                    [
+                                                        html.P("Annika Brinkmann"),
+                                                    ]
+                                                ),
+                                            ],
+                                            className="mb-2",
+                                            style=card_style,
+                                        ),
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            [
+                                                dbc.CardImg(
+                                                    src="assets/AN.png",
+                                                    top=True,
+                                                    style=img_style,
+                                                    className="align-self-center mt-2",
+                                                ),
+                                                dbc.CardBody(
+                                                    [
+                                                        html.P("Andreas Nitsche"),
+                                                    ]
+                                                ),
+                                            ],
+                                            className="mb-2",
+                                            style=card_style,
+                                        ),
+                                    ),
                                 ],
                                 className="mb-4",
                             ),
