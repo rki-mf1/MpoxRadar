@@ -77,10 +77,9 @@ def get_explore_callbacks(  # noqa: C901
                 min_nb_freq = max_nb_freq
             if min_nb_freq == 0 and max_nb_freq>0:
                 min_nb_freq = 1
-            text_freq = f"Select minimum number of mutation frequency. Maximum frequency: {max_nb_freq}"
+            text_freq = f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
         text_nb_mut = (
-            f"Select x most frequent sequences. Maximum number of mutations with chosen "
-            f"filter options: {len(mut_options)}"
+            f"Select n-th most frequent variants. Number variants matching filters: {len(mut_options)}"
         )
 
         return mut_options, mut_value, text_nb_mut, max_select, select_x_mut, min_nb_freq, text_freq

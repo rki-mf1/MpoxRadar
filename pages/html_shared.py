@@ -111,7 +111,7 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                 dbc.Row(
                     [
                         dbc.Label(
-                            "Min number of mutation frequency",
+                            "Select minimum variant frequency. Highest frequency in selection: 0",
                             id=f"min_nb_freq_{elem_id}",
                         ),
                         html.Br(),
@@ -124,6 +124,13 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                             min=1,
                         ),
                         html.Br(),
+                        dbc.Tooltip(
+                            "Specifies the minimum number of sequences in which the variant must occur to be listed "
+                            "here. Highest frequency represents the highest number of sequences sharing the same "
+                            "variant. E.g., a minimum variant frequency of 2 remove all variants detected "
+                            "only once.",
+                            target=f"min_nb_freq_{elem_id}",
+                        ),
                     ]
                 ),
             ]

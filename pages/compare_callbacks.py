@@ -183,13 +183,13 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
                 gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
             )
             mut_value_both = [v["value"] for v in mut_options_both]
-            text_freq_1 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_left}"
-            text_freq_2 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_right}"
-            text_freq_3 = f"Select minimum number of mutation frequency. Maximum frequency: {max_freq_nb_both}"
+            text_freq_1 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_left}"
+            text_freq_2 = f"Select minimum variant frequency. Highest frequency in selection:  {max_freq_nb_right}"
+            text_freq_3 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_both}"
 
-        text_1 = f"Unique number of mutations in left selection: {len(mut_options_left)}"
-        text_2 = f"Unique number of mutations in right selection: {len(mut_options_right)}"
-        text_3 = f"Number of mutations in both selections: {len(mut_options_both)}"
+        text_1 = f"Unique number of variants in left selection: {len(mut_options_left)}"
+        text_2 = f"Unique number of variants in right selection: {len(mut_options_right)}"
+        text_3 = f"Number of variants in both selections: {len(mut_options_both)}"
 
         return (
             mut_options_left,
