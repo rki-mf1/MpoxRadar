@@ -29,6 +29,7 @@ class TableFilter(object):
             "sample.name",
             "NUC_PROFILE",
             "AA_PROFILE",
+            "IMPORTED",
             "COLLECTION_DATE",
             "RELEASE_DATE",
             "ISOLATE",

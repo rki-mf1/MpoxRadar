@@ -144,7 +144,7 @@ def get_compare_callbacks(  # noqa: C901
                                                                 end_date_1,
                                                                 variantView_dfs,
                                                                 propertyView_dfs,
-                                                                1)
+                                                                )
             df_mutations_1 = df_mutations_1[['sample.id'] + variant_columns]
             # RIGHT OPTIONS
             df_mutations_2 = create_mutation_dfs_for_comparison(aa_nt_radio,
@@ -155,7 +155,7 @@ def get_compare_callbacks(  # noqa: C901
                                                                 end_date_2,
                                                                 variantView_dfs,
                                                                 propertyView_dfs,
-                                                                1)
+                                                                )
             df_mutations_2 = df_mutations_2[['sample.id'] + variant_columns]
 
             # DIFFERENCES

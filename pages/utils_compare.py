@@ -62,7 +62,7 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
                                        end_date,
                                        variantView_dfs,
                                        propertyView_dfs,
-                                       min_nb_freq):
+                                       ):
     if aa_nt_radio == 'cds':
         variantView_dfs = [df[df["element.symbol"].isin(gene_value)] for df in variantView_dfs]
 
@@ -72,7 +72,7 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
     merged_dfs = []
     for i, variantView in enumerate(variantView_dfs):
         merged_dfs.append(merge_df(variantView, propertyView_dfs[i], aa_nt_radio))
-    df_mutations = pd.concat(merged_dfs, ignore_index=True, axis=0)
+    df_mutations = pd.concat(merged_dfs, ignore_index=True, axis=0).reset_index(drop=True)
     return df_mutations
 
 
@@ -190,20 +190,21 @@ def create_comparison_tables(df_dict,
     sorted_indices = (variantView_df_both["freq l"] + variantView_df_both["freq r"]).sort_values(ascending=False).index
     variantView_df_both = variantView_df_both.loc[sorted_indices, :].reset_index(drop=True)
 
-
     variantView_dfs_both = [df[df['sample.id'].isin(samples_both)] for df in variantView_dfs]
     variantView_dfs_left = [df[df['sample.id'].isin(samples_left)] for df in variantView_dfs]
     variantView_dfs_right = [df[df['sample.id'].isin(samples_right)] for df in variantView_dfs]
     table_columns = [
         "sample.name",
         "variant.label",
+        "IMPORTED",
         "COLLECTION_DATE",
+        "RELEASE_DATE",
         "ISOLATE",
+        "LENGTH",
         "SEQ_TECH",
         "COUNTRY",
         "GEO_LOCATION",
         "HOST",
-        "LENGTH",
         "GENOME_COMPLETENESS",
         "reference.accession",
     ]

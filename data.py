@@ -251,7 +251,7 @@ def create_property_view(df, dummy_date="2021-12-31"):
     #  all dates and integer values into value_date column for unstacking
     df["value_text"] = df.apply(
         lambda row: row["value_date"]
-        if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE"]
+        if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE", "IMPORTED"]
         else row["value_text"],
         axis=1,
     )
@@ -266,8 +266,9 @@ def create_property_view(df, dummy_date="2021-12-31"):
     c = ["sample.id", "sample.name"]
     df = df.set_index(["property.name"] + c).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
-    df.RELEASE_DATE.fillna(dummy_date, inplace=True)
     df.COLLECTION_DATE.fillna(df.RELEASE_DATE, inplace=True)
+    # delete entries without collection and release date else nan errors:
+    df = df.dropna(subset=["COLLECTION_DATE"])
     df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
         lambda d: datetime.strptime(d, "%Y-%m-%d").date()
     )
@@ -386,7 +387,7 @@ def load_all_sql_files():
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict"):
-    #if True:
+    # if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
