@@ -13,11 +13,7 @@ def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
                     options=reference_options,
                     value=start_ref_id,
                     id=f"reference_radio_{radio_id}",
-                    style={
-                        "font-size": 20,
-                        "align-itmes": "center",
-                        "margin": "auto"
-                    },
+                    style={"font-size": 16, "align-itmes": "center", "margin": "auto"},
                 ),
             ]
         )
@@ -36,7 +32,7 @@ def html_elem_dropdown_genes(gene_options, g_id=0):
                         dbc.Spinner(
                             dcc.Dropdown(
                                 options=gene_options,
-                                value=[g['value'] for g in gene_options],
+                                value=[g["value"] for g in gene_options],
                                 id=f"gene_dropdown_{g_id}",
                                 # maxHeight=200,  # just height of dropdown not choose option field
                                 optionHeight=35,  # height options in dropdown, not chosen options
@@ -93,49 +89,50 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                 ],
                 style={"overflow-y": "auto", "maxHeight": 300, "minHeight": 200},
             ),
-            dbc.CardFooter([
-                dbc.Row(
-                    [
-                        dbc.Label(
-                            "Number mutations",
-                            id=f"max_nb_txt_{elem_id}",
-                        ),
-                        dcc.Checklist(
-                            id=f"select_all_mutations_{elem_id}",
-                            options=[{"label": "Select All", "value": 1}],
-                            value=[1],
-                        ),
-                    ]
-                ),
-                html.Br(),
-                dbc.Row(
-                    [
-                        dbc.Label(
-                            "Select minimum variant frequency. Highest frequency in selection: 0",
-                            id=f"min_nb_freq_{elem_id}",
-                        ),
-                        html.Br(),
-                        dcc.Input(
-                            id=f"select_min_nb_frequent_mut_{elem_id}",
-                            type="number",
-                            placeholder=1,
-                            value=1,
-                            className="input_field",
-                            min=1,
-                        ),
-                        html.Br(),
-                        dbc.Tooltip(
-                            "Specifies the minimum number of sequences in which the variant must occur to be listed "
-                            "here. Highest frequency represents the highest number of sequences sharing the same "
-                            "variant. E.g., a minimum variant frequency of 2 remove all variants detected "
-                            "only once.",
-                            target=f"min_nb_freq_{elem_id}",
-                        ),
-                    ]
-                ),
-            ]
+            dbc.CardFooter(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Label(
+                                "Number mutations",
+                                id=f"max_nb_txt_{elem_id}",
+                            ),
+                            dcc.Checklist(
+                                id=f"select_all_mutations_{elem_id}",
+                                options=[{"label": "Select All", "value": 1}],
+                                value=[1],
+                            ),
+                        ]
+                    ),
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Label(
+                                "Select minimum variant frequency. Highest frequency in selection: 0",
+                                id=f"min_nb_freq_{elem_id}",
+                            ),
+                            html.Br(),
+                            dcc.Input(
+                                id=f"select_min_nb_frequent_mut_{elem_id}",
+                                type="number",
+                                placeholder=1,
+                                value=1,
+                                className="input_field",
+                                min=1,
+                            ),
+                            html.Br(),
+                            dbc.Tooltip(
+                                "Specifies the minimum number of sequences in which the variant must occur to be listed "
+                                "here. Highest frequency represents the highest number of sequences sharing the same "
+                                "variant. E.g., a minimum variant frequency of 2 remove all variants detected "
+                                "only once.",
+                                target=f"min_nb_freq_{elem_id}",
+                            ),
+                        ]
+                    ),
+                ]
             ),
-            dcc.Store(id='compare_shared_dict'),
+            dcc.Store(id="compare_shared_dict"),
         ]
     )
     return checklist_aa_mutations
@@ -150,7 +147,11 @@ def html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
                     dbc.Spinner(
                         dbc.Checklist(
                             options=seq_tech_options,
-                            value=[s['value'] for s in seq_tech_options if not s['disabled']],
+                            value=[
+                                s["value"]
+                                for s in seq_tech_options
+                                if not s["disabled"]
+                            ],
                             id=f"seq_tech_dropdown_{s_id}",
                             labelStyle={"display": "block"},
                             style={
@@ -240,7 +241,7 @@ def html_complete_partial_radio(tab):
                             "font-weight": "bold",
                             "align-itmes": "center",
                             "textAlign": "center",
-                            'overflowX': 'auto'
+                            "overflowX": "auto",
                         },
                         id=f"complete_partial_radio_{tab}",
                     ),

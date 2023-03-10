@@ -385,7 +385,32 @@ query_card = dbc.Card(
         ),
         dbc.CardBody(
             [
-                html.Div([]),
+                html.Div(
+                    [
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Alert(
+                                    [
+                                        html.I(className="bi bi-journal-text me-2"),
+                                        "For a step-by-step guide on how to use this tool with an example, check out ",
+                                        html.A(
+                                            "our wiki.",
+                                            href="https://github.com/rki-mf1/MpoxRadar/wiki/Advanced-Tool",
+                                            target="_blank",
+                                        ),
+                                        " For more detailed information on the features, check out the ",
+                                        html.A(
+                                            "help page.",
+                                            href="Help",
+                                        ),
+                                    ],
+                                    color="info",
+                                    dismissable=True,
+                                )
+                            ),
+                        ),
+                    ]
+                ),
                 custom_cmd_cards,
             ]
         ),

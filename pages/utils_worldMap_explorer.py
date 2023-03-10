@@ -22,8 +22,7 @@ class TableFilter(object):
     """
 
     def __init__(self):
-        """
-        """
+        """ """
         # TODO length column unfilled
         super(TableFilter, self).__init__()
         self.table_columns = [
@@ -44,36 +43,36 @@ class TableFilter(object):
         ]
 
     def _get_filtered_samples(
-            self,
-            propertyView_dfs,
-            variantView_dfs,
-            seq_tech_list,
-            dates,
-            countries,
-            mut_value,
+        self,
+        propertyView_dfs,
+        variantView_dfs,
+        seq_tech_list,
+        dates,
+        countries,
+        mut_value,
     ):
         sample_set = set()
         for i, df in enumerate(variantView_dfs):
-            samples = set(propertyView_dfs[i][
-                              propertyView_dfs[i]["COLLECTION_DATE"].isin(dates)
-                              & propertyView_dfs[i]["SEQ_TECH"].isin(seq_tech_list)
-                              & propertyView_dfs[i]["COUNTRY"].isin(countries)
-                              ]["sample.id"])
+            samples = set(
+                propertyView_dfs[i][
+                    propertyView_dfs[i]["COLLECTION_DATE"].isin(dates)
+                    & propertyView_dfs[i]["SEQ_TECH"].isin(seq_tech_list)
+                    & propertyView_dfs[i]["COUNTRY"].isin(countries)
+                ]["sample.id"]
+            )
             sample_set = sample_set.union(
                 set(
                     df[
                         df["sample.id"].isin(samples)
                         & df["gene:variant"].isin(mut_value)
-                        ]["sample.id"]
+                    ]["sample.id"]
                 )
             )
         return sample_set
 
     def _merge_variantView_with_propertyView(self, variantView, propertyView):
         return pd.merge(
-            variantView, propertyView,
-            how="left",
-            on=["sample.id", "sample.name"]
+            variantView, propertyView, how="left", on=["sample.id", "sample.name"]
         )
 
     def combine_labels_by_sample(self, df, aa_nt):
@@ -87,11 +86,7 @@ class TableFilter(object):
             ]
             df = df[cols]
             df = (
-                df.groupby(
-                    cols[0:-1],
-                    dropna=False,
-                    group_keys=True
-                )["gene:variant"]
+                df.groupby(cols[0:-1], dropna=False, group_keys=True)["gene:variant"]
                 .apply(lambda x: ",".join([str(y) for y in set(x)]))
                 .reset_index()
                 .rename(columns={"gene:variant": "AA_PROFILE"})
@@ -107,11 +102,7 @@ class TableFilter(object):
             ]
             df = df[cols]
             df = (
-                df.groupby(
-                    cols[0:-1],
-                    dropna=False,
-                    group_keys=True
-                )["variant.label"]
+                df.groupby(cols[0:-1], dropna=False, group_keys=True)["variant.label"]
                 .apply(lambda x: ",".join([str(y) for y in set(x)]))
                 .reset_index()
                 .rename(columns={"variant.label": "NUC_PROFILE"})
@@ -119,20 +110,20 @@ class TableFilter(object):
         return df
 
     def get_filtered_table(
-            self,
-            df_dict,
-            complete_partial_radio,
-            mutation_list,
-            seq_tech_list,
-            reference_id,
-            dates,
-            countries,
+        self,
+        df_dict,
+        complete_partial_radio,
+        mutation_list,
+        seq_tech_list,
+        reference_id,
+        dates,
+        countries,
     ):
         variantView_dfs_cds = select_variantView_dfs(
-            df_dict, complete_partial_radio, reference_id, 'cds'
+            df_dict, complete_partial_radio, reference_id, "cds"
         )
         variantView_dfs_source = select_variantView_dfs(
-            df_dict, complete_partial_radio, reference_id, 'source'
+            df_dict, complete_partial_radio, reference_id, "source"
         )
         propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
         samples = self._get_filtered_samples(
@@ -143,35 +134,39 @@ class TableFilter(object):
             countries,
             mutation_list,
         )
-        variantView_dfs_cds = [variantView[variantView["sample.id"].isin(samples)]
-                               for variantView in variantView_dfs_cds]
-        variantView_dfs_source = [variantView[variantView["sample.id"].isin(samples)]
-                                  for variantView in variantView_dfs_source]
+        variantView_dfs_cds = [
+            variantView[variantView["sample.id"].isin(samples)]
+            for variantView in variantView_dfs_cds
+        ]
+        variantView_dfs_source = [
+            variantView[variantView["sample.id"].isin(samples)]
+            for variantView in variantView_dfs_source
+        ]
         table_dfs_cds = []
         for variantView in variantView_dfs_cds:
-            result_df = self.combine_labels_by_sample(variantView, 'cds')
+            result_df = self.combine_labels_by_sample(variantView, "cds")
             table_dfs_cds.append(result_df)
         table_df_cds = pd.concat(table_dfs_cds, ignore_index=True, axis=0)
 
         table_dfs_source = []
         for variantView in variantView_dfs_source:
-            result_df = self.combine_labels_by_sample(variantView, 'source')
+            result_df = self.combine_labels_by_sample(variantView, "source")
             table_dfs_source.append(result_df)
         table_df_source = pd.concat(table_dfs_source, ignore_index=True, axis=0)
 
-        df = pd.merge(table_df_cds, table_df_source,
-                      how="inner",
-                      on=['sample.id', 'sample.name', 'reference.accession', "reference.id"])
+        df = pd.merge(
+            table_df_cds,
+            table_df_source,
+            how="inner",
+            on=["sample.id", "sample.name", "reference.accession", "reference.id"],
+        )
 
         propertyView_df = pd.concat(propertyView_dfs, ignore_index=True, axis=0)
         df = self._merge_variantView_with_propertyView(df, propertyView_df)
         df = df[self.table_columns]
         if df.empty:
-            df = pd.DataFrame(
-                [],
-                columns=[self.table_columns]
-            )
-        df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
+            df = pd.DataFrame([], columns=[self.table_columns])
+        df = df.rename(columns={"reference.accession": "REFERENCE_ACCESSION"})
         return df
 
 
@@ -197,10 +192,7 @@ class DfsAndDetailPlot(object):
         param df: df_all_dates_all_voc
         param dates: [date(2021, 12, 12), date(2021, 12, 13), ...]
         """
-        df = df[
-            df["COLLECTION_DATE"].isin(dates)
-            & df["variant.label"].isin(mutations)
-            ]
+        df = df[df["COLLECTION_DATE"].isin(dates) & df["variant.label"].isin(mutations)]
         if location_ID:
             df = df[df.location_ID == location_ID]
         seq_set = set(",".join(list(df["sample_id_list"])).split(","))
@@ -214,17 +206,17 @@ class DfsAndDetailPlot(object):
         samples_2 = set()
         for world_df in self.world_dfs:
             df = world_df[
-                    world_df["COLLECTION_DATE"].isin(dates)
-                    & world_df["SEQ_TECH"].isin(seq_tech_list)
-                    & world_df["COUNTRY"].isin(countries)
-                    & world_df["element.symbol"].isin(genes)
-                    ].copy()
-            df.sample_id_list = df.sample_id_list.map(lambda x: x.split(','))
-            df2 = df[df['gene:variant'].isin(mutations)]
+                world_df["COLLECTION_DATE"].isin(dates)
+                & world_df["SEQ_TECH"].isin(seq_tech_list)
+                & world_df["COUNTRY"].isin(countries)
+                & world_df["element.symbol"].isin(genes)
+            ].copy()
+            df.sample_id_list = df.sample_id_list.map(lambda x: x.split(","))
+            df2 = df[df["gene:variant"].isin(mutations)]
 
-            for sample_list in df['sample_id_list'].tolist():
+            for sample_list in df["sample_id_list"].tolist():
                 samples_1.update(sample_list)
-            for sample_list in df2['sample_id_list'].tolist():
+            for sample_list in df2["sample_id_list"].tolist():
                 samples_2.update(sample_list)
         return len(samples_1), len(samples_2)
 
@@ -234,7 +226,7 @@ class DfsAndDetailPlot(object):
             & df["SEQ_TECH"].isin(seq_tech_list)
             & df["gene:variant"].isin(mutations)
             & df["COUNTRY"].isin(countries)
-            ]
+        ]
         return df
 
     def get_df_for_frequency_bar(self, filtered_dfs):
@@ -326,9 +318,9 @@ class DfsAndDetailPlot(object):
         unique_date_numbers = list(set(date_numbers))
         unique_date_numbers.sort()
         tickvals_date = unique_date_numbers[
-                        0:: math.ceil(len(unique_date_numbers) / 6)
-                        ]
-        ticktext_date = unique_dates[0:: math.ceil(len(unique_dates) / 6)]
+            0 :: math.ceil(len(unique_date_numbers) / 6)
+        ]
+        ticktext_date = unique_dates[0 :: math.ceil(len(unique_dates) / 6)]
         return tickvals_date, ticktext_date
 
     def create_frequency_plot(self, df):
@@ -358,9 +350,7 @@ class DfsAndDetailPlot(object):
         return fig
 
     # plot methods
-    def get_frequency_bar_chart(
-            self, mutations, seqtech_list, dates, location_name
-    ):
+    def get_frequency_bar_chart(self, mutations, seqtech_list, dates, location_name):
         """
         :return fig bar chart showing mutation information of last hovered plz
         """
@@ -483,12 +473,12 @@ class DfsAndDetailPlot(object):
         return fig
 
     def get_frequency_development_scatter_plot(
-            self,
-            mutations,
-            seqtech_list,
-            dates,
-            location_name,
-            axis_type="lin",
+        self,
+        mutations,
+        seqtech_list,
+        dates,
+        location_name,
+        axis_type="lin",
     ):
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
         if location_name:
@@ -551,9 +541,7 @@ class WorldMap(DfsAndDetailPlot):
         """
         super(WorldMap, self).__init__(world_dfs, color_dict, location_coordinates)
 
-    def get_world_map_df(
-            self, method, mutations, seq_tech_list, dates, countries
-    ):
+    def get_world_map_df(self, method, mutations, seq_tech_list, dates, countries):
         """
         :param method: 'Frequency' or 'Increase'
         :param mutations: list of selected voc mutations gene:mut
@@ -568,9 +556,7 @@ class WorldMap(DfsAndDetailPlot):
         if countries is None:
             countries = []
         filtered_dfs = [
-            self.filter_df(
-                world_df, mutations, seq_tech_list, dates, countries
-            )
+            self.filter_df(world_df, mutations, seq_tech_list, dates, countries)
             for world_df in self.world_dfs
         ]
 
@@ -582,7 +568,7 @@ class WorldMap(DfsAndDetailPlot):
                 sample_set = {
                     item
                     for sublist in [
-                        sample.split(',') for sample in group["sample_id_list"].unique()
+                        sample.split(",") for sample in group["sample_id_list"].unique()
                     ]
                     for item in sublist
                 }
@@ -590,7 +576,7 @@ class WorldMap(DfsAndDetailPlot):
                 number_sequences.append(len(sample_set))
             df = pd.DataFrame(
                 list(zip(countries, number_sequences)),
-                columns=['COUNTRY', 'number_sequences']
+                columns=["COUNTRY", "number_sequences"],
             )
             column_of_interest = "number_sequences"
         elif method == "Increase":
@@ -623,7 +609,9 @@ class WorldMap(DfsAndDetailPlot):
             hover_data=shown_hover_data,
             labels={
                 el: (
-                    el.replace(".", " ").title() if el != "number_sequences" else "number of sequences"
+                    el.replace(".", " ").title()
+                    if el != "number_sequences"
+                    else "number of sequences"
                 )
                 for el in df.columns
             },
@@ -635,7 +623,7 @@ class WorldMap(DfsAndDetailPlot):
         return fig
 
     def create_map_fig(
-            self, df, shown_hover_data, color_column, size_column, z=2, cen=None
+        self, df, shown_hover_data, color_column, size_column, z=2, cen=None
     ):
         """
         param df:  COUNTRY  | variant.label   |   number_sequences | lat |  lon |   scaled_column
