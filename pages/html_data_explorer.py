@@ -83,13 +83,16 @@ def create_world_map_explorer(date_slider):
         [
             html.H4(
                 "Detailed look at the sequences with the chosen mutations for the selected country",
-                id="chosen_location"
+                id="chosen_location",
             ),
-            dbc.FormText(
-                "Please click on a country you are interested in on the global map above to see detail plots for that country.\n",
-                color="primary",
+            html.H5(
+                dbc.Badge(
+                    id="sequence_information",
+                    color="white",
+                    text_color="primary",
+                    className="border me-1",
+                )
             ),
-            html.H5(id="sequence_information"),
         ]
     )
 
@@ -135,6 +138,19 @@ def create_world_map_explorer(date_slider):
                                 ),
                             ],
                             align="center",
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                [
+                                    html.I(
+                                        className="bi bi-megaphone-fill",
+                                    ),
+                                    dbc.FormText(
+                                        " Note: Please click on a country you are interested in on the global map above to see detail plots for that country.\n",
+                                        color="primary",
+                                    ),
+                                ],
+                            ),
                         ),
                         html.Br(),
                         dbc.Row(
@@ -205,7 +221,7 @@ def html_interval(interval=30):
 # TODO : max for input field?
 # TODO design dropdown
 def html_elem_dropdown_aa_mutations(
-        mutation_options, nb_shown_options, title="AA mutations: ", elem_id=0
+    mutation_options, nb_shown_options, title="AA mutations: ", elem_id=0
 ):
     checklist_aa_mutations = dbc.Card(
         dbc.CardBody(
@@ -216,7 +232,8 @@ def html_elem_dropdown_aa_mutations(
                     dcc.Dropdown(
                         options=mutation_options,
                         value=[
-                            mut_dict["value"] for mut_dict in mutation_options[0:nb_shown_options]
+                            mut_dict["value"]
+                            for mut_dict in mutation_options[0:nb_shown_options]
                         ],
                         id=f"mutation_dropdown_{elem_id}",
                         # maxHeight=300,
@@ -228,51 +245,83 @@ def html_elem_dropdown_aa_mutations(
                     type="grow",
                 ),
                 dbc.Row(
-                    [
-                        dbc.Label(
-                            f"Select n-th most frequent variants. "
-                            f"Number variants matching filters: {len(mutation_options)}",
-                            id=f"max_nb_txt_{elem_id}",
-                        ),
-                        dbc.Tooltip(
-                            "Selects from frequency sorted variants the specified top n variants."
-                            "E.g. a value of 50 selects the 50 most common variants to be shown in map, "
-                            "plots and tables.",
-                            target=f"max_nb_txt_{elem_id}",
-                        ),
-                        dcc.Input(
-                            id=f"select_x_frequent_mut_{elem_id}",
-                            type="number",
-                            placeholder=20,
-                            value=20,
-                            className="input_field",
-                            min=1,
-                            max=len(mutation_options),
-                        ), ]),
-                html.Br(),
+                    dbc.Col(
+                        [
+                            dbc.Row(
+                                dbc.Col(
+                                    [
+                                        dbc.Label(
+                                            f"Select n-th most frequent variants. "
+                                            f"Number variants matching filters: {len(mutation_options)}",
+                                            id=f"max_nb_txt_{elem_id}",
+                                        ),
+                                        html.I(
+                                            className="bi bi-info-circle ms-1 text-primary fa-2x"
+                                        ),
+                                        dbc.Tooltip(
+                                            "Selects from frequency sorted variants the specified top n variants."
+                                            "E.g. a value of 50 selects the 50 most common variants to be shown in map, "
+                                            "plots and tables.",
+                                            target=f"max_nb_txt_{elem_id}",
+                                        ),
+                                    ]
+                                ),
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    dcc.Input(
+                                        id=f"select_x_frequent_mut_{elem_id}",
+                                        type="number",
+                                        placeholder=20,
+                                        value=20,
+                                        className="input_field",
+                                        min=1,
+                                        max=len(mutation_options),
+                                    ),
+                                ),
+                            ),
+                        ],
+                    ),
+                    className="mt-1",
+                ),
                 dbc.Row(
-                    [
-                        dbc.Label(
-                            "Select minimum variant frequency. Highest frequency in selection: 0",
-                            id=f"min_nb_freq_{elem_id}",
-                        ),
-                        html.Br(),
-                        dcc.Input(
-                            id=f"select_min_nb_frequent_mut_{elem_id}",
-                            type="number",
-                            placeholder=1,
-                            value=1,
-                            className="input_field",
-                            min=1,
-                        ),
-                        dbc.Tooltip(
-                            "Specifies the minimum number of sequences in which the variant must occur to be listed "
-                            "here. Highest frequency represents the highest number of sequences sharing the same "
-                            "variant. E.g., a minimum variant frequency of 2 remove all variants detected "
-                            "only once.",
-                            target=f"min_nb_freq_{elem_id}",
-                        ),
-                    ]
+                    dbc.Col(
+                        [
+                            dbc.Row(
+                                dbc.Col(
+                                    [
+                                        dbc.Label(
+                                            "Select minimum variant frequency. Highest frequency in selection: 0",
+                                            id=f"min_nb_freq_{elem_id}",
+                                        ),
+                                        html.I(
+                                            className="bi bi-info-circle ms-1 text-primary fa-2x"
+                                        ),
+                                    ]
+                                ),
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    dcc.Input(
+                                        id=f"select_min_nb_frequent_mut_{elem_id}",
+                                        type="number",
+                                        placeholder=1,
+                                        value=1,
+                                        className="input_field",
+                                        min=1,
+                                    ),
+                                ),
+                            ),
+                            dbc.Tooltip(
+                                "Specifies the minimum number of sequences in which the variant must occur to be listed "
+                                "here. Highest frequency represents the highest number of sequences sharing the same "
+                                "variant. E.g., a minimum variant frequency of 2 remove all variants detected "
+                                "only once.",
+                                target=f"min_nb_freq_{elem_id}",
+                            ),
+                        ],
+                    ),
+                    className="mt-1",
                 ),
             ],
             style={
