@@ -18,7 +18,7 @@ sequences_card = dbc.Card(
             [
                 dbc.Col(
                     [
-                        html.Div(html.I(className="bi bi-body-text", style={})),
+                        html.Div(html.I(className="bi bi-body-text fa-3x", style={})),
                     ],
                     className="col-md-1 col-xs-1 mx-2",
                     style={},

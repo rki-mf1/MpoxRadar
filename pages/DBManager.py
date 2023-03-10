@@ -219,7 +219,7 @@ class DBManager(object):
             "FROM ( "
             "SELECT `reference.accession`,  COUNT(`variant.label`) AS Freq "
             "From   variantView "
-            "WHERE `element.type` = 'cds' "
+            "WHERE `element.type` = 'cds' AND `variant.alt` != 'X' "
             "Group By `reference.accession` "
             "ORDER BY Freq DESC) AS T1 "
             "Group BY `reference.accession` "
