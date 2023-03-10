@@ -1,8 +1,8 @@
-# MPoxSonar
+# MpoxSonar
 
-MPoxSonar is an extension of Covsonar (the database-driven system for handling genomic sequences of SARS-CoV-2 and screening genomic profiles, developed at the RKI (https://github.com/rki-mf1/covsonar).) that adds support for multiple genome references and quick processing with MariaDB.
+MpoxSonar is an extension of Covsonar (the database-driven system for handling genomic sequences of SARS-CoV-2 and screening genomic profiles, developed at the RKI (https://github.com/rki-mf1/covsonar).) that adds support for multiple genome references and quick processing with MariaDB.
 
-What's new in MPoxSonar
+What's new in MpoxSonar
 * New design
     * Improve workflows
     * Performance improvements
@@ -11,38 +11,65 @@ What's new in MPoxSonar
 * New database design
 	* New database schema for MariaDB
 
-Now, MPoxSonar is mainly used for MonkeyPox virus but it can be used with other pathogens.
+Now, MpoxSonar is mainly used for MonkeyPox virus but it can be used with other pathogens.
 
 ## Prerequisite software
 
 1. Install MariaDB server (MySQL should work too!, not tested yet).
 2. Install conda environment.
 
-## 1. MPoxSonar Installation.
+## 1. MpoxSonar Installation.
+Currently, the MpoxSonar is not available at the pip&conda repository.
 
 ### Stable version.🔖
+(master branch)
+```sh
+# 1. Git clone
+git clone https://github.com/rki-mf1/MpoxSonar
+# 2. Install env.
+conda create -n mpxsonar-dev python=3.10 poetry fortran-compiler nox pre-commit emboss=6.6.0
+conda activate mpxsonar-dev  # needs to be activated for the following commands to work
 
-None
-
-### Dev. version.🚧
+cd mpxsonar
+```
+3.There is a ".env.template" file in the root directory. This file contains variables
+that must be used in the program and may differ depending on the environment.
+The ".env.template" file should be copied and changed to ".env",
+and then the variables should be edited accordingly.
 
 ```sh
-# example command
-git clone https://github.com/silenus092/mpxsonar.git
-
-conda create -n mpxsonar-dev python=3.9 poetry fortran-compiler nox pre-commit emboss=6.6.0
-conda activate mpxsonar-dev  # needs to be activated for the following commands to work
-cd mpxsonar
+# 4. Install MpoxSonar env.
 poetry install
-# test
-sonar -h
+# 5. Test
+sonar -v
 ```
 
-Finally, you need to copy and change name from ".env.template" file to ".env for a convenient of database connection, and then you edit the file according to your system.
+### Dev. version.🚧
+every installation step is same as stable version, but the code is in "dev branch".
+```sh
+git fetch
+git checkout dev
+```
+
+
+## Quickstart
+
+```sh
+# Setup database
+sonar setup
+# Add properties
+sonar add-prop --name COLLECTION_DATE --dtype date --descr "sampling date"
+sonar add-prop --name GENOME_COMPLETENESS --dtype text --descr "genome completeness"
+sonar add-prop --name LENGTH --dtype integer --descr "sequence length"
+# Import  samples
+sonar import --fasta example-data/mpox.fasta --tsv example-data/mpox.tsv --threads 5 --cache ../tmp_cache  --cols sample=ID
+# Query
+sonar match
+```
 
 ## 2. Usage
 
-In MPoxSonar, the table below shows the several commands that can be called.
+In MpoxSonar, the table below shows the several commands that can be called.
 
 | subcommand | purpose                                                             |
 |------------|---------------------------------------------------------------------|
@@ -68,9 +95,9 @@ sonar -h
 sonar import -h
 ```
 
-### 2.1 Setup database (setup ⛽)
+### 2.1 Setup a database (setup ⛽)
 
-First, we have to create a new database instance.
+First, we have to create a new database instance. (if we already configure detail in the .env file.)
 ```sh
 sonar setup
 ```
@@ -83,11 +110,14 @@ sonar setup --db https://super_user:123456@localhost:3306/mpx
 
 > Attention ⚠️: If you already set up .env file, then there is no need to add the --db tag in the command. The rest of our example command will not include the "--db" tag. We assume there is the .env file on your system.
 
-> Note 🕯️: By default, NC_063383.1 (Monkeypox virus, 2022) is used as a reference when running the setup command. If we want to set up a database for a different reference genome, we can add `--gbk` following the Genbank file.
+> Note 🕯️: By default, NC_063383.1 (Monkeypox virus) is used as a reference when running the setup command. If we want to set up a database for a different reference genome, we can provide `--gbk` following the Genbank file. [how to download genbank file](https://ncbiinsights.ncbi.nlm.nih.gov/2017/05/08/genome-data-download-made-easy/).
+```sh
+sonar setup --db test.db --auto-create --gbk MT903344.1.gb
+```
 
 ### 2.2 Property management (`list-prop`, `add-prop` and `delete-prop`)
 
-In MPoxSonar, users can now arbitrarily add meta information or properties into a database to fit a specific project objective.
+In MpoxSonar, users can now arbitrarily add meta information or properties into a database to fit a specific project objective.
 
 To add properties, we can use the `add-prop` command to add meta information into the database.
 
@@ -98,11 +128,11 @@ The required arguments are listed below when we use `add-prop` command
 
 ```sh
 # for example
-sonar add-prop --name LINEAGE --dtype text --descr "store Lineage"
+sonar add-prop --name LINEAGE --dtype text --descr "Store Lineage"
 #
-sonar add-prop --name AGE --dtype integer --descr "age information"
+sonar add-prop --name AGE --dtype integer --descr "patient age (example)"
 #
-sonar add-prop --name DATE_DRAW --dtype date --descr "sampling date"
+sonar add-prop --name COLLECTION_DATE --dtype date --descr "sampling date"
 ```
 > TIP 🕯️: `sonar add-prop -h ` to see all available arguments.
 
@@ -133,8 +163,8 @@ Add new reference.
 ```sh
 sonar add-ref --gbk MT903344.1.gb
 ```
->⚠️ Attention: Some references did not annotate the gene name but just gave only "locus_tag" in the GenBank file. The program will use "locus_tag" instead of the gene name when adding to the database. This annotation will affect the search (match) command for protein mutation.
-For example, we want to search for the D88K mutation. The reference MT903344.1 used MPXV-UK_ as the protein ID, so when we perform the search, we will write it as "MPXV-UK_P2-076:D88K", while the NC_063383.1 use "OPG093" (e.g., OPG093:D88K).
+>⚠️ Attention: Some references did not annotate a gene name but just gave only "locus_tag" in the GenBank file. The program will use "locus_tag" instead of the gene name when adding to the database. This annotation will affect the search (match) command for protein mutation.
+For example, we want to search for the D88K mutation. The reference MT903344.1 used "MPXV-UK_" as the protein ID, so when we perform the search, we will write it as "MPXV-UK_P2-076:D88K", while the NC_063383.1 use "OPG093" (e.g., OPG093:D88K).
 
 List all references in a database
 ```sh
@@ -188,12 +218,12 @@ As you can see, we defined `--cols sample=IMS_ID`, in which `IMS_ID` is the ID t
 
 To update meta information when we add a new property, we can use the same `import` command, but this time, in the `--tsv` tag, we provide a new meta or updated file, for example:
 ```sh
-sonar import --tsv meta.passed.tsv --threads 200 --cache tmp_cache --cols sample=IMS_ID
+sonar import --tsv meta.passed.tsv --threads 64 --cache tmp_cache --cols sample=IMS_ID
 
 ```
 > NOTE 🤨: please make sure the `--cols sample=IMS_ID` is correctly referenced. If you have a different column name, please change it according to the meta-info file (for example, `--cols sample=IMS_NEW_ID`)
 
-### 2.5 Query genome sequences based on profiles (match)
+### 2.5 Query genome sequences based on profiles (match command)
 
 Genomic profiles can be defined to align genomes. For this purpose, the variants related to the complete genome of the Monkeypox virus, NCBI Reference Sequence (NC_063383.1) must be expressed as follows:
 
@@ -212,7 +242,7 @@ There are additional options to adjust the matching.
 | option             | description                                                            |
 |--------------------|------------------------------------------------------------------------|
 | --count            | count matching genomes only                                            |
-| --format {csv,tsv,vcf}| output format (default: tsv) |
+| --format {csv,tsv} | output format (default: tsv) |
 
 
 > TIP 🕯️: use `sonar match -h ` to see all available arguments.
@@ -231,10 +261,10 @@ sonar match -r NC_063383.1 --count
 ```
 > NOTE 🤨: Currently, if we run `sonar match --count`, it will count the result by sample name. This behavior will change soon.
 
-```
+```sh
 # Combine with meta info.
-# Samples are collected on first of January 2022
-sonar match -r NC_063383.1 --COLLECTION_DATE 2022-01-01
+# Samples are collected on first of May 2022
+sonar match -r NC_063383.1 --COLLECTION_DATE 2022-05-01
 
 # matching genomes with specific IDs
 sonar match --sample ID-001 ID-001 ID-002
@@ -243,7 +273,7 @@ sonar match --sample ID-001 ID-001 ID-002
 We use `^` as a **"NOT"** operator. We put it before any conditional statement to negate, exclude or filter the result.
 ```sh
 # get sequences aligned with NC_063383.1 and was not collected on 2022-01-01.
-sonar match -r NC_063383.1 --COLLECTION_DATE ^2022-01-01
+sonar match -r NC_063383.1 --COLLECTION_DATE ^2022-05-01
 ```
 
 More example in `--profile` match
@@ -272,7 +302,7 @@ sonar match  --profile A2145C --COLLECTION_DATE 2022-05-31
 More example; property match
 ```sh
 # query with integer type
-# by default we use = operator
+# by default we use = (equal) operator
 sonar match  --AGE 25
 # however, if we want to query with comparison operators (e.g., >, !=, <, >=, <=)
 # , just add " " (double quote) around values.
@@ -280,63 +310,58 @@ sonar match  --AGE ">25"
 sonar match  --AGE ">=25" "<=30"  # AND Combination: >=25 AND <=30
 sonar match  --AGE "!=60"
 
-# Range query matches
-sonar match  --DEMIS_ID_PC  10641:10658
+# Seqeunce LENGTH in range
+sonar match  --LENGTH  10641:10658
 # 10641, 10642, 10643, .... 10658
 
-# Date
-# Sample were collected in 2020
-sonar match  --COLLECTION_DATE 2020-01-01:2020-12-31
+# Date Range
+# Sample were collected in 2022
+sonar match  --COLLECTION_DATE 2022-01-01:2022-12-31
 ```
 > TIP 🕯️: Don't forget `sonar list-prop ` to list all properties
 
-**Export to CSV/TSV/VCF file**
+**Export to CSV/TSV file**
 
-covSonar can return results in different formats: `--format ["csv", "tsv", "vcf"]`
+MpoxSonar can return results in different formats: `--format ["csv", "tsv"]`
 
 ```sh
 # example command
-sonar match  --format csv -o out.csv
+sonar match --format tsv -o out.csv
 
-# in vcf format
-sonar match --profile A2145C --COLLECTION_DATE 2022-05-31 --format vcf -o out.vcf
+# in csv format
+sonar match --profile G3120A --COLLECTION_DATE 2022-05-31 --format csv -o out.csv
 
-# In case we have a list of ID and it is stored in a file, so we can use --sample-file
-# tag to load and query according to the listed ID; example of --sample-file
-sonar match --sample-file accessions.txt --format vcf -o out.vcf
 ```
 
 > NOTE 📌: accessions.txt has to contain one ID per line.
 
-By default, covSonar returns every property to the output file if a user needs to export only some particular column. We can use `--out-column` tag to include only a specific property/column.
+By default, MpoxSonar returns every property to the output file if a user needs to export only some particular column. We can use `--out-column` tag to include only a specific property/column.
 
 for example,
 
 ```sh
 # only NUC_PROFILE,AA_PROFILE and LINEAGE will save into tsv file
-sonar match  --DATE_DRAW 2021-03-01  -o test.tsv --out-column NUC_PROFILE,AA_PROFILE,LINEAGE
+sonar match  --COLLECTION_DATE 2022-06-01  -o test.tsv --out-column NUC_PROFILE,AA_PROFILE,COLLECTION_DATE
 # column name separated by comma
 ```
 
-### 2.6 Show infos about the used sonar system and database (info)
+### 2.6 Show infos about the used sonar system and database (info command)
 
-Detailed infos about the used sonar system (e.g. version, reference,  number of imported genomes, unique sequences, available metadata).
+Detailed infos about the used sonar system (e.g. version, reference,  number of imported genomes, unique sequences).
 
 ```sh
 sonar info
 ```
 
-### 2.7 Restore genome sequences from the database (restore)
+### 2.7 Restore genome sequences from the database (restore command)
 Genome sequences can be restored from the database based on their accessions.
 The restored sequences are combined with their original FASTA header and  shown on the screen. The screen output can be redirected to a file easily by using `>`.
 
 ```sh
-# Restore genome sequences linked to accessions 'mygenome1' and 'mygenome2' from the
-# database 'test.db' and write these to a fasta file named 'restored.fasta'
-sonar restore --sample mygenome1 mygenome2 > restored.fasta
-# as before, but consider all accessions from 'accessions.txt' (the file has to
-# contain one accession per line)
-sonar restore --sample-file accessions.txt > restored.fasta
+# Restore genome sequences linked to reference.
+sonar restore -r NC_063383.1 --sample ID_1 ID_2 > restored.fasta
+# as before, 'accessions.txt' (the file has to contain one accession per line)
+sonar restore -r NC_063383.1 --sample-file accessions.txt > restored.fasta
 ```
 
 ### 2.8 Delete sample (delete)
@@ -345,9 +370,30 @@ sonar restore --sample-file accessions.txt > restored.fasta
 sonar delete --sample ID_1 ID_2 ID_3
 ```
 
-
-
 ---------------------------------
+
+## Extra features.
+
+### NCBI Downloader.
+We provide the simple script to download MonkeyPox data from NCBI server.
+
+In ".env file, please setup "NCBI API key".
+```
+# To get API key https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/
+NCBI_API_KEY=""
+NCBI_TOOL=""
+NCBI_EMAIL=""
+```
+
+To run.
+```sh
+# example
+python NCBI.downloader.py -o /mnt/data/2022-05-01/
+```
+In the example command, the output will be in the "2022-05-01" folder, and then two folders are created under this folder.
+The first is "GB", which stores all downloaded Genbank files. The second one is output, where the final outputs are stored.
+
+The script has to connect with the database to check if a sample is already in the database; otherwise, it will download only a new sample.
 
 ## Contact
 

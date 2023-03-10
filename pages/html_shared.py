@@ -1,6 +1,6 @@
+from dash import dash_table
 from dash import dcc
 from dash import html
-from dash import dash_table
 import dash_bootstrap_components as dbc
 
 
@@ -181,7 +181,7 @@ def html_elem_dropdown_countries(countries, c_id=0):
                     dbc.Spinner(
                         dcc.Dropdown(
                             options=countries,
-                            value=[c['value'] for c in countries if not c['disabled']],
+                            value=[c["value"] for c in countries if not c["disabled"]],
                             id=f"country_dropdown_{c_id}",
                             # maxHeight=200,
                             optionHeight=35,
@@ -248,19 +248,14 @@ def html_disclaimer_seq_errors(tool, only_cds=False):
     t = ""
     if not only_cds:
         t = ", nucleotide mutations containing N"
-    disclaimer = dcc.Markdown(
-        f"Sequencing errors are not shown. \n Amino acids mutations containing X{t} are excluded.",
-        className="me-1",
-        style={
-            "font-size": 20,
-            "font-weight": "bold",
-            "align-itmes": "center",
-            "textAlign": "center",
-            "color": "white",
-            "white-space": "pre",
-            "background-color": "#ffbd33"
-        },
-        id=f"disclaimer_mutation_{tool}"
+    disclaimer = dbc.Alert(
+        [
+            html.I(className="bi bi-info-circle-fill me-2"),
+            f"Sequencing errors are not shown. \n Amino acids mutations containing X{t} are excluded.",
+        ],
+        className="d-flex align-items-center",
+        color="#FFCC00",
+        id=f"disclaimer_mutation_{tool}",
     )
     return disclaimer
 

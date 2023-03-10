@@ -1,12 +1,13 @@
-import csv
-import os
-import numpy as np
-import pandas as pd
 from collections import defaultdict
+import csv
 from datetime import datetime
 import multiprocessing as mp
+import os
 from time import perf_counter
 from urllib.parse import urlparse
+
+import numpy as np
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import exc
 
@@ -102,7 +103,7 @@ needed_columns = {
         "property.name",
         "value_text",
         "value_date",
-        "value_integer"
+        "value_integer",
     ],
     "variantView": [
         "sample.id",

@@ -1,8 +1,9 @@
-import pandas as pd
 import datetime
 
-from pages.utils_filters import select_variantView_dfs
+import pandas as pd
+
 from pages.utils_filters import select_propertyView_dfs
+from pages.utils_filters import select_variantView_dfs
 from pages.utils_worldMap_explorer import DateSlider
 
 
@@ -86,10 +87,10 @@ def combine_labels_by_sample(df, aa_nt_radio):
                     cols,
                     dropna=False,
                 )["gene:variant"]
-                    .apply(lambda x: ",".join([str(y) for y in set(x)]))
-                    .reset_index()
-                    .rename(columns={"gene:variant": "AA_PROFILE"})
-            )[['sample.name', "AA_PROFILE"] + cols[1:]]
+                .apply(lambda x: ",".join([str(y) for y in set(x)]))
+                .reset_index()
+                .rename(columns={"gene:variant": "AA_PROFILE"})
+            )[["sample.name", "AA_PROFILE"] + cols[1:]]
         elif aa_nt_radio == "source":
             cols.remove("variant.label")
             df = (
@@ -97,30 +98,31 @@ def combine_labels_by_sample(df, aa_nt_radio):
                     cols,
                     dropna=False,
                 )["variant.label"]
-                    .apply(lambda x: ",".join([str(y) for y in set(x)]))
-                    .reset_index()
-                    .rename(columns={"variant.label": "NUC_PROFILE"})
+                .apply(lambda x: ",".join([str(y) for y in set(x)]))
+                .reset_index()
+                .rename(columns={"variant.label": "NUC_PROFILE"})
             )[['sample.name', "NUC_PROFILE"] + cols[1:]]
     df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
     return df
 
 
-def create_comparison_tables(df_dict,
-                             complete_partial_radio,
-                             aa_nt_radio,
-                             mut_value_1,
-                             reference_value,
-                             seqtech_value_1,
-                             country_value_1,
-                             start_date_1,
-                             end_date_1,
-                             mut_value_2,
-                             seqtech_value_2,
-                             country_value_2,
-                             start_date_2,
-                             end_date_2,
-                             mut_value_3
-                             ):
+def create_comparison_tables(
+        df_dict,
+        complete_partial_radio,
+        aa_nt_radio,
+        mut_value_1,
+        reference_value,
+        seqtech_value_1,
+        country_value_1,
+        start_date_1,
+        end_date_1,
+        mut_value_2,
+        seqtech_value_2,
+        country_value_2,
+        start_date_2,
+        end_date_2,
+        mut_value_3
+):
     if aa_nt_radio == 'cds':
         variant_col = "gene:variant"
     else:
@@ -215,23 +217,29 @@ def create_comparison_tables(df_dict,
             merge_tables(variantView_dfs_left[i], propertyView_dfs_left[i])
             for i in range(len(variantView_dfs_left))
         ],
-        ignore_index=True, axis=0)[table_columns]
+        ignore_index=True,
+        axis=0,
+    )[table_columns]
     table_df_2 = pd.concat(
         [
             merge_tables(variantView_dfs_right[i], propertyView_dfs_right[i])
             for i in range(len(variantView_dfs_right))
         ],
-        ignore_index=True, axis=0)[table_columns]
+        ignore_index=True,
+        axis=0
+    )[table_columns]
     table_df_3 = pd.concat(
         [
             merge_tables(variantView_dfs_both[i], propertyView_dfs_left[i])
             for i in range(len(variantView_dfs_both))
-        ] +
-        [
+        ]
+        + [
             merge_tables(variantView_dfs_both[i], propertyView_dfs_right[i])
             for i in range(len(variantView_dfs_both))
         ],
-        ignore_index=True, axis=0)[table_columns]
+        ignore_index=True,
+        axis=0,
+    )[table_columns]
 
     table_df_1 = combine_labels_by_sample(table_df_1, aa_nt_radio)
     table_df_2 = combine_labels_by_sample(table_df_2, aa_nt_radio)

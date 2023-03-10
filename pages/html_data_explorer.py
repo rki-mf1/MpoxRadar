@@ -89,7 +89,6 @@ def create_world_map_explorer(date_slider):
                 "Please click on a country you are interested in on the global map above to see detail plots for that country.\n",
                 color="primary",
             ),
-            html.H5(),
             html.H5(id="sequence_information"),
         ]
     )

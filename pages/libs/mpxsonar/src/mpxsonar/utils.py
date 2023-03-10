@@ -46,3 +46,28 @@ def open_file(fname, mode="r", compressed=False, encoding=None):
             return open(fname, mode, encoding=encoding)
     except Exception:
         sys.exit("input error: " + fname + " cannot be opened.")
+
+
+def insert_before_keyword(s, keyword, new_string):
+    """
+    Inserts a string before a keyword in a string.
+
+    Args:
+        s (str): The original string.
+        keyword (str): The keyword to search for in the string.
+        new_string (str): The string to insert before the keyword.
+
+    Returns:
+        str: The modified string.
+    """
+    # Find the index of the keyword in the string
+    index = s.find(keyword)
+
+    # If the keyword is not found, return the original string
+    if index == -1:
+        return s
+
+    # Insert the new string before the keyword
+    modified_string = s[:index] + new_string + s[index:]
+
+    return modified_string

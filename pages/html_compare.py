@@ -1,7 +1,8 @@
-from dash import html
-from dash import dcc
-import dash_bootstrap_components as dbc
 from datetime import date
+
+from dash import dcc
+from dash import html
+import dash_bootstrap_components as dbc
 
 
 def html_date_picker(d_id):

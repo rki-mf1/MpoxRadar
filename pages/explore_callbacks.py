@@ -1,23 +1,19 @@
 from dash import callback
+from dash import ctx
 from dash import Input
 from dash import Output
 from dash import State
-from dash import ctx
-from dash.exceptions import PreventUpdate
 
 from pages.utils_filters import actualize_filters
 from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_worldMap_explorer import DateSlider
-from pages.utils_worldMap_explorer import WorldMap
 from pages.utils_worldMap_explorer import TableFilter
+from pages.utils_worldMap_explorer import WorldMap
 
 
 # This is the EXPLORE TOOL PART
 def get_explore_callbacks(  # noqa: C901
-        df_dict,
-        date_slider,
-        color_dict,
-        location_coordinates
+    df_dict, date_slider, color_dict, location_coordinates
 ):
     @callback(
         [
@@ -306,7 +302,7 @@ def get_explore_callbacks(  # noqa: C901
     #         else:
     #             raise PreventUpdate
 
-        # update plots
+    # update plots
 
     @callback(
         [
@@ -324,8 +320,6 @@ def get_explore_callbacks(  # noqa: C901
             Input("date_slider", "value"),
             Input("selected_interval", "value"),
             Input("gene_dropdown_0", "value"),
-            Input("complete_partial_radio_explore", "value"),
-            Input("country_dropdown_0", "value"),
             #   Input('yaxis_type', 'value')
         ],
         prevent_initial_call=True,

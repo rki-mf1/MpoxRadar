@@ -3,7 +3,7 @@ import shlex
 import time
 
 import dash
-from dash import callback, dcc
+from dash import callback
 from dash import html
 from dash import Input
 from dash import no_update
@@ -18,30 +18,31 @@ import plotly.graph_objects as go
 from pages.config import color_schemes
 from pages.config import location_coordinates
 from pages.config import logging_radar
-from pages.html_compare import html_compare_button
-from pages.html_shared import html_complete_partial_radio, small_table
-from pages.html_shared import html_disclaimer_seq_errors
-from pages.html_shared import html_table
-from pages.html_data_explorer import create_world_map_explorer
 from pages.html_compare import html_aa_nt_radio
+from pages.html_compare import html_compare_button
 from pages.html_compare import html_date_picker
-from pages.html_shared import html_elem_checklist_seq_tech
+from pages.html_data_explorer import create_world_map_explorer
 from pages.html_data_explorer import html_elem_dropdown_aa_mutations
+from pages.html_data_explorer import html_elem_method_radioitems
+from pages.html_data_explorer import html_interval
+from pages.html_shared import html_complete_partial_radio
+from pages.html_shared import html_disclaimer_seq_errors
+from pages.html_shared import html_elem_checklist_seq_tech
 from pages.html_shared import html_elem_dropdown_aa_mutations_without_max
 from pages.html_shared import html_elem_dropdown_countries
 from pages.html_shared import html_elem_dropdown_genes
-from pages.html_data_explorer import html_elem_method_radioitems
 from pages.html_shared import html_elem_reference_radioitems
-from pages.html_data_explorer import html_interval
+from pages.html_shared import html_table
+from pages.html_shared import small_table
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
-from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
 from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
-from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_filters import get_all_frequency_sorted_seqtech
 from pages.utils_filters import get_all_gene_dict
 from pages.utils_filters import get_all_references
+from pages.utils_filters import get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import TableFilter
 from .app_controller import get_freq_mutation
@@ -109,7 +110,10 @@ tab_explored_tool = html.Div(
                 html.Div(
                     [
                         dbc.Row(html.H2("Filter Panel", style={"textAlign": "center"})),
-                        dbc.Row(html_complete_partial_radio('explore')),
+                        dbc.Row(
+                            dbc.Col(html_complete_partial_radio("explore")),
+                            className="mb-2",
+                        ),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -166,7 +170,9 @@ tab_explored_tool = html.Div(
                         ),
                     ],
                 ),
-                html_disclaimer_seq_errors('explorer', only_cds=True),
+                dbc.Row(
+                    dbc.Col(html_disclaimer_seq_errors("explorer")), className="mt-2"
+                ),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
                 html.Div(html_table(pd.DataFrame(columns=TableFilter().table_columns),
@@ -275,8 +281,8 @@ tab_compare_tool = (
                 className="mt-2",
             ),
             html.Hr(),
-            dbc.Row(html.H2("Output Section", style={"textAlign": "center"})),
-            html_disclaimer_seq_errors('compare'),
+            dbc.Row(dbc.Col(html.H2("Output Section", style={"textAlign": "center"}))),
+            dbc.Row(dbc.Col(html_disclaimer_seq_errors("compare", "cds"))),
             html.Div(
                 [
                     dbc.Row(
@@ -319,15 +325,21 @@ tab_compare_tool = (
                     ),
                     dbc.Row(
                         [
-                            html_table(pd.DataFrame(columns=compare_columns),
-                                       title="Samples with mutations unique for left selection", tool="compare_1"
-                                       ),
-                            html_table(pd.DataFrame(columns=compare_columns),
-                                       title="Samples with mutations contained in both selections", tool="compare_3"
-                                       ),
-                            html_table(pd.DataFrame(columns=compare_columns),
-                                       title="Samples with mutations unique for right selection", tool="compare_2"
-                                       ),
+                            html_table(
+                                pd.DataFrame(columns=compare_columns),
+                                title="Samples with mutations unique for left selection",
+                                tool="compare_1"
+                            ),
+                            html_table(
+                                pd.DataFrame(columns=compare_columns),
+                                title="Samples with mutations contained in both selections",
+                                tool="compare_3"
+                            ),
+                            html_table(
+                                pd.DataFrame(columns=compare_columns),
+                                title="Samples with mutations unique for right selection",
+                                tool="compare_2"
+                            ),
                         ],
                         className="mt-3",
                     ),
@@ -627,13 +639,23 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         keep="last",
         inplace=True,
     )
-    # remove mutation case = 1
-    table_df = table_df[table_df["Case"] > 10]
+    _tmp_original_df = table_df.copy()
+    size_data = len(table_df)
+    if size_data > 100:
+        # remove mutation case = 1
+        table_df = table_df[table_df["Case"] > 10]
+        # in case, the filter condition remove all samples.
+        if len(table_df) == 0:
+            table_df = _tmp_original_df.sample(frac=0.5, random_state=42)
+    else:
+        pass
+        # remove mutation case = 1
+        # table_df = table_df[table_df["Case"] > 1]
     # sort value
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
     table_df["mutation_list"] = (
-            table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
     )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(

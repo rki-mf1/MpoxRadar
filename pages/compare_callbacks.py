@@ -1,8 +1,8 @@
 from dash import callback
+from dash import ctx
 from dash import Input
 from dash import Output
 from dash import State
-from dash import ctx
 import pandas as pd
 
 from pages.config import cache
@@ -14,9 +14,7 @@ from pages.utils_filters import actualize_filters
 from pages.utils_filters import get_frequency_sorted_mutation_by_df
 
 
-def get_compare_callbacks(  # noqa: C901
-        df_dict, color_dict
-):
+def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
     @callback(
         [
             Output("mutation_dropdown_left", "options"),
