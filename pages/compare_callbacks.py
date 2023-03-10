@@ -6,7 +6,8 @@ from dash import State
 import pandas as pd
 
 from pages.config import cache
-from pages.utils_compare import create_mutation_dfs_for_comparison, select_min_x_frequent_mut
+from pages.utils_compare import create_mutation_dfs_for_comparison, select_min_x_frequent_mut, overview_columns, \
+    overview_column_names
 from pages.utils_compare import select_variantView_dfs
 from pages.utils_compare import select_propertyView_dfs
 from pages.utils_compare import create_comparison_tables
@@ -334,11 +335,10 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
        # df_both = df_both[df_both['value'].isin(mut_value_both)]
 
         table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
-        table_df.columns = [table_cols[0] + ' left', "#seq l", table_cols[0] + ' shared', "#seq s-l", "#seq s-r",
-                            table_cols[0] + ' right', "#seq r", ]
+        table_df.columns = overview_columns
         table_df_records = table_df.to_dict("records")
 
-        column_names = [{"name": i, "id": i} for i in table_df.columns]
+        column_names = [{"name": overview_column_names[i], "id": j} for i, j in enumerate(overview_columns)]
 
         return (
             table_df_records,

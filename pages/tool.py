@@ -21,6 +21,7 @@ from pages.config import logging_radar
 from pages.html_compare import html_aa_nt_radio
 from pages.html_compare import html_compare_button
 from pages.html_compare import html_date_picker
+from pages.html_compare import overview_table
 from pages.html_data_explorer import create_world_map_explorer
 from pages.html_data_explorer import html_elem_dropdown_aa_mutations
 from pages.html_data_explorer import html_elem_method_radioitems
@@ -33,7 +34,6 @@ from pages.html_shared import html_elem_dropdown_countries
 from pages.html_shared import html_elem_dropdown_genes
 from pages.html_shared import html_elem_reference_radioitems
 from pages.html_shared import html_table
-from pages.html_shared import small_table
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
@@ -52,6 +52,7 @@ from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
+from .utils_compare import overview_columns, overview_column_names
 
 df_dict = load_all_sql_files()
 date_slider = DateSlider(df_dict["propertyView"]['complete']["COLLECTION_DATE"].tolist())
@@ -101,7 +102,7 @@ logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 compare_columns = TableFilter().table_columns
 compare_columns.remove("NUC_PROFILE")
-compare_overview_columns = ["unique left", "#seq l", "shared", "#seq s", "unique right", "#seq r"]
+
 
 tab_explored_tool = html.Div(
     [
@@ -317,9 +318,11 @@ tab_compare_tool = (
                         ]
                     ),
                     dbc.Row(
-                        small_table(pd.DataFrame(columns=compare_overview_columns),
-                                    title="Overview Table",
-                                    tool="compare_0"
+                        overview_table(
+                            pd.DataFrame(columns=overview_columns),
+                            overview_column_names,
+                            title="Overview Table",
+                            tool="compare_0"
                                     ),
                         className="mt-3",
                     ),

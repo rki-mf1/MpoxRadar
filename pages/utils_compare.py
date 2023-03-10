@@ -7,6 +7,18 @@ from pages.utils_filters import select_variantView_dfs
 from pages.utils_worldMap_explorer import DateSlider
 
 
+overview_columns = [
+    'unique left', "# left",
+    'shared', "# l", "# r",
+    'unique right', "# right",
+]
+overview_column_names = [
+    'unique variants for left selection', "# seq left",
+    'shared variants of both selections', "# seq left", "# seq right",
+    'unique variants for right selection', "# seq right",
+]
+
+
 def merge_df(variantView, propertyView, aa_nt_radio):
     if aa_nt_radio == "cds":
         return pd.merge(

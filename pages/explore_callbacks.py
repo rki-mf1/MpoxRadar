@@ -321,6 +321,10 @@ def get_explore_callbacks(  # noqa: C901
             Input("gene_dropdown_0", "value"),
             #   Input('yaxis_type', 'value')
         ],
+        [
+            State("complete_partial_radio_explore", "value"),
+            State("country_dropdown_0", "value"),
+        ],
         prevent_initial_call=True,
     )
     # @cache.memoize()
