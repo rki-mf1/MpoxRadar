@@ -621,7 +621,12 @@ class WorldMap(DfsAndDetailPlot):
             color_continuous_scale=px.colors.sequential.Plasma,
             hover_name="COUNTRY",
             hover_data=shown_hover_data,
-            labels={el: el.replace(".", " ").title() for el in df.columns},
+            labels={
+                el: (
+                    el.replace(".", " ").title() if el != "number_sequences" else "number of sequences"
+                )
+                for el in df.columns
+            },
         )
         fig.update_layout(
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
