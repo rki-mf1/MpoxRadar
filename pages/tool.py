@@ -282,7 +282,7 @@ tab_compare_tool = (
             ),
             html.Hr(),
             dbc.Row(dbc.Col(html.H2("Output Section", style={"textAlign": "center"}))),
-            dbc.Row(dbc.Col(html_disclaimer_seq_errors("compare", "cds"))),
+            dbc.Row(dbc.Col(html_disclaimer_seq_errors("compare", only_cds=False))),
             html.Div(
                 [
                     dbc.Row(
