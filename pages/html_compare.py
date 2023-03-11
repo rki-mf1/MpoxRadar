@@ -113,7 +113,6 @@ def overview_table(df, column_names, title, tool):
                             "whiteSpace": "pre-line",
                             "height": "auto",
                             "lineHeight": "15px",
-                            "fontWeight": "bold",
                             "minWidth": "130px",
                             "width": "auto",
                             "maxWidth": "400px",
