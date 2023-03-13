@@ -307,7 +307,7 @@ def update_upper_plot(click_data, mutations, method, reference_id, seqtech_list,
     title_text = location_name
     # 1. plot
     if method == 'Increase':
-        fig = world_map.get_slope_bar_plot(date_list, mutations, reference_id, seqtech_list, location_name)
+        fig = world_map.create_slope_bar_plot(date_list, mutations, reference_id, seqtech_list, location_name)
         plot_header = "Slope mutations"
     elif method == 'Frequency':
         fig = world_map.get_frequency_bar_chart(mutations, reference_id, seqtech_list, date_list, location_name)

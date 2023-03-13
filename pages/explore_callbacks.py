@@ -7,13 +7,14 @@ from dash import State
 from pages.utils_filters import actualize_filters
 from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import VariantMapAndPlots
 from pages.utils_worldMap_explorer import TableFilter
-from pages.utils_worldMap_explorer import WorldMap
+
 
 
 # This is the EXPLORE TOOL PART
 def get_explore_callbacks(  # noqa: C901
-    df_dict, date_slider, color_dict, location_coordinates
+        df_dict, date_slider, color_dict, location_coordinates
 ):
     @callback(
         [
@@ -75,7 +76,7 @@ def get_explore_callbacks(  # noqa: C901
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
             if min_nb_freq > max_nb_freq:
                 min_nb_freq = max_nb_freq
-            if min_nb_freq == 0 and max_nb_freq>0:
+            if min_nb_freq == 0 and max_nb_freq > 0:
                 min_nb_freq = 1
             text_freq = f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
         text_nb_mut = (
@@ -176,17 +177,23 @@ def get_explore_callbacks(  # noqa: C901
             complete_partial_radio,
             layout,
     ):
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        world_map_dfs = [df_dict["world_map"]['complete'][reference_id]]
-        if complete_partial_radio == 'partial':
-            world_map_dfs.append(df_dict["world_map"]['partial'][reference_id])
-        world_map = WorldMap(world_map_dfs, color_dict, location_coordinates)
-        fig = world_map.get_world_map(
-            mutation_list,
-            seqtech_list,
-            method,
-            date_list,
+        variant_plot_instance = VariantMapAndPlots(
+            df_dict,
+            date_slider,
+            reference_id,
+            complete_partial_radio,
             countries,
+            seqtech_list,
+            mutation_list,
+            dates,
+            interval,
+            color_dict,
+            'map',
+            location_coordinates,
+            )
+
+        fig = variant_plot_instance.get_world_map(
+            method,
         )
         # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
         # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
@@ -200,7 +207,7 @@ def get_explore_callbacks(  # noqa: C901
         [
             Input("date_slider", "drag_value"),
             Input("selected_interval", "value"),
-         #   Input("auto_stepper", "n_intervals"),
+            #   Input("auto_stepper", "n_intervals"),
         ],
         [
             State("date_slider", "value"),
@@ -210,7 +217,7 @@ def get_explore_callbacks(  # noqa: C901
     def update_slider_interval(
             drag_value,
             interval,
-           # n_intervals,
+            # n_intervals,
             slider_value):
         """
         slider moved by user drag, changed location of slider with drag_value
@@ -261,6 +268,7 @@ def get_explore_callbacks(  # noqa: C901
         #             date_slider.date_list[n_intervals + interval - 1]
         #         )  # first_date + interval*86400
         #     return [first_date, second_date]
+
     #
     # @callback(
     #     [
@@ -340,38 +348,37 @@ def get_explore_callbacks(  # noqa: C901
             complete_partial_radio,
             countries
     ):
-        location_name = None
         try:
-            location_name = click_data["points"][0]["hovertext"]
+            clicked_country = click_data["points"][0]["hovertext"]
         except TypeError:
-            if countries:
-                location_name = countries[0]
-        if location_name and location_name not in countries and countries:
-            location_name = countries[0]
-        # date from slider
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        # title text
-        country = location_name if location_name else ""
-        title_text = f"Detailed look at the sequences with the chosen mutations for the selected country: {country}"
-        world_dfs = [df_dict["world_map"]['complete'][reference_id]]
-        if complete_partial_radio == 'partial':
-            world_dfs.append(df_dict["world_map"]['partial'][reference_id])
-        world_map = WorldMap(world_dfs, color_dict, location_coordinates)
-        number_selected_sequences, seq_with_mut = world_map.get_nb_filtered_seq(seqtech_list, date_list, [location_name],
-                                                                                genes, mutations)
-        info_header = f"Number sequences for country {location_name} and selected properties  between " \
-                      f"{date_list[0]} - {date_list[-1]}: {number_selected_sequences} " \
-                      f"of which {seq_with_mut} sequences carry at least one of the selected mutations."
+            clicked_country = ""
+
+        variant_plot_instance = VariantMapAndPlots(
+            df_dict,
+            date_slider,
+            reference_id,
+            complete_partial_radio,
+            countries,
+            seqtech_list,
+            mutations,
+            dates,
+            interval,
+            color_dict,
+            'detail',
+            location_coordinates,
+            genes,
+            clicked_country
+        )
+        title_text = f"Detailed look at the sequences with the chosen mutations for the selected country: {variant_plot_instance.location_name}"
+        info_header = f"Number sequences for country {variant_plot_instance.location_name} and selected properties  between " \
+                      f"{variant_plot_instance.dates[0]} - {variant_plot_instance.dates[-1]}: {variant_plot_instance.number_selected_sequences} " \
+                      f"of which {variant_plot_instance.seq_with_mut} sequences carry at least one of the selected mutations."
         # 1. plot
         if method == "Increase":
-            fig = world_map.get_slope_bar_plot(
-                date_list, mutations, seqtech_list, location_name
-            )
+            fig = variant_plot_instance.create_slope_bar_plot()
             plot_header = "Slope mutations"
         elif method == "Frequency":
-            fig = world_map.get_frequency_bar_chart(
-                mutations, seqtech_list, date_list, location_name
-            )
+            fig = variant_plot_instance.get_frequency_bar_chart()
             plot_header = f"Number Sequences"
         return fig, title_text, plot_header, info_header
 
@@ -387,6 +394,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("results_per_location", "clickData"),
             Input("complete_partial_radio_explore", "value"),
             Input("country_dropdown_0", "value"),
+            Input("gene_dropdown_0", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -399,26 +407,33 @@ def get_explore_callbacks(  # noqa: C901
             interval,
             clickDataBoxPlot,
             complete_partial_radio,
-            countries
+            countries,
+            genes
     ):
         if ctx.triggered_id == "results_per_location":
             mutations = [clickDataBoxPlot["points"][0]["label"]]
-        location_name = None
         try:
-            location_name = click_data["points"][0]["hovertext"]
+            clicked_country = click_data["points"][0]["hovertext"]
         except TypeError:
-            if countries:
-                location_name = countries[0]
-        if location_name and location_name not in countries and countries:
-            location_name = countries[0]
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        world_dfs = [df_dict["world_map"]['complete'][reference_id]]
-        if complete_partial_radio == 'partial':
-            world_dfs.append(df_dict["world_map"]['partial'][reference_id])
-        world_map = WorldMap(world_dfs, color_dict, location_coordinates)
-        fig_develop = world_map.get_frequency_development_scatter_plot(
-            mutations, seqtech_list, date_list, location_name
-        )
+            clicked_country = ""
+
+        variant_plot_instance = VariantMapAndPlots(
+            df_dict,
+            date_slider,
+            reference_id,
+            complete_partial_radio,
+            countries,
+            seqtech_list,
+            mutations,
+            dates,
+            interval,
+            color_dict,
+            'detail',
+            location_coordinates,
+            genes,
+            clicked_country
+            )
+        fig_develop = variant_plot_instance.get_frequency_development_scatter_plot()
         return fig_develop
 
     # fill table

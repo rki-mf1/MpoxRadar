@@ -92,9 +92,9 @@ class TableFilter(object):
                     dropna=False,
                     group_keys=True
                 )["gene:variant"]
-                .apply(lambda x: ",".join([str(y) for y in set(x)]))
-                .reset_index()
-                .rename(columns={"gene:variant": "AA_PROFILE"})
+                    .apply(lambda x: ",".join([str(y) for y in set(x)]))
+                    .reset_index()
+                    .rename(columns={"gene:variant": "AA_PROFILE"})
             )
 
         elif aa_nt == "source":
@@ -112,9 +112,9 @@ class TableFilter(object):
                     dropna=False,
                     group_keys=True
                 )["variant.label"]
-                .apply(lambda x: ",".join([str(y) for y in set(x)]))
-                .reset_index()
-                .rename(columns={"variant.label": "NUC_PROFILE"})
+                    .apply(lambda x: ",".join([str(y) for y in set(x)]))
+                    .reset_index()
+                    .rename(columns={"variant.label": "NUC_PROFILE"})
             )
         return df
 
@@ -175,52 +175,128 @@ class TableFilter(object):
         return df
 
 
-class DfsAndDetailPlot(object):
-    def __init__(self, world_dfs, color_dict, location_coordinates):
-        super(DfsAndDetailPlot, self).__init__()
-        dates = sorted(
-            list(
-                {i for s in [set(df["COLLECTION_DATE"]) for df in world_dfs] for i in s}
-            )
-        )
-        # self.min_date = dates[0]
-        self.min_date = datetime.strptime("2022-01-01", "%Y-%m-%d").date()
-        self.max_date = dates[-1]
-        self.world_dfs = world_dfs
+class VariantMapAndPlots(object):
+    """
+        world_dfs df.columns:
+         COUNTRY,COLLECTION_DATE,SEQ_TECH,sample_id_list,variant.label,number_sequences,element.symbol,gene:variant
+        column types: str, str, datetime.date, str, str, str, int, str, str
+        column sample_id_list: comma seperated sample ids e.g. "3,45,67" or "3"
+        :param mutations: list of selected mutations gene:mut
+        :param seq_techs: list of selected sequencing technologies
+        :param dates: [start_date, end_dat] by Dateslider
+        :param countries: list of selected countries
+    """
+
+    def __init__(self,
+                 df_dict,
+                 date_slider,
+                 reference_id,
+                 complete_partial_radio,
+                 countries,
+                 seq_techs,
+                 mutations,
+                 dates,
+                 interval,
+                 color_dict,
+                 plot_type,
+                 location_coordinates,
+                 genes=None,  # only detail plots
+                 clicked_country=None  # only detail plots
+                 ):
+        super(VariantMapAndPlots, self).__init__()
+
+        self.world_dfs = [df_dict["world_map"]['complete'][reference_id]]
+        if complete_partial_radio == 'partial':
+            self.world_dfs.append(df_dict["world_map"]['partial'][reference_id])
+        self.countries = countries
+        self.mutations = mutations
+        self.seq_techs = seq_techs
+        self.min_date = date_slider.min_date
+        self.dates = self.define_interval_dates(date_slider, dates, interval)
         self.color_dict = color_dict
         self.df_location = location_coordinates[
             ["name", "ISO_Code", "lat", "lon"]
         ].rename(columns={"name": "COUNTRY"})
+        if plot_type == "map":
+            countries_for_filter = self.countries
+        elif plot_type == "detail":
+            self.location_name, \
+            self.number_selected_sequences, \
+            self.seq_with_mut = self.select_country_for_detail_plots_and_nb_filtered_seq(clicked_country, genes)
+            countries_for_filter = [self.location_name] if self.location_name else []
 
-    def get_number_sequences_per_interval(self, df, dates, mutations, location_ID=None):
-        """
-        param df: df_all_dates_all_voc
-        param dates: [date(2021, 12, 12), date(2021, 12, 13), ...]
-        """
-        df = df[
-            df["COLLECTION_DATE"].isin(dates)
-            & df["variant.label"].isin(mutations)
+        self.filtered_dfs = [
+            self.filter_df(
+                world_df, countries_for_filter
+            )
+            for world_df in self.world_dfs
+        ]
+
+    def define_interval_dates(self, date_slider, dates, interval):
+        dates = date_slider.get_all_dates_in_interval(dates, interval)
+        if len(dates) == 0:
+            dates_in_world_df = sorted(
+                list(
+                    {i for s in [set(df["COLLECTION_DATE"]) for df in self.world_dfs] for i in s}
+                )
+            )
+            dates = [
+                dat
+                for dat in [
+                    dates_in_world_df[-1] - timedelta(days=x) for x in reversed(range(28))
+                ]
             ]
-        if location_ID:
-            df = df[df.location_ID == location_ID]
-        seq_set = set(",".join(list(df["sample_id_list"])).split(","))
-        if "0" in seq_set:
-            return len(seq_set) - 1
-        else:
-            return len(seq_set)
+        return dates
 
-    def get_nb_filtered_seq(self, seq_tech_list, dates, countries, genes, mutations):
+    def select_country_for_detail_plots_and_nb_filtered_seq(
+            self,
+            clicked_country,
+            genes,
+    ):
+        """
+        param clicked_country: user clicked country OR ""
+        define country to show detail plots
+        order country selection: 1. user click data, 2. country with most seq in filter without date filtering
+        3. if country of old click selection not in updated filters --> take first country of country dropdown values
+        4. if no seq for country --> select one from country values (e.g. USA #1 in list, no clicks, but no seq in
+        interval days)
+        """
+        location_name = clicked_country
+        number_selected_sequences = 0
+        seq_with_mut = 0
+        if self.countries:
+            if not clicked_country:
+                location_name = self.countries[0]
+            if clicked_country and clicked_country not in self.countries:
+                location_name = self.countries[0]
+            self.countries.pop(self.countries.index(location_name))
+            countries_to_check_for_seq = [location_name] + self.countries
+        else:
+            countries_to_check_for_seq = [location_name]
+
+        for country in countries_to_check_for_seq:
+            number_selected_sequences, seq_with_mut = self.get_nb_filtered_seq(
+                [country],
+                genes,
+            )
+            if number_selected_sequences > 0:
+                location_name, country_name = country, country
+                break
+
+        return location_name, number_selected_sequences, seq_with_mut
+
+    def get_nb_filtered_seq(self, countries, genes):
         samples_1 = set()
         samples_2 = set()
         for world_df in self.world_dfs:
             df = world_df[
-                    world_df["COLLECTION_DATE"].isin(dates)
-                    & world_df["SEQ_TECH"].isin(seq_tech_list)
-                    & world_df["COUNTRY"].isin(countries)
-                    & world_df["element.symbol"].isin(genes)
-                    ].copy()
+                world_df["COLLECTION_DATE"].isin(self.dates)
+                & world_df["SEQ_TECH"].isin(self.seq_techs)
+                & world_df["COUNTRY"].isin(countries)
+                & world_df["element.symbol"].isin(genes)
+                ].copy()
             df.sample_id_list = df.sample_id_list.map(lambda x: x.split(','))
-            df2 = df[df['gene:variant'].isin(mutations)]
+            df2 = df[df['gene:variant'].isin(self.mutations)]
 
             for sample_list in df['sample_id_list'].tolist():
                 samples_1.update(sample_list)
@@ -228,16 +304,19 @@ class DfsAndDetailPlot(object):
                 samples_2.update(sample_list)
         return len(samples_1), len(samples_2)
 
-    def filter_df(self, df, mutations, seq_tech_list, dates, countries):
-        df = df[
-            df["COLLECTION_DATE"].isin(dates)
-            & df["SEQ_TECH"].isin(seq_tech_list)
-            & df["gene:variant"].isin(mutations)
-            & df["COUNTRY"].isin(countries)
-            ]
+    def filter_df(self, world_df, countries):
+        if countries:
+            df = world_df[
+                world_df["COLLECTION_DATE"].isin(self.dates)
+                & world_df["SEQ_TECH"].isin(self.seq_techs)
+                & world_df["gene:variant"].isin(self.mutations)
+                & world_df["COUNTRY"].isin(countries)
+                ]
+        else:
+            df = pd.DataFrame(columns=world_df.columns)
         return df
 
-    def get_df_for_frequency_bar(self, filtered_dfs):
+    def get_df_for_frequency_bar(self):
         dfs = [
             (
                 filtered_df[
@@ -250,11 +329,11 @@ class DfsAndDetailPlot(object):
                         "element.symbol",
                     ]
                 ]
-                .groupby(["COUNTRY", "variant.label", "element.symbol"])
-                .sum(numeric_only=True)
-                .reset_index()
+                    .groupby(["COUNTRY", "variant.label", "element.symbol"])
+                    .sum(numeric_only=True)
+                    .reset_index()
             )
-            for filtered_df in filtered_dfs
+            for filtered_df in self.filtered_dfs
         ]
         df = pd.concat(dfs, ignore_index=True, axis=0)
         return df
@@ -272,35 +351,35 @@ class DfsAndDetailPlot(object):
         df = df.astype({"slope": float})
         return df
 
-    def get_increase_df(self, filtered_dfs):
+    def get_increase_df(self):
         """
         shows change in frequency of the different virus mutations, calculate lin regression with scipy.stats module and
         returns the slope of the regression line (x:range (interval)), y:number of sequences per day in selected interval
         for choropleth map select slope with greatest increase
         """
-        df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
+        df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0)
         df = (
             df.groupby(
                 ["COUNTRY", "variant.label", "element.symbol", "COLLECTION_DATE"]
             )
-            .sum(numeric_only=True)
-            .reset_index()
+                .sum(numeric_only=True)
+                .reset_index()
         )
         df = (
             df.groupby(["COUNTRY", "variant.label", "element.symbol"])
-            .agg(
+                .agg(
                 {
                     "number_sequences": lambda x: list(x),
                     "COLLECTION_DATE": lambda x: list(x),
                 }
             )
-            .reset_index()
+                .reset_index()
         )
         df = self.add_slope_column(df)
         return df
 
-    def get_df_for_scatter_plot(self, filtered_dfs):
-        df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
+    def concat_filtered_dfs(self):
+        df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0)
         return df[
             [
                 "COUNTRY",
@@ -358,20 +437,12 @@ class DfsAndDetailPlot(object):
         return fig
 
     # plot methods
-    def get_frequency_bar_chart(
-            self, mutations, seqtech_list, dates, location_name
-    ):
+    def get_frequency_bar_chart(self):
         """
         :return fig bar chart showing mutation information of last hovered plz
         """
-        if location_name:
-            filtered_dfs = [
-                self.filter_df(
-                    world_df, mutations, seqtech_list, dates, [location_name]
-                )
-                for world_df in self.world_dfs
-            ]
-            df = self.get_df_for_frequency_bar(filtered_dfs)
+        if self.location_name:
+            df = self.get_df_for_frequency_bar()
             df = self.drop_rows_by_value(df, 0, "number_sequences")
         else:
             df = pd.DataFrame()
@@ -409,15 +480,9 @@ class DfsAndDetailPlot(object):
         )
         return fig
 
-    def get_slope_bar_plot(self, dates, mutations, seqtech_list, location_name):
-        if location_name:
-            filtered_dfs = [
-                self.filter_df(
-                    world_df, mutations, seqtech_list, dates, [location_name]
-                )
-                for world_df in self.world_dfs
-            ]
-            df = self.get_increase_df(filtered_dfs)
+    def create_slope_bar_plot(self):
+        if self.location_name:
+            df = self.get_increase_df()
         else:
             df = pd.DataFrame()
         if df.empty:
@@ -482,32 +547,12 @@ class DfsAndDetailPlot(object):
         fig.update_traces(marker={"size": 5})
         return fig
 
-    def get_frequency_development_scatter_plot(
-            self,
-            mutations,
-            seqtech_list,
-            dates,
-            location_name,
-            axis_type="lin",
-    ):
+    def get_frequency_development_scatter_plot(self, axis_type="lin"):
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
-        if location_name:
-            filtered_dfs = [
-                self.filter_df(
-                    world_df, mutations, seqtech_list, dates, [location_name]
-                )
-                for world_df in self.world_dfs
-            ]
-            if len(dates) == 0:
-                dates = [
-                    dat
-                    for dat in [
-                        self.max_date - timedelta(days=x) for x in reversed(range(28))
-                    ]
-                ]
-            df = self.get_df_for_scatter_plot(filtered_dfs)
+        if self.location_name:
+            df = self.concat_filtered_dfs()
             # remove rows if VOC no seq in time-interval
-            for var in mutations:
+            for var in self.mutations:
                 if df[df["variant.label"] == var]["number_sequences"].sum() == 0:
                     df = df[df["variant.label"] != var]
         # dummy dataframe for showing empty results
@@ -515,7 +560,7 @@ class DfsAndDetailPlot(object):
             df = pd.DataFrame()
         if df.empty:
             df = pd.DataFrame(
-                data=[[location_name, dates[-1], "no_mutations", 0, "no_gene"]],
+                data=[[self.location_name, self.dates[-1], "no_mutations", 0, "no_gene"]],
                 columns=[
                     "COUNTRY",
                     "COLLECTION_DATE",
@@ -529,7 +574,7 @@ class DfsAndDetailPlot(object):
         df["date_numbers"] = date_numbers
 
         tickvals_date, ticktext_date = self.calculate_ticks_from_dates(
-            dates, date_numbers
+            self.dates, date_numbers
         )
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
@@ -539,79 +584,54 @@ class DfsAndDetailPlot(object):
             fig = self.create_scatter_plot(df, tickvals_date, ticktext_date, axis_type)
         return fig
 
+    def get_nb_seq_per_country_df(self):
+        concatenated_filtered_df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0)
+        countries = []
+        number_sequences = []
+        for name, group in concatenated_filtered_df.groupby("COUNTRY"):
+            sample_set = {
+                item
+                for sublist in [
+                    sample.split(',') for sample in group["sample_id_list"].unique()
+                ]
+                for item in sublist
+            }
+            countries.append(name)
+            number_sequences.append(len(sample_set))
+        return pd.DataFrame(
+            list(zip(countries, number_sequences)),
+            columns=['COUNTRY', 'number_sequences']
+        )
 
-class WorldMap(DfsAndDetailPlot):
-    def __init__(self, world_dfs, color_dict, location_coordinates):
-        """
-        creates df for maps and map figures
-        param world_dfs: list of dfs, [partial_df] OR  [partial AND complete df]
-                df.columns = COUNTRY,COLLECTION_DATE,SEQ_TECH,sample_id_list,variant.label,number_sequences,element.symbol,gene:variant
-                column types: str, str, datetime.date, str, str, str, int, str, str
-                sample_id_list: comma seperated sample ids e.g. "3,45,67" or "3"
-        """
-        super(WorldMap, self).__init__(world_dfs, color_dict, location_coordinates)
-
-    def get_world_map_df(
-            self, method, mutations, seq_tech_list, dates, countries
-    ):
+    def get_world_map_df(self, method):
         """
         :param method: 'Frequency' or 'Increase'
-        :param mutations: list of selected voc mutations gene:mut
-        :param seq_tech_list: list of selected sequencing technologies
-        :param method: 'Frequency' or 'Increase' (from dropdown left menu)
-        :param dates: all selected dates in interval (date slider)
-        :param countries: list of selected countries
         return frequency OR increase  df: frequency_df.columns = COUNTRY,number_sequences,ISO_Code
                                          increase_df.columns = COUNTRY,slope,ISO_Code
 
         """
-        if countries is None:
-            countries = []
-        filtered_dfs = [
-            self.filter_df(
-                world_df, mutations, seq_tech_list, dates, countries
-            )
-            for world_df in self.world_dfs
-        ]
-
-        if method == "Frequency":
-            df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
-            countries = []
-            number_sequences = []
-            for name, group in df.groupby("COUNTRY"):
-                sample_set = {
-                    item
-                    for sublist in [
-                        sample.split(',') for sample in group["sample_id_list"].unique()
-                    ]
-                    for item in sublist
-                }
-                countries.append(name)
-                number_sequences.append(len(sample_set))
-            df = pd.DataFrame(
-                list(zip(countries, number_sequences)),
-                columns=['COUNTRY', 'number_sequences']
-            )
+        if method == "Frequency" and self.filtered_dfs:
+            map_df = self.get_nb_seq_per_country_df()
             column_of_interest = "number_sequences"
         elif method == "Increase":
-            df = self.get_increase_df(filtered_dfs)
+            map_df = self.get_increase_df()
             # select max slope for each country, remove zero first to get negative slopes too
-            df = df.sort_values("slope", ascending=False).drop_duplicates(["COUNTRY"])
+            map_df = map_df.sort_values("slope", ascending=False).drop_duplicates(["COUNTRY"])
             column_of_interest = "slope"
 
         # df = self.drop_rows_by_value(df, 0, column_of_interest)
-        if df.empty:
-            df = pd.DataFrame(
+        if map_df.empty or not self.filtered_dfs:
+            map_df = pd.DataFrame(
                 data=[["", 0]],
                 columns=[
                     "COUNTRY",
                     column_of_interest,
                 ],
             )
-        df = pd.merge(df, self.df_location, on="COUNTRY")[
+        map_location_df = pd.merge(map_df, self.df_location, on="COUNTRY")[
             ["COUNTRY", column_of_interest, "ISO_Code"]
         ]
-        return df, column_of_interest
+        return map_location_df, column_of_interest
 
     def create_choropleth_map(self, df, shown_hover_data, color_column):
         fig = px.choropleth(
@@ -674,21 +694,15 @@ class WorldMap(DfsAndDetailPlot):
         )
         return fig
 
-    def get_world_map(self, mutations, seq_tech_list, method, dates, countries):
+    def get_world_map(self, method):
         """
-        :param mutations: list of str mutations (from dropdown left menu) gene:mut
-        :param seq_tech_list: list of selected sequencing technologies
         :param method: 'Frequency' or 'Increase' (from dropdown left menu)
-        :param dates: all selected dates in interval (date slider)
-        :param countries: list of selected countries
         :return fig:
             frequency method: choropleth map with number of sequences with selected properties per country
             increase method: choropleth map showing decrease/increase of mutation with strongest increase in selected interval
                             (zero values = one time point are excluded)
         """
-        df, column_of_interest = self.get_world_map_df(
-            method, mutations, seq_tech_list, dates, countries
-        )
+        df, column_of_interest = self.get_world_map_df(method)
         if method == "Frequency":
             shown_hover_data = {
                 column_of_interest: True,
