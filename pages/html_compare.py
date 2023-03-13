@@ -64,7 +64,10 @@ def html_aa_nt_radio():
 
 def html_compare_button():
     return dbc.Button(
-        [html.I(className="bi bi-file-play me-1"), "Compare"],
+        [
+            html.I(className="fa-solid fa-magnifying-glass-chart fa-1.5x me-1"),
+            "Compare",
+        ],
         id="compare_button",
         size="lg",
         className="me-1",
@@ -113,6 +116,7 @@ def overview_table(df, column_names, title, tool):
                             "whiteSpace": "pre-line",
                             "height": "auto",
                             "lineHeight": "15px",
+                            "fontWeight": "bold",
                             "minWidth": "130px",
                             "width": "auto",
                             "maxWidth": "400px",

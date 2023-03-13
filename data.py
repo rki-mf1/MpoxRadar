@@ -284,19 +284,13 @@ def create_property_view(df, dummy_date="2021-12-31"):
 def create_variant_view(df, propertyViewSamples):
     df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
     df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
-    df = df[df['sample.id'].isin(propertyViewSamples)]
+    df = df[df["sample.id"].isin(propertyViewSamples)]
     return df
 
 
 def remove_x_appearing_variants(world_df, nb=1):
-    df2 = (
-        world_df.groupby(["gene:variant"])
-            .sum(numeric_only=True)
-            .reset_index()
-    )
-    variants_to_remove = df2[df2["number_sequences"] <= nb][
-        "gene:variant"
-    ].tolist()
+    df2 = world_df.groupby(["gene:variant"]).sum(numeric_only=True).reset_index()
+    variants_to_remove = df2[df2["number_sequences"] <= nb]["gene:variant"].tolist()
     if variants_to_remove:
         world_df = world_df[~world_df["gene:variant"].isin(variants_to_remove)]
     return world_df
@@ -330,14 +324,12 @@ def create_world_map_df(variantView, propertyView):
             ],
             dropna=False,
         )["sample.id"]
-            .apply(lambda x: ",".join([str(y) for y in set(x)]))
-            .reset_index(name="sample_id_list")
+        .apply(lambda x: ",".join([str(y) for y in set(x)]))
+        .reset_index(name="sample_id_list")
     )
     # 5. add sequence count
-    df["number_sequences"] = df[
-        "sample_id_list"
-    ].apply(lambda x: len(x.split(",")))
-    df["gene:variant"] = df['element.symbol'].astype(str) + ":" + df['variant.label']
+    df["number_sequences"] = df["sample_id_list"].apply(lambda x: len(x.split(",")))
+    df["gene:variant"] = df["element.symbol"].astype(str) + ":" + df["variant.label"]
     df = df[
         [
             "COUNTRY",
@@ -347,7 +339,7 @@ def create_world_map_df(variantView, propertyView):
             "variant.label",
             "number_sequences",
             "element.symbol",
-            "gene:variant"
+            "gene:variant",
         ]
     ]
     # TODO: first combine tables and remove then?
@@ -355,18 +347,22 @@ def create_world_map_df(variantView, propertyView):
     return df
 
 
-def remove_seq_errors_and_add_gene_var_column(variantViewPartial, reference_id, seq_type):
+def remove_seq_errors_and_add_gene_var_column(
+    variantViewPartial, reference_id, seq_type
+):
     df = variantViewPartial[
-        (variantViewPartial['reference.id'] == reference_id)
-        & (variantViewPartial['element.type'] == seq_type)
-        ].reset_index(drop=True)
-    if seq_type == 'source':
-        unknown_nt = ['N', 'V', 'D', 'H', 'B', 'K', 'M', 'S', 'W']
-        df = df[~df['variant.label'].str.contains('N')]
+        (variantViewPartial["reference.id"] == reference_id)
+        & (variantViewPartial["element.type"] == seq_type)
+    ].reset_index(drop=True)
+    if seq_type == "source":
+        # unknown_nt = ["N", "V", "D", "H", "B", "K", "M", "S", "W"]
+        df = df[~df["variant.label"].str.contains("N")]
     # B, Z, J not in DB, X always at the end, all undefined nucleotides translated to X
     elif seq_type == "cds":
-        df = df[~df['variant.label'].str.endswith('X')]
-        df['gene:variant'] = df['element.symbol'].astype(str) + ":" + df['variant.label']
+        df = df[~df["variant.label"].str.endswith("X")]
+        df["gene:variant"] = (
+            df["element.symbol"].astype(str) + ":" + df["variant.label"]
+        )
     return df
 
 
@@ -388,7 +384,7 @@ def load_all_sql_files():
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict"):
-    # if True:
+        # if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
@@ -401,44 +397,64 @@ def load_all_sql_files():
         print("Data preprocessing...")
         propertyView = create_property_view(loaded_df_dict["propertyView"])
         processed_df_dict["propertyView"]["complete"] = propertyView[
-            propertyView["GENOME_COMPLETENESS"] == 'complete'].reset_index(drop=True)
+            propertyView["GENOME_COMPLETENESS"] == "complete"
+        ].reset_index(drop=True)
         processed_df_dict["propertyView"]["partial"] = propertyView[
-            propertyView["GENOME_COMPLETENESS"] == 'partial'].reset_index(drop=True)
+            propertyView["GENOME_COMPLETENESS"] == "partial"
+        ].reset_index(drop=True)
         del loaded_df_dict["propertyView"]
         del propertyView
 
-        variantViewComplete = create_variant_view(loaded_df_dict["variantView"],
-                                                  processed_df_dict["propertyView"]["complete"]['sample.id'])
+        variantViewComplete = create_variant_view(
+            loaded_df_dict["variantView"],
+            processed_df_dict["propertyView"]["complete"]["sample.id"],
+        )
         processed_df_dict["variantView"]["complete"] = {}
         # TODO why NaN in reference --> database error?
-        reference_ids = [int(ref) for ref in variantViewComplete['reference.id'].dropna().unique()]
+        reference_ids = [
+            int(ref) for ref in variantViewComplete["reference.id"].dropna().unique()
+        ]
         for reference_id in reference_ids:
             processed_df_dict["variantView"]["complete"][reference_id] = {}
-            for seq_type in ['source', 'cds']:
-                processed_df_dict["variantView"]["complete"][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
-                    variantViewComplete, reference_id, seq_type)
+            for seq_type in ["source", "cds"]:
+                processed_df_dict["variantView"]["complete"][reference_id][
+                    seq_type
+                ] = remove_seq_errors_and_add_gene_var_column(
+                    variantViewComplete, reference_id, seq_type
+                )
         del variantViewComplete
 
-        variantViewPartial = create_variant_view(loaded_df_dict["variantView"],
-                                                 processed_df_dict["propertyView"]["partial"]['sample.id'])
+        variantViewPartial = create_variant_view(
+            loaded_df_dict["variantView"],
+            processed_df_dict["propertyView"]["partial"]["sample.id"],
+        )
         processed_df_dict["variantView"]["partial"] = {}
         for reference_id in reference_ids:
             processed_df_dict["variantView"]["partial"][reference_id] = {}
-            for seq_type in ['source', 'cds']:
-                processed_df_dict["variantView"]["partial"][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
-                    variantViewPartial, reference_id, seq_type)
+            for seq_type in ["source", "cds"]:
+                processed_df_dict["variantView"]["partial"][reference_id][
+                    seq_type
+                ] = remove_seq_errors_and_add_gene_var_column(
+                    variantViewPartial, reference_id, seq_type
+                )
         del loaded_df_dict["variantView"]
         del variantViewPartial
 
         processed_df_dict["world_map"]["complete"] = {}
         processed_df_dict["world_map"]["partial"] = {}
         for reference_id in reference_ids:
-            processed_df_dict["world_map"]["complete"][reference_id] = create_world_map_df(
+            processed_df_dict["world_map"]["complete"][
+                reference_id
+            ] = create_world_map_df(
                 processed_df_dict["variantView"]["complete"][reference_id]["cds"],
-                processed_df_dict["propertyView"]["complete"])
-            processed_df_dict["world_map"]["partial"][reference_id] = create_world_map_df(
+                processed_df_dict["propertyView"]["complete"],
+            )
+            processed_df_dict["world_map"]["partial"][
+                reference_id
+            ] = create_world_map_df(
                 processed_df_dict["variantView"]["partial"][reference_id]["cds"],
-                processed_df_dict["propertyView"]["partial"])
+                processed_df_dict["propertyView"]["partial"],
+            )
 
         if redis_manager:
             print("Create a new cache")

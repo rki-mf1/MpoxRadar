@@ -208,7 +208,8 @@ tab_explored_tool = html.Div(
                     ],
                 ),
                 dbc.Row(
-                    dbc.Col(html_disclaimer_seq_errors("explorer", only_cds=True)), className="mt-2"
+                    dbc.Col(html_disclaimer_seq_errors("explorer", only_cds=True)),
+                    className="mt-2",
                 ),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
@@ -309,7 +310,15 @@ tab_compare_tool = (
                                     ),
                                 ]
                             ),
-                            html.Hr(className="vr"),
+                            html.Hr(
+                                className="vr",
+                                style={
+                                    "border": "none",
+                                    "borderColor": "#AB87FF",
+                                    "opacity": "unset",
+                                    "width": "1px",
+                                },
+                            ),
                             dbc.Col(
                                 [
                                     dbc.Row(
