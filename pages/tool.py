@@ -309,7 +309,15 @@ tab_compare_tool = (
                                     ),
                                 ]
                             ),
-                            html.Hr(className="vr"),
+                            html.Hr(
+                                className="vr",
+                                style={
+                                    "border": "none",
+                                    "borderColor": "#AB87FF",
+                                    "opacity": "unset",
+                                    "width": "1px",
+                                },
+                            ),
                             dbc.Col(
                                 [
                                     dbc.Row(

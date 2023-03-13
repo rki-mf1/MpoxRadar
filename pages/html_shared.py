@@ -258,7 +258,7 @@ def html_disclaimer_seq_errors(tool, only_cds=False):
         t = ", nucleotide mutations containing N"
     disclaimer = dbc.Alert(
         [
-            html.I(className="bi bi-info-circle-fill me-2"),
+            html.I(className="fa-solid fa-bullhorn me-2"),
             f"Sequencing errors are not shown. \n Amino acids mutations containing X{t} are excluded.",
         ],
         className="d-flex align-items-center",
@@ -269,6 +269,7 @@ def html_disclaimer_seq_errors(tool, only_cds=False):
 
 
 def html_table(df, title, tool):
+
     Output_table_standard = dbc.Card(
         [
             html.H3(title),
@@ -291,13 +292,26 @@ def html_table(df, title, tool):
                                             "whiteSpace": "normal",
                                             "height": "auto",
                                             "lineHeight": "15px",
-                                            # all three widths are needed
-                                            "minWidth": "100%",
-                                            "width": "400px",
-                                            "maxWidth": "750px",
+                                            "width": "100%",
+                                            "maxWidth": "400px",
+                                            "minWidth": "300px",
                                         },
-                                        style_cell={"fontSize": 12},
-                                        style_table={"overflowX": "auto"},
+                                        style_cell_conditional=[
+                                            {
+                                                "if": {"column_id": "NUC_PROFILE"},
+                                                "width": "300px",
+                                            },
+                                            {
+                                                "if": {"column_id": "AA_PROFILE"},
+                                                "width": "400px",
+                                            },
+                                        ],
+                                        style_cell={
+                                            "fontSize": 12,
+                                        },
+                                        style_table={
+                                            "overflowX": "auto",
+                                        },
                                         export_format="csv",
                                     ),
                                 ]

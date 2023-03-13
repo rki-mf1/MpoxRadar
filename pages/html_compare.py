@@ -64,7 +64,10 @@ def html_aa_nt_radio():
 
 def html_compare_button():
     return dbc.Button(
-        [html.I(className="bi bi-file-play me-1"), "Compare"],
+        [
+            html.I(className="fa-solid fa-magnifying-glass-chart fa-1.5x me-1"),
+            "Compare",
+        ],
         id="compare_button",
         size="lg",
         className="me-1",

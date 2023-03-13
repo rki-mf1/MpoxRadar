@@ -85,13 +85,10 @@ def create_world_map_explorer(date_slider):
                 "Detailed look at the sequences with the chosen mutations for the selected country",
                 id="chosen_location",
             ),
-            html.H5(
-                dbc.Badge(
-                    id="sequence_information",
-                    color="white",
-                    text_color="primary",
-                    className="border me-1",
-                )
+            dbc.Alert(
+                id="sequence_information",
+                color="info",
+                className="border me-1",
             ),
         ]
     )
@@ -143,7 +140,7 @@ def create_world_map_explorer(date_slider):
                             dbc.Col(
                                 [
                                     html.I(
-                                        className="bi bi-megaphone-fill",
+                                        className="fa-solid fa-computer-mouse",
                                     ),
                                     dbc.FormText(
                                         " Note: Please click on a country you are interested in on the global map above to see detail plots for that country.\n",
@@ -256,7 +253,7 @@ def html_elem_dropdown_aa_mutations(
                                             id=f"max_nb_txt_{elem_id}",
                                         ),
                                         html.I(
-                                            className="bi bi-info-circle ms-1 text-primary fa-2x"
+                                            className="bi bi-info-circle ms-1 text-primary fa-1x"
                                         ),
                                         dbc.Tooltip(
                                             "Selects from frequency sorted variants the specified top n variants."
@@ -295,7 +292,7 @@ def html_elem_dropdown_aa_mutations(
                                             id=f"min_nb_freq_{elem_id}",
                                         ),
                                         html.I(
-                                            className="bi bi-info-circle ms-1 text-primary fa-2x"
+                                            className="bi bi-info-circle ms-1 text-primary fa-1x"
                                         ),
                                     ]
                                 ),
