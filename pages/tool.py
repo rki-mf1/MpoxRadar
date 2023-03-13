@@ -208,7 +208,8 @@ tab_explored_tool = html.Div(
                     ],
                 ),
                 dbc.Row(
-                    dbc.Col(html_disclaimer_seq_errors("explorer")), className="mt-2"
+                    dbc.Col(html_disclaimer_seq_errors("explorer", only_cds=True)),
+                    className="mt-2",
                 ),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
