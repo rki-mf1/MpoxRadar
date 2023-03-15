@@ -225,7 +225,11 @@ class VariantMapAndPlots(object):
         ].rename(columns={"name": "COUNTRY"})
         if plot_type == "map":
             countries_for_filter = self.countries
+            if genes or clicked_country:
+                raise ValueError("Instance is not correct initialized, map plotting does not require gene and click country information")
         elif plot_type == "detail":
+            if not genes or not clicked_country:
+                raise ValueError("Instance is not correct initialized, detail plots require gene information")
             self.location_name, \
             self.number_selected_sequences, \
             self.seq_with_mut = self.select_country_for_detail_plots_and_nb_filtered_seq(clicked_country, genes)
@@ -320,6 +324,7 @@ class VariantMapAndPlots(object):
                 ]
         else:
             df = pd.DataFrame(columns=world_df.columns)
+        df = df.astype({'number_sequences': 'int32'})
         return df
 
     def get_df_for_frequency_bar(self):
@@ -366,7 +371,7 @@ class VariantMapAndPlots(object):
         returns the slope of the regression line (x:range (interval)), y:number of sequences per day in selected interval
         for choropleth map select slope with greatest increase
         """
-        df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0)
+        df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0).reset_index(drop=True)
         df = (
             df.groupby(
                 ["COUNTRY", "variant.label", "element.symbol", "COLLECTION_DATE"]
@@ -384,6 +389,7 @@ class VariantMapAndPlots(object):
             )
                 .reset_index()
         )
+
         df = self.add_slope_column(df)
         return df
 
@@ -636,14 +642,6 @@ class VariantMapAndPlots(object):
             column_of_interest = "slope"
 
         # df = self.drop_rows_by_value(df, 0, column_of_interest)
-        if map_df.empty or not self.filtered_dfs:
-            map_df = pd.DataFrame(
-                data=[["", 0]],
-                columns=[
-                    "COUNTRY",
-                    column_of_interest,
-                ],
-            )
         map_location_df = pd.merge(map_df, self.df_location, on="COUNTRY")[
             ["COUNTRY", column_of_interest, "ISO_Code"]
         ]
