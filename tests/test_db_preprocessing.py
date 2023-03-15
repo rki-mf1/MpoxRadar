@@ -53,6 +53,9 @@ class TestDbPreprocessing(unittest.TestCase):
                            == DbProperties.country_entries_cds_per_country[country][completeness][reference]
                     assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['variant.label']) \
                            == DbProperties.variants_cds_per_country[country][completeness][reference]
+                    assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['gene:variant']) \
+                           == DbProperties.gene_variants_cds_per_country[country][completeness][reference]
+
         # test different seq_techs per country
                     assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['SEQ_TECH'])\
                            == DbProperties.seq_techs_cds_per_country[country][completeness][reference]
@@ -107,7 +110,7 @@ class TestDbPreprocessing(unittest.TestCase):
 
                 assert set(variantView_dfs_source[completeness][reference]['element.type']) == {'source'}
                 assert set(variantView_dfs_cds[completeness][reference]['element.type']) == {'cds'}
-                assert set(variantView_dfs_cds[completeness][reference]['gene:variant']) == DbProperties.genes[completeness][reference]
+                assert set(variantView_dfs_cds[completeness][reference]['gene:variant']) == DbProperties.cds_gene_variants[completeness][reference]
 
     def test_propertyView_df(self):
         propertyView_dfs = {'complete': self.processed_df_dict["propertyView"]["complete"],
