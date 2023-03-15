@@ -181,9 +181,15 @@ class VariantMapAndPlots(object):
          COUNTRY,COLLECTION_DATE,SEQ_TECH,sample_id_list,variant.label,number_sequences,element.symbol,gene:variant
         column types: str, str, datetime.date, str, str, str, int, str, str
         column sample_id_list: comma seperated sample ids e.g. "3,45,67" or "3"
+        :param countries: list of selected countries
         :param mutations: list of selected mutations gene:mut
         :param seq_techs: list of selected sequencing technologies
         :param dates: [start_date, end_dat] by Dateslider
+        :param interval:
+        :param color_dict: {variant:color}
+        :param plot_type: 'map', OR 'detail'
+        :param location_coordinates: dict
+        :param genes: list of selected genes, only relevant for calculate nb filtered sequences
         :param countries: list of selected countries
     """
 
@@ -269,8 +275,8 @@ class VariantMapAndPlots(object):
                 location_name = self.countries[0]
             if clicked_country and clicked_country not in self.countries:
                 location_name = self.countries[0]
-            self.countries.pop(self.countries.index(location_name))
-            countries_to_check_for_seq = [location_name] + self.countries
+
+            countries_to_check_for_seq = [location_name] + [country for country in self.countries if country != location_name]
         else:
             countries_to_check_for_seq = [location_name]
 
@@ -336,6 +342,9 @@ class VariantMapAndPlots(object):
             for filtered_df in self.filtered_dfs
         ]
         df = pd.concat(dfs, ignore_index=True, axis=0)
+        df = df.groupby(["COUNTRY", "variant.label", "element.symbol"])\
+            .sum(numeric_only=True)\
+            .reset_index()
         return df
 
     def add_slope_column(self, df):
@@ -504,6 +513,35 @@ class VariantMapAndPlots(object):
             fig = self.create_slope_plot(df)
         return fig
 
+    def get_scatter_df(self):
+        if self.location_name:
+            df = self.concat_filtered_dfs()
+            df = df.groupby(["COUNTRY", 'COLLECTION_DATE', "variant.label", "element.symbol"]) \
+                .sum(numeric_only=True) \
+                .reset_index()
+            # remove rows if VOC no seq in time-interval
+            for var in self.mutations:
+                if df[df["variant.label"] == var]["number_sequences"].sum() == 0:
+                    df = df[df["variant.label"] != var]
+        # dummy dataframe for showing empty results
+        else:
+            df = pd.DataFrame()
+        if df.empty:
+            df = pd.DataFrame(
+                data=[[self.location_name, self.dates[-1], "no_mutations", "no_gene", 0]],
+                columns=[
+                    "COUNTRY",
+                    "COLLECTION_DATE",
+                    "variant.label",
+                    "element.symbol",
+                    "number_sequences",
+                ],
+            )
+        # date_numbers: assign date to number, numbers needed for calculation of trendline
+        date_numbers = [(d - self.min_date).days for d in df["COLLECTION_DATE"]]
+        df["date_numbers"] = date_numbers
+        return df
+
     def create_scatter_plot(self, df, tickvals_date, ticktext_date, axis_type):
         fig = px.scatter(
             df,
@@ -549,32 +587,10 @@ class VariantMapAndPlots(object):
 
     def get_frequency_development_scatter_plot(self, axis_type="lin"):
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
-        if self.location_name:
-            df = self.concat_filtered_dfs()
-            # remove rows if VOC no seq in time-interval
-            for var in self.mutations:
-                if df[df["variant.label"] == var]["number_sequences"].sum() == 0:
-                    df = df[df["variant.label"] != var]
-        # dummy dataframe for showing empty results
-        else:
-            df = pd.DataFrame()
-        if df.empty:
-            df = pd.DataFrame(
-                data=[[self.location_name, self.dates[-1], "no_mutations", 0, "no_gene"]],
-                columns=[
-                    "COUNTRY",
-                    "COLLECTION_DATE",
-                    "variant.label",
-                    "number_sequences",
-                    "element.symbol",
-                ],
-            )
-        # date_numbers: assign date to number, numbers needed for calculation of trendline
-        date_numbers = [(d - self.min_date).days for d in df["COLLECTION_DATE"]]
-        df["date_numbers"] = date_numbers
+        df = self.get_scatter_df()
 
         tickvals_date, ticktext_date = self.calculate_ticks_from_dates(
-            self.dates, date_numbers
+            self.dates, df["date_numbers"]
         )
         # this try/except block is a hack that catches randomly appearing errors of data with wrong type,
         # unclear why this is working
@@ -726,7 +742,11 @@ class DateSlider:
         param dates: propertyView["COLLECTION_DATE"], type 'datetime.date' (YYYY, M, D)
         """
         # TODO min date = 1978, max 2202-07-01
-        self.min_date = datetime.strptime("2022-01-01", "%Y-%m-%d").date()  # min(dates)
+        defined_min_date = datetime.strptime("2022-01-01", "%Y-%m-%d").date()  # min(dates)
+        if min(dates) < defined_min_date:
+            self.min_date = defined_min_date
+        else:
+            self.min_date = min(dates)
         self.max_date = max(dates)
         self.date_list = [
             self.max_date - timedelta(days=x)
