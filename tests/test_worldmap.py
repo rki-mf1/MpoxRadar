@@ -1,13 +1,12 @@
 import datetime
 import unittest
-import pytest
 from parameterized import parameterized
 from pages.config import location_coordinates
 from pages.utils import get_color_dict
 from pages.utils_worldMap_explorer import VariantMapAndPlots, DateSlider
 import pandas as pd
 from pandas._testing import assert_frame_equal
-from datetime import date, timedelta
+from datetime import date
 import os
 from data import load_all_sql_files
 from tests.test_db_properties import DbProperties
@@ -49,7 +48,7 @@ test_params = [
 
 class TestWorldMap(unittest.TestCase):
     def setUp(self):
-        self.db_name = "mpx_test_03"
+        self.db_name = "mpx_test_04"
         self.processed_df_dict = load_all_sql_files(self.db_name)
         dates_in_propertyViews = sorted(
             list(
@@ -158,6 +157,7 @@ class TestWorldMap(unittest.TestCase):
             correct_df = correct_df.sort_values(by=["COLLECTION_DATE", "variant.label"]).reset_index(
                 drop=True)
             df = variant_map_and_plot_instance.get_scatter_df()
+
             df = df.sort_values(by=["COLLECTION_DATE", "variant.label"]).reset_index(drop=True)
             assert_frame_equal(df, correct_df, check_datetimelike_compat=True, check_dtype=False)
 
@@ -284,8 +284,8 @@ class TestWorldMap(unittest.TestCase):
         fig = variant_map_and_plot_instance.get_frequency_bar_chart()
         assert (fig['data'][0]['x'] == (['OPG159'], ['C133F']))
         assert (round(list(fig['data'][0]['y'])[0]) == 1)
-        assert (fig['data'][1]['x'] == (['OPG210'], ['D1604K']))
-        assert (round(list(fig['data'][1]['y'])[0]) == 31)
+        assert (fig['data'][1]['x'] == (['OPG197', 'OPG197'], ['D25G', 'T22K']))
+        assert (round(list(fig['data'][1]['y'])[0]) == 3)
 
     def test_scatter_plot(self):
         variant_map_and_plot_instance = VariantMapAndPlots(
@@ -306,24 +306,12 @@ class TestWorldMap(unittest.TestCase):
         fig = variant_map_and_plot_instance.get_frequency_development_scatter_plot()
 
         for fig_value, test_value in zip(fig['data'][0]['customdata'],
-                                         [[datetime.date(2022, 7, 1), 'D1604K', 'Germany', 'OPG210'],
-                                          [datetime.date(2022, 8, 1), 'D1604K', 'Germany', 'OPG210'],
-                                          [datetime.date(2022, 9, 1), 'D1604K', 'Germany', 'OPG210']]):
+                                         [[datetime.date(2022, 7, 1), 'D25G', 'Germany', 'OPG197'],
+                                          [datetime.date(2022, 8, 1), 'D25G', 'Germany', 'OPG197'],
+                                          [datetime.date(2022, 9, 1), 'D25G', 'Germany', 'OPG197']]):
             self.assertListEqual(list(fig_value), test_value)
-        self.assertListEqual(list(fig['data'][0]['x']), [3, 34, 65])
-        self.assertListEqual(list(fig['data'][0]['y']), [17, 8, 6])
-        self.assertListEqual(list(fig['data'][1]['x']), [3, 34, 65])
-        self.assertListEqual([round(x, 2) for x in list(fig['data'][1]['y'])], [15.83, 10.33, 4.83])
-    #
-    # def test_get_number_sequences_per_interval(self):
-    #     nb_mut = self.world_map.get_number_sequences_per_interval(self.dates21, self.variants1)
-    #     assert (14 == nb_mut)
-    #     nb_wt = self.world_map.get_number_sequences_per_interval(self.dates21, ["wildtype"])
-    #     assert (7 == nb_wt)
-    #
-    # def test_get_frequency_development_scatter_plot(self):
-    #     fig = self.world_map.get_frequency_development_scatter_plot(self.variants1, 'linear', self.dates21, 80331)
-    #     assert (fig['layout']['xaxis']['ticktext'] == ("2022-01-01", "2022-01-10"))
-    #     assert (fig['data'][0]['legendgroup'] == 'A475V')
-    #     assert (list(fig['data'][0]['x']) == [0, 9])
-    #     assert ([round(x) for x in list(fig['data'][0]['y'])] == [1, 2])
+        self.assertListEqual(list(fig['data'][0]['x']), [3])
+        self.assertListEqual(list(fig['data'][0]['y']), [3])
+        self.assertListEqual(list(fig['data'][2]['x']), [65])
+        self.assertListEqual([round(x, 2) for x in list(fig['data'][2]['y'])], [1])
+

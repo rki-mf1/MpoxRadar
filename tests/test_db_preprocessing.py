@@ -15,7 +15,7 @@ def to_date(d):
 
 class TestDbPreprocessing(unittest.TestCase):
     def setUp(self):
-        self.db_name = "mpx_test_03"
+        self.db_name = "mpx_test_04"
         self.processed_df_dict = load_all_sql_files(self.db_name)
         self.countries = DbProperties.country_entries_cds_per_country.keys()
 
@@ -95,8 +95,8 @@ class TestDbPreprocessing(unittest.TestCase):
                 }
         }
 
-        source_samples = {'complete': {2: 67, 4: 10}, 'partial': {2: 53, 4: 14}}
-        cds_samples = {'complete': {2: 235, 4: 115}, 'partial': {2: 108, 4: 64}}
+        source_samples = {'complete': {2: 51, 4: 7}, 'partial': {2: 29, 4: 8}}
+        cds_samples = {'complete': {2: 162, 4: 57}, 'partial': {2: 69, 4: 27}}
         for reference in [2, 4]:
             for completeness in ['complete', 'partial']:
                 assert list(variantView_dfs_source[completeness][reference].columns) == DbProperties.variantView_df_source_columns
@@ -110,6 +110,7 @@ class TestDbPreprocessing(unittest.TestCase):
 
                 assert set(variantView_dfs_source[completeness][reference]['element.type']) == {'source'}
                 assert set(variantView_dfs_cds[completeness][reference]['element.type']) == {'cds'}
+
                 assert set(variantView_dfs_cds[completeness][reference]['gene:variant']) == DbProperties.cds_gene_variants[completeness][reference]
 
     def test_propertyView_df(self):

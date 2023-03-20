@@ -19,61 +19,52 @@ class DbProperties:
     source_variants = {
         'complete':
             {
-                2: ['C11343A', 'C70780T', 'G74360A', 'G8020A', 'del:150586-150602', 'del:197161-197209'],
+                2: ['C11343A', 'C70780T', 'G74360A', 'G8020A', 'del:150586-150602'],
                 4: ['C159772T', 'G165079A', 'G50051A', 'del:133123'],
             },
         'partial':
             {
-                2: ['C70780T', 'G173318A', 'G74360A', 'G97290A', 'del:150586-150602', 'del:197161-197209'],
-                4: ['C159772T', 'C43029T', 'G165079A', 'G55179A', 'del:133123'],
+                2: ['C70780T', 'G173318A', 'G74360A', 'del:150586-150602'],
+                4: ['C159772T', 'C43029T', 'G165079A', 'del:133123'],
             }
     }
 
     cds_variants = {
         'complete':
             {
-                2: ['A233G', 'A433G', 'C133F', 'D1604K', 'D25G', 'I119K', 'L263F', 'L29P', 'N95K', 'Q188F', 'R194P',
-                    'R84K',
-                    'S288F', 'T22K', 'T58K', 'V305G'],
-                4: ['A233G', 'A433G', 'C133F', 'D1604K', 'D25G', 'I119K', 'L263F', 'N95K', 'Q188F', 'R194P', 'R84K',
-                    'S288F',
-                    'T22K', 'T58K', 'V305G'],
+                2: ['A233G',  'C133F',  'D25G', 'L263F', 'Q188F', 'R194P',
+                    'R84K', 'T22K', 'T58K'],
+                4: ['A233G',  'C133F', 'D25G', 'L263F', 'Q188F', 'R194P', 'R84K',
+                    'T22K', 'T58K'],
             },
         'partial':
             {
-                2: ['A233G', 'A433G', 'D1604K', 'D723G', 'E121K', 'I119K', 'L142P', 'L263F', 'L29P', 'Q188F',
-                    'Q436P', 'R194P',
-                    'R84K', 'S288F', 'T22K', 'V305G'],
-                4: ['A233G', 'A433G', 'D1604K', 'D723G', 'E121K', 'I119K', 'L142P', 'Q188F', 'Q436P', 'R194P',
-                    'R84K', 'S288F',
-                    'T22K', 'V305G']
+                2: ['A233G', 'D723G', 'E121K', 'L263F', 'Q188F',
+                    'Q436P', 'R194P', 'R84K', 'T22K'],
+                4: ['A233G', 'D723G', 'E121K', 'Q188F', 'Q436P', 'R194P',
+                    'R84K', 'T22K']
             }
     }
 
     cds_gene_variants = {
         'complete':
             {
-                2: {'OPG113:T58K', 'OPG094:R194P', 'OPG164:I119K', 'OPG197:T22K', 'OPG193:A233G', 'OPG210:D1604K',
-                    'OPG117:A433G', 'OPG197:D25G', 'OPG089:V305G', 'OPG189:N95K', 'OPG005:T22K', 'OPG016:R84K',
-                    'OPG159:C133F', 'OPG015:Q188F', 'OPG151:L263F', 'OPG185:S288F', 'OPG044:L29P', 'OPG193:L263F'},
-                4: {'MPXV-USA_2022_MA001-186:R84K', 'MPXV-USA_2022_MA001-072:V305G', 'MPXV-USA_2022_MA001-100:A433G',
-                    'MPXV-USA_2022_MA001-162:S288F', 'MPXV-USA_2022_MA001-148:I119K', 'MPXV-USA_2022_MA001-171:T22K',
-                    'MPXV-USA_2022_MA001-171:D25G', 'MPXV-USA_2022_MA001-143:C133F', 'MPXV-USA_2022_MA001-184:T22K',
-                    'MPXV-USA_2022_MA001-169:A233G', 'MPXV-USA_2022_MA001-134:L263F', 'MPXV-USA_2022_MA001-187:Q188F',
-                    'MPXV-USA_2022_MA001-077:R194P', 'MPXV-USA_2022_MA001-182:D1604K', 'MPXV-USA_2022_MA001-165:N95K',
-                    'MPXV-USA_2022_MA001-096:T58K'},
+                2: {'OPG094:R194P', 'OPG159:C133F', 'OPG193:L263F', 'OPG197:T22K', 'OPG005:T22K', 'OPG016:R84K',
+                    'OPG151:L263F', 'OPG015:Q188F', 'OPG197:D25G', 'OPG113:T58K', 'OPG193:A233G'},
+                4: {'MPXV-USA_2022_MA001-186:R84K', 'MPXV-USA_2022_MA001-171:T22K', 'MPXV-USA_2022_MA001-096:T58K',
+                    'MPXV-USA_2022_MA001-143:C133F', 'MPXV-USA_2022_MA001-184:T22K', 'MPXV-USA_2022_MA001-171:D25G',
+                    'MPXV-USA_2022_MA001-077:R194P', 'MPXV-USA_2022_MA001-134:L263F', 'MPXV-USA_2022_MA001-169:A233G',
+                    'MPXV-USA_2022_MA001-187:Q188F'}
             },
         'partial':
             {
-                2: {'OPG094:R194P', 'OPG164:I119K', 'OPG185:E121K', 'OPG193:A233G', 'OPG210:D1604K', 'OPG117:A433G',
-                    'OPG089:V305G', 'OPG005:T22K', 'OPG016:R84K', 'OPG113:D723G', 'OPG015:Q188F', 'OPG185:S288F',
-                    'OPG151:Q436P', 'OPG044:L29P', 'OPG193:L263F', 'OPG044:L142P'},
+                2: {'OPG193:L263F', 'OPG185:E121K', 'OPG113:D723G', 'OPG016:R84K', 'OPG015:Q188F', 'OPG094:R194P',
+                    'OPG151:Q436P', 'OPG193:A233G', 'OPG005:T22K'},
                 4: {'MPXV-USA_2022_MA001-096:D723G', 'MPXV-USA_2022_MA001-187:Q188F', 'MPXV-USA_2022_MA001-184:T22K',
-                    'MPXV-USA_2022_MA001-134:Q436P', 'MPXV-USA_2022_MA001-182:D1604K',
-                    'MPXV-USA_2022_MA001-100:A433G', 'MPXV-USA_2022_MA001-162:E121K',
-                    'MPXV-USA_2022_MA001-028:L142P', 'MPXV-USA_2022_MA001-169:A233G',
-                    'MPXV-USA_2022_MA001-072:V305G', 'MPXV-USA_2022_MA001-148:I119K',
-                    'MPXV-USA_2022_MA001-162:S288F', 'MPXV-USA_2022_MA001-186:R84K', 'MPXV-USA_2022_MA001-077:R194P'
+                    'MPXV-USA_2022_MA001-134:Q436P',
+                    'MPXV-USA_2022_MA001-162:E121K',
+                    'MPXV-USA_2022_MA001-169:A233G',
+                    'MPXV-USA_2022_MA001-186:R84K', 'MPXV-USA_2022_MA001-077:R194P'
                     }
             }
     }
@@ -82,29 +73,28 @@ class DbProperties:
         'Germany':
             {
                 'complete': {
-                    2: {'Q188F', 'S288F', 'T22K', 'R84K', 'D25G', 'T58K', 'D1604K', 'R194P', 'L263F', 'V305G', 'N95K',
-                        'C133F', 'L29P'},
-                    4: {'Q188F', 'S288F', 'T22K', 'R84K', 'D25G', 'T58K', 'D1604K', 'R194P', 'L263F', 'V305G', 'N95K',
-                        'C133F'}
+                    2: {'Q188F', 'T22K', 'R84K', 'D25G', 'T58K', 'R194P', 'L263F',
+                        'C133F'},
+                    4: {'C133F', 'Q188F', 'R84K', 'D25G', 'R194P', 'L263F', 'T22K', 'T58K'}
                 },
                 'partial': {
-                    2: {'Q188F', 'S288F', 'R84K', 'L142P', 'D1604K', 'Q436P', 'R194P', 'L263F', 'V305G', 'E121K',
-                        'L29P'},
-                    4: {'Q188F', 'S288F', 'R84K', 'L142P', 'D1604K', 'Q436P', 'R194P', 'V305G', 'E121K'}}
+                    2: {'R194P', 'R84K', 'L263F', 'Q188F'},
+                    4: {'R194P', 'Q188F', 'R84K'}}
             },
         "USA": {
             'complete':
                 {
-                    2: {'A433G', 'T22K', 'R84K', 'L263F', 'I119K', 'L29P', 'A233G'},
-                    4: {'A433G', 'T22K', 'R84K', 'I119K', 'A233G'}
+                    2: {'T22K', 'R84K', 'L263F', 'A233G'},
+                    4: {'T22K', 'R84K',  'A233G'}
                 },
             'partial': {
-                2: {'D723G', 'A433G', 'T22K', 'S288F', 'D1604K', 'Q436P', 'E121K', 'I119K', 'L263F', 'A233G', 'L29P'},
-                4: {'D723G', 'A433G', 'T22K', 'S288F', 'D1604K', 'Q436P', 'E121K', 'I119K', 'A233G'}}
+                2: {'L263F', 'T22K', 'E121K', 'Q436P', 'D723G', 'A233G'},
+                4: {'Q436P', 'A233G', 'T22K', 'D723G', 'E121K'}
+            }
         },
         "Egypt": {
             'complete': {
-                2: {'L263F', 'L29P'},
+                2: {'L263F'},
                 4: set(),
             },
             'partial': {
@@ -117,46 +107,38 @@ class DbProperties:
         'Germany':
             {
                 'complete': {
-                    2: {'OPG094:R194P', 'OPG193:L263F', 'OPG197:D25G', 'OPG159:C133F', 'OPG197:T22K', 'OPG113:T58K',
-                        'OPG185:S288F', 'OPG189:N95K', 'OPG089:V305G', 'OPG151:L263F', 'OPG016:R84K', 'OPG044:L29P',
-                        'OPG015:Q188F', 'OPG210:D1604K'},
-                    4: {'MPXV-USA_2022_MA001-182:D1604K', 'MPXV-USA_2022_MA001-162:S288F',
-                        'MPXV-USA_2022_MA001-187:Q188F', 'MPXV-USA_2022_MA001-171:D25G', 'MPXV-USA_2022_MA001-096:T58K',
-                        'MPXV-USA_2022_MA001-072:V305G', 'MPXV-USA_2022_MA001-186:R84K', 'MPXV-USA_2022_MA001-171:T22K',
-                        'MPXV-USA_2022_MA001-134:L263F', 'MPXV-USA_2022_MA001-165:N95K',
-                        'MPXV-USA_2022_MA001-143:C133F',
-                        'MPXV-USA_2022_MA001-077:R194P'}
+                    2: {'OPG015:Q188F', 'OPG016:R84K', 'OPG094:R194P', 'OPG113:T58K','OPG151:L263F', 'OPG159:C133F',
+                        'OPG193:L263F', 'OPG197:D25G', 'OPG197:T22K'},
+                    4: {'MPXV-USA_2022_MA001-077:R194P', 'MPXV-USA_2022_MA001-096:T58K',
+                        'MPXV-USA_2022_MA001-134:L263F', 'MPXV-USA_2022_MA001-143:C133F',
+                        'MPXV-USA_2022_MA001-171:D25G', 'MPXV-USA_2022_MA001-171:T22K',
+                        'MPXV-USA_2022_MA001-186:R84K', 'MPXV-USA_2022_MA001-187:Q188F'},
                 },
                 'partial': {
-                    2: {'OPG185:S288F', 'OPG210:D1604K', 'OPG089:V305G', 'OPG193:L263F', 'OPG015:Q188F', 'OPG185:E121K',
-                        'OPG094:R194P', 'OPG016:R84K', 'OPG151:Q436P', 'OPG044:L142P', 'OPG044:L29P'},
-                    4: {'MPXV-USA_2022_MA001-182:D1604K', 'MPXV-USA_2022_MA001-162:S288F',
-                        'MPXV-USA_2022_MA001-187:Q188F', 'MPXV-USA_2022_MA001-028:L142P',
-                        'MPXV-USA_2022_MA001-162:E121K', 'MPXV-USA_2022_MA001-072:V305G',
-                        'MPXV-USA_2022_MA001-186:R84K',
-                        'MPXV-USA_2022_MA001-134:Q436P', 'MPXV-USA_2022_MA001-077:R194P'}
+                    2: {'OPG015:Q188F', 'OPG094:R194P', 'OPG193:L263F', 'OPG016:R84K'},
+                    4: {'MPXV-USA_2022_MA001-077:R194P', 'MPXV-USA_2022_MA001-186:R84K',
+                        'MPXV-USA_2022_MA001-187:Q188F'}
                 }
             },
         "USA": {
             'complete':
                 {
-                    2: {'OPG005:T22K', 'OPG193:L263F', 'OPG193:A233G', 'OPG117:A433G', 'OPG164:I119K', 'OPG016:R84K',
-                        'OPG044:L29P'},
-                    4: {'MPXV-USA_2022_MA001-100:A433G', 'MPXV-USA_2022_MA001-148:I119K',
+                    2: {'OPG005:T22K', 'OPG193:L263F', 'OPG193:A233G',  'OPG016:R84K',
+                        },
+                    4: {
                         'MPXV-USA_2022_MA001-186:R84K',
                         'MPXV-USA_2022_MA001-184:T22K', 'MPXV-USA_2022_MA001-169:A233G'}
                 },
             'partial': {
-                2: {'OPG185:S288F', 'OPG117:A433G', 'OPG210:D1604K', 'OPG113:D723G', 'OPG193:L263F', 'OPG164:I119K',
-                    'OPG185:E121K', 'OPG151:Q436P', 'OPG005:T22K', 'OPG044:L29P', 'OPG193:A233G'},
-                4: {'MPXV-USA_2022_MA001-182:D1604K', 'MPXV-USA_2022_MA001-162:S288F', 'MPXV-USA_2022_MA001-100:A433G',
-                    'MPXV-USA_2022_MA001-148:I119K', 'MPXV-USA_2022_MA001-162:E121K', 'MPXV-USA_2022_MA001-184:T22K',
+                2: {'OPG113:D723G', 'OPG193:L263F',
+                    'OPG185:E121K', 'OPG151:Q436P', 'OPG005:T22K', 'OPG193:A233G'},
+                4: {'MPXV-USA_2022_MA001-162:E121K', 'MPXV-USA_2022_MA001-184:T22K',
                     'MPXV-USA_2022_MA001-169:A233G', 'MPXV-USA_2022_MA001-096:D723G', 'MPXV-USA_2022_MA001-134:Q436P'}
             }
         },
         "Egypt": {
             'complete': {
-                2: {'OPG193:L263F', 'OPG044:L29P'},
+                2: {'OPG193:L263F'},
                 4: set(),
             },
             'partial': {
@@ -221,38 +203,31 @@ class DbProperties:
         'Germany':
             {
                 'complete': {
-                    2: {'OPG044', 'OPG185', 'OPG193', 'OPG089', 'OPG094', 'OPG159', 'OPG151', 'OPG189', 'OPG015',
-                        'OPG113',
-                        'OPG016', 'OPG197', 'OPG210'},
-                    4: {'MPXV-USA_2022_MA001-182', 'MPXV-USA_2022_MA001-072', 'MPXV-USA_2022_MA001-171',
-                        'MPXV-USA_2022_MA001-165', 'MPXV-USA_2022_MA001-187', 'MPXV-USA_2022_MA001-162',
-                        'MPXV-USA_2022_MA001-143', 'MPXV-USA_2022_MA001-096', 'MPXV-USA_2022_MA001-077',
-                        'MPXV-USA_2022_MA001-186', 'MPXV-USA_2022_MA001-134'}
+                    2: {'OPG159', 'OPG015', 'OPG016', 'OPG113', 'OPG197', 'OPG193', 'OPG094', 'OPG151'},
+                    4: {'MPXV-USA_2022_MA001-077', 'MPXV-USA_2022_MA001-096', 'MPXV-USA_2022_MA001-134',
+                        'MPXV-USA_2022_MA001-143', 'MPXV-USA_2022_MA001-171', 'MPXV-USA_2022_MA001-186',
+                        'MPXV-USA_2022_MA001-187'}
                 },
                 'partial': {
-                    2: {'OPG044', 'OPG185', 'OPG193', 'OPG089', 'OPG094', 'OPG151', 'OPG015', 'OPG016', 'OPG210'},
-                    4: {'MPXV-USA_2022_MA001-182', 'MPXV-USA_2022_MA001-072', 'MPXV-USA_2022_MA001-187',
-                        'MPXV-USA_2022_MA001-162', 'MPXV-USA_2022_MA001-077', 'MPXV-USA_2022_MA001-186',
-                        'MPXV-USA_2022_MA001-134', 'MPXV-USA_2022_MA001-028'}
+                    2: {'OPG015', 'OPG094', 'OPG193', 'OPG016'},
+                    4: {'MPXV-USA_2022_MA001-077', 'MPXV-USA_2022_MA001-186', 'MPXV-USA_2022_MA001-187'}
                 }
             },
         "USA": {
             'complete':
                 {
-                    2: {'OPG044', 'OPG193', 'OPG117', 'OPG164', 'OPG005', 'OPG016'},
-                    4: {'MPXV-USA_2022_MA001-184', 'MPXV-USA_2022_MA001-148', 'MPXV-USA_2022_MA001-169',
-                        'MPXV-USA_2022_MA001-186', 'MPXV-USA_2022_MA001-100'},
+                    2: {'OPG193', 'OPG016', 'OPG005'},
+                    4: {'MPXV-USA_2022_MA001-169', 'MPXV-USA_2022_MA001-184', 'MPXV-USA_2022_MA001-186'},
                 },
             'partial': {
-                2: {'OPG044', 'OPG185', 'OPG193', 'OPG117', 'OPG164', 'OPG005', 'OPG151', 'OPG113', 'OPG210'},
-                4: {'MPXV-USA_2022_MA001-182', 'MPXV-USA_2022_MA001-096', 'MPXV-USA_2022_MA001-184',
-                    'MPXV-USA_2022_MA001-162', 'MPXV-USA_2022_MA001-148', 'MPXV-USA_2022_MA001-169',
-                    'MPXV-USA_2022_MA001-134', 'MPXV-USA_2022_MA001-100'},
+                2: {'OPG005', 'OPG193', 'OPG185', 'OPG113', 'OPG151'},
+                4: {'MPXV-USA_2022_MA001-096', 'MPXV-USA_2022_MA001-134', 'MPXV-USA_2022_MA001-162',
+                    'MPXV-USA_2022_MA001-169', 'MPXV-USA_2022_MA001-184'},
             }
         },
         "Egypt": {
             'complete': {
-                2: {'OPG044', 'OPG193'},
+                2: {'OPG193'},
                 4: set(),
             },
             'partial': {
@@ -265,17 +240,17 @@ class DbProperties:
     country_entries_cds_per_country = {
         'Germany':
             {
-                'complete': {2: 30, 4: 22},
-                'partial': {2: 25, 4: 17}
+                'complete': {2: 17, 4: 13},
+                'partial': {2: 11, 4: 7}
             },
         'USA':
             {
-                'complete': {2: 21, 4: 7},
-                'partial': {2: 62, 4: 38}
+                'complete': {2: 11, 4: 5},
+                'partial': {2: 30, 4: 20}
             },
         'Egypt':
             {
-                'complete': {2: 2, 4: 0},
+                'complete': {2: 1, 4: 0},
                 'partial': {2: 0, 4: 0}
             }
     }
@@ -283,13 +258,13 @@ class DbProperties:
     samples_dict_cds_per_country = {
         'Germany':
             {
-                'complete': {2: 222, 4: 107},
-                'partial': {2: 71, 4: 34}
+                'complete': {2: 153, 4: 52},
+                'partial': {2: 47, 4: 12}
             },
         'USA':
             {
-                'complete': {2: 12, 4: 8},
-                'partial': {2: 37, 4: 30}
+                'complete': {2: 8, 4: 5},
+                'partial': {2: 22, 4: 15}
             },
         'Egypt':
             {
@@ -300,12 +275,12 @@ class DbProperties:
 
     samples_dict_propertyView_per_country = {
         'Germany': {
-            'complete': 222,
-            'partial': 71
+            'complete': 153,
+            'partial': 47
         },
         "USA": {
-            'complete': 12,
-            'partial': 37
+            'complete': 8,
+            'partial': 22
         },
         "Egypt": {
             'complete': 1,
@@ -315,43 +290,34 @@ class DbProperties:
 
     correct_rows_map_df_freq = {
         2: {
-            'interval2': {
-                'complete': [
-                    ['Germany', 4, 'DEU'],
-                    ['Egypt', 1, 'EGY'],
-                ],
-                'partial': [
-                    ['Germany', 6, 'DEU'],
-                    ['Egypt', 1, 'EGY'],
-                ]
-            },
             'interval1': {
                 'complete': [
-                    ['Germany', 222, 'DEU'],
+                    ['Germany', 153, 'DEU'],
                     ['Egypt', 1, 'EGY'],
-                    ['USA', 12, 'USA'],
+                    ['USA', 8, 'USA'],
                 ],
                 'partial': [
-                    ['Germany', 293, 'DEU'],
+                    ['Germany', 200, 'DEU'],
                     ['Egypt', 1, 'EGY'],
-                    ['USA', 49, 'USA'],
+                    ['USA', 30, 'USA'],
                 ]
             },
+            'interval2': {
+                'complete': [
+                    ['Germany', 3, 'DEU'],
+                    ['Egypt', 1, 'EGY'],
+                ],
+                'partial': [
+                    ['Germany', 4, 'DEU'],
+                    ['Egypt', 1, 'EGY'],
+                ]
+            },
+
         }
     }
 
     correct_rows_map_df_incr = {
         2: {
-            'interval2': {
-                'complete': [
-                    ['Germany', 0.0, 'DEU'],
-                    ['Egypt', 0.0, 'EGY'],
-                ],
-                'partial': [
-                    ['Germany', 0.0, 'DEU'],
-                    ['Egypt', 0.0, 'EGY'],
-                ]
-            },
             'interval1': {
                 'complete': [
                     ['Germany', 0.0323, 'DEU'],
@@ -359,9 +325,19 @@ class DbProperties:
                     ['USA', 0.0, 'USA'],
                 ],
                 'partial': [
-                    ['Germany', 0.0645, 'DEU'],
+                    ['Germany', 0.0968, 'DEU'],
                     ['Egypt', 0.0, 'EGY'],
-                    ['USA', 0.1156, 'USA'],
+                    ['USA', 0.2081, 'USA'],
+                ]
+            },
+            'interval2': {
+                'complete': [
+                    ['Germany', 0.0, 'DEU'],
+                    ['Egypt', 0.0, 'EGY'],
+                ],
+                'partial': [
+                    ['Germany', 0.0, 'DEU'],
+                    ['Egypt', 0.0, 'EGY'],
                 ]
             },
         }
@@ -372,23 +348,23 @@ class DbProperties:
             'Germany': {
                 'interval2': {
                     'complete': [
-                        ["Germany", "L263F", "OPG193", 4], ],
+                        ["Germany", "L263F", "OPG193", 3], ],
                     'partial': [
-                        ["Germany", "L263F", "OPG193", 6], ]
+                        ["Germany", "L263F", "OPG193", 4], ]
 
                 },
                 'interval1': {
                     'complete': [
                         ['Germany', 'L263F', 'OPG151', 1],
-                        ['Germany', 'L263F', 'OPG193', 222],
+                        ['Germany', 'L263F', 'OPG193', 153],
                         ['Germany', 'R84K', 'OPG016', 5],
                         ['Germany', 'T22K', 'OPG197', 1],
                         ['Germany', 'T58K', 'OPG113', 1],
                     ],
                     'partial': [
                         ['Germany', 'L263F', 'OPG151', 1],
-                        ['Germany', 'L263F', 'OPG193', 293],
-                        ['Germany', 'R84K', 'OPG016', 8],
+                        ['Germany', 'L263F', 'OPG193', 200],
+                        ['Germany', 'R84K', 'OPG016', 7],
                         ['Germany', 'T22K', 'OPG197', 1],
                         ['Germany', 'T58K', 'OPG113', 1],
                     ]
@@ -398,12 +374,12 @@ class DbProperties:
                 'interval1': {
                     'complete': [
                         ['USA', 'A233G', 'OPG193', 1],
-                        ['USA', 'L263F', 'OPG193', 12],
+                        ['USA', 'L263F', 'OPG193', 8],
                         ['USA', 'R84K', 'OPG016', 2],
                     ],
                     'partial': [
-                        ['USA', 'A233G', 'OPG193', 7],
-                        ['USA', 'L263F', 'OPG193', 49],
+                        ['USA', 'A233G', 'OPG193', 4],
+                        ['USA', 'L263F', 'OPG193', 30],
                         ['USA', 'R84K', 'OPG016', 2],
                     ],
                 },
@@ -441,10 +417,10 @@ class DbProperties:
                 'interval1': {
                     'complete': [
                         ['Germany', 'L263F', 'OPG151', [1], [datetime.date(2022, 7, 1)], 0.0],
-                        ['Germany', 'L263F', 'OPG193', [106, 40, 72, 4], [datetime.date(2022, 7, 1),
+                        ['Germany', 'L263F', 'OPG193', [72, 28, 50, 3], [datetime.date(2022, 7, 1),
                                                                           datetime.date(2022, 8, 1),
                                                                           datetime.date(2022, 9, 1),
-                                                                          datetime.date(2022, 10, 1)], -0.8902],
+                                                                          datetime.date(2022, 10, 1)], -0.6010],
                         ['Germany', 'R84K', 'OPG016', [2, 3], [datetime.date(2022, 8, 1), datetime.date(2022, 9, 1)],
                          0.0323],
                         ['Germany', 'T22K', 'OPG197', [1], [datetime.date(2022, 9, 1)], 0.0],
@@ -452,21 +428,21 @@ class DbProperties:
                     ],
                     'partial': [
                         ['Germany', 'L263F', 'OPG151', [1], [datetime.date(2022, 7, 1)], 0.0],
-                        ['Germany', 'L263F', 'OPG193', [118, 65, 104, 6],
+                        ['Germany', 'L263F', 'OPG193', [78, 47, 71, 4],
                          [datetime.date(2022, 7, 1), datetime.date(2022, 8, 1), datetime.date(2022, 9, 1),
-                          datetime.date(2022, 10, 1)], -0.9625],
-                        ['Germany', 'R84K', 'OPG016', [3, 5], [datetime.date(2022, 8, 1), datetime.date(2022, 9, 1)],
-                         0.0645],
+                          datetime.date(2022, 10, 1)], -0.6415],
+                        ['Germany', 'R84K', 'OPG016', [2, 5], [datetime.date(2022, 8, 1), datetime.date(2022, 9, 1)],
+                         0.0968],
                         ['Germany', 'T22K', 'OPG197', [1], [datetime.date(2022, 9, 1)], 0.0],
                         ['Germany', 'T58K', 'OPG113', [1], [datetime.date(2022, 9, 1)], 0.0],
                     ]
                 },
                 'interval2': {
                     'complete': [
-                        ['Germany', 'L263F', 'OPG193', [4], [datetime.date(2022, 10, 1)], 0.0],
+                        ['Germany', 'L263F', 'OPG193', [3], [datetime.date(2022, 10, 1)], 0.0],
                     ],
                     'partial': [
-                        ['Germany', 'L263F', 'OPG193', [6], [datetime.date(2022, 10, 1)], 0.0],
+                        ['Germany', 'L263F', 'OPG193', [4], [datetime.date(2022, 10, 1)], 0.0],
                     ]
                 },
             },
@@ -474,20 +450,20 @@ class DbProperties:
                 'interval1': {
                     'complete': [
                         ['USA', 'A233G', 'OPG193', [1], [datetime.date(2022, 7, 6)], 0.0],
-                        ['USA', 'L263F', 'OPG193', [2, 5, 2, 2, 1],
-                         [datetime.date(2022, 6, 30), datetime.date(2022, 7, 1), datetime.date(2022, 7, 2),
-                          datetime.date(2022, 7, 6), datetime.date(2022, 7, 7)], -0.268],
+                        ['USA', 'L263F', 'OPG193', [2, 4, 1, 1],
+                         [datetime.date(2022, 6, 30), datetime.date(2022, 7, 1),
+                          datetime.date(2022, 7, 2), datetime.date(2022, 7, 6)], -0.2892],
                         ['USA', 'R84K', 'OPG016', [2], [datetime.date(2022, 7, 1)], 0.0],
                     ],
                     'partial': [
-                        ['USA', 'A233G', 'OPG193', [2, 1, 1, 1, 1, 1],
-                         [datetime.date(2022, 6, 28), datetime.date(2022, 7, 1), datetime.date(2022, 7, 3),
-                          datetime.date(2022, 7, 4), datetime.date(2022, 7, 5), datetime.date(2022, 7, 6)], -0.1128],
-                        ['USA', 'L263F', 'OPG193', [3, 6, 9, 3, 1, 3, 8, 11, 2, 1, 1, 1],
-                         [datetime.date(2022, 6, 28), datetime.date(2022, 6, 30), datetime.date(2022, 7, 1),
-                          datetime.date(2022, 7, 2), datetime.date(2022, 7, 3), datetime.date(2022, 7, 4),
-                          datetime.date(2022, 7, 5), datetime.date(2022, 7, 6), datetime.date(2022, 7, 7),
-                          datetime.date(2022, 7, 9), datetime.date(2022, 7, 23), datetime.date(2022, 8, 4)], -0.1341],
+                        ['USA', 'A233G', 'OPG193', [1, 1, 1, 1],
+                         [datetime.date(2022, 6, 28),
+                          datetime.date(2022, 7, 3), datetime.date(2022, 7, 5), datetime.date(2022, 7, 6)], 0],
+                        ['USA', 'L263F', 'OPG193', [2, 4, 7, 2, 1, 1, 5, 6, 1, 1],
+                         [datetime.date(2022, 6, 28), datetime.date(2022, 6, 30),
+                          datetime.date(2022, 7, 1), datetime.date(2022, 7, 2), datetime.date(2022, 7, 3),
+                          datetime.date(2022, 7, 4), datetime.date(2022, 7, 5), datetime.date(2022, 7, 6),
+                          datetime.date(2022, 7, 9), datetime.date(2022, 8, 4)], -0.0697],
                         ['USA', 'R84K', 'OPG016', [2], [datetime.date(2022, 7, 1)], 0.0],
                     ],
                 },
@@ -525,33 +501,33 @@ class DbProperties:
                 'interval1': {
                     'complete': [
                         ['Germany', datetime.date(2022, 7, 1), 'L263F', 'OPG151', 1, 3],
-                        ['Germany', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 106, 3],
-                        ['Germany', datetime.date(2022, 8, 1), 'L263F', 'OPG193', 40, 34],
+                        ['Germany', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 72, 3],
+                        ['Germany', datetime.date(2022, 8, 1), 'L263F', 'OPG193', 28, 34],
                         ['Germany', datetime.date(2022, 8, 1), 'R84K', 'OPG016', 2, 34],
-                        ['Germany', datetime.date(2022, 9, 1), 'L263F', 'OPG193', 72, 65],
+                        ['Germany', datetime.date(2022, 9, 1), 'L263F', 'OPG193', 50, 65],
                         ['Germany', datetime.date(2022, 9, 1), 'R84K', 'OPG016', 3, 65],
                         ['Germany', datetime.date(2022, 9, 1), 'T22K', 'OPG197', 1, 65],
                         ['Germany', datetime.date(2022, 9, 1), 'T58K', 'OPG113', 1, 65],
-                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 4, 95],
+                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 3, 95],
                     ],
                     'partial': [
                         ['Germany', datetime.date(2022, 7, 1), 'L263F', 'OPG151', 1, 3],
-                        ['Germany', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 118, 3],
-                        ['Germany', datetime.date(2022, 8, 1), 'L263F', 'OPG193', 65, 34],
-                        ['Germany', datetime.date(2022, 8, 1), 'R84K', 'OPG016', 3, 34],
-                        ['Germany', datetime.date(2022, 9, 1), 'L263F', 'OPG193', 104, 65],
+                        ['Germany', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 78, 3],
+                        ['Germany', datetime.date(2022, 8, 1), 'L263F', 'OPG193', 47, 34],
+                        ['Germany', datetime.date(2022, 8, 1), 'R84K', 'OPG016', 2, 34],
+                        ['Germany', datetime.date(2022, 9, 1), 'L263F', 'OPG193', 71, 65],
                         ['Germany', datetime.date(2022, 9, 1), 'R84K', 'OPG016', 5, 65],
                         ['Germany', datetime.date(2022, 9, 1), 'T22K', 'OPG197', 1, 65],
                         ['Germany', datetime.date(2022, 9, 1), 'T58K', 'OPG113', 1, 65],
-                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 6, 95],
+                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 4, 95],
                     ]
                 },
                 'interval2': {
                     'complete': [
-                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 4, 95],
+                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 3, 95],
                     ],
                     'partial': [
-                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 6, 95],
+                        ['Germany', datetime.date(2022, 10, 1), 'L263F', 'OPG193', 4, 95],
                     ]
                 },
             },
@@ -559,32 +535,27 @@ class DbProperties:
                 'interval1': {
                     'complete': [
                         ['USA', datetime.date(2022, 6, 30), 'L263F', 'OPG193', 2, 2],
-                        ['USA', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 5, 3],
+                        ['USA', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 4, 3],
                         ['USA', datetime.date(2022, 7, 1), 'R84K', 'OPG016', 2, 3],
-                        ['USA', datetime.date(2022, 7, 2), 'L263F', 'OPG193', 2, 4],
+                        ['USA', datetime.date(2022, 7, 2), 'L263F', 'OPG193', 1, 4],
                         ['USA', datetime.date(2022, 7, 6), 'A233G', 'OPG193', 1, 8],
-                        ['USA', datetime.date(2022, 7, 6), 'L263F', 'OPG193', 2, 8],
-                        ['USA', datetime.date(2022, 7, 7), 'L263F', 'OPG193', 1, 9],
+                        ['USA', datetime.date(2022, 7, 6), 'L263F', 'OPG193', 1, 8],
                     ],
                     'partial': [
-                        ['USA', datetime.date(2022, 6, 28), 'A233G', 'OPG193', 2, 0],
-                        ['USA', datetime.date(2022, 6, 28), 'L263F', 'OPG193', 3, 0],
-                        ['USA', datetime.date(2022, 6, 30), 'L263F', 'OPG193', 6, 2],
-                        ['USA', datetime.date(2022, 7, 1), 'A233G', 'OPG193', 1, 3],
-                        ['USA', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 9, 3],
+                        ['USA', datetime.date(2022, 6, 28), 'A233G', 'OPG193', 1, 0],
+                        ['USA', datetime.date(2022, 6, 28), 'L263F', 'OPG193', 2, 0],
+                        ['USA', datetime.date(2022, 6, 30), 'L263F', 'OPG193', 4, 2],
+                        ['USA', datetime.date(2022, 7, 1), 'L263F', 'OPG193', 7, 3],
                         ['USA', datetime.date(2022, 7, 1), 'R84K', 'OPG016', 2, 3],
-                        ['USA', datetime.date(2022, 7, 2), 'L263F', 'OPG193', 3, 4],
+                        ['USA', datetime.date(2022, 7, 2), 'L263F', 'OPG193', 2, 4],
                         ['USA', datetime.date(2022, 7, 3), 'A233G', 'OPG193', 1, 5],
                         ['USA', datetime.date(2022, 7, 3), 'L263F', 'OPG193', 1, 5],
-                        ['USA', datetime.date(2022, 7, 4), 'A233G', 'OPG193', 1, 6],
-                        ['USA', datetime.date(2022, 7, 4), 'L263F', 'OPG193', 3, 6],
+                        ['USA', datetime.date(2022, 7, 4), 'L263F', 'OPG193', 1, 6],
                         ['USA', datetime.date(2022, 7, 5), 'A233G', 'OPG193', 1, 7],
-                        ['USA', datetime.date(2022, 7, 5), 'L263F', 'OPG193', 8, 7],
+                        ['USA', datetime.date(2022, 7, 5), 'L263F', 'OPG193', 5, 7],
                         ['USA', datetime.date(2022, 7, 6), 'A233G', 'OPG193', 1, 8],
-                        ['USA', datetime.date(2022, 7, 6), 'L263F', 'OPG193', 11, 8],
-                        ['USA', datetime.date(2022, 7, 7), 'L263F', 'OPG193', 2, 9],
+                        ['USA', datetime.date(2022, 7, 6), 'L263F', 'OPG193', 6, 8],
                         ['USA', datetime.date(2022, 7, 9), 'L263F', 'OPG193', 1, 11],
-                        ['USA', datetime.date(2022, 7, 23), 'L263F', 'OPG193', 1, 25],
                         ['USA', datetime.date(2022, 8, 4), 'L263F', 'OPG193', 1, 37],
                     ],
                 },
