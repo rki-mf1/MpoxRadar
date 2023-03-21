@@ -333,7 +333,7 @@ def get_explore_callbacks(  # noqa: C901
             State("complete_partial_radio_explore", "value"),
             State("country_dropdown_0", "value"),
         ],
-        prevent_initial_call=True,
+        prevent_initial_call=False,
     )
     # @cache.memoize()
     def update_upper_plot(
@@ -451,7 +451,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("country_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
         ],
-        prevent_initial_call=True,
+        prevent_initial_call=False,
     )
     # @cache.memoize()
     def update_table_filter(

@@ -128,6 +128,15 @@ class TableFilter(object):
             dates,
             countries,
     ):
+        """
+        param df_dict: all pre-processed pandas df
+        param complete_partial_radio: complete OR partial (= using complete AND partial dfs)
+        param mutation_list: mutations of style "gene:variant" (user selected)
+        param seq_tech_list: seq tech list of filter, type list of str
+        param reference_id: int
+        param dates: list of dates (date slider chosen date + interval)
+        param countries: country list of filter, type list of str
+        """
         variantView_dfs_cds = select_variantView_dfs(
             df_dict, complete_partial_radio, reference_id, 'cds'
         )
@@ -152,24 +161,20 @@ class TableFilter(object):
             result_df = self.combine_labels_by_sample(variantView, 'cds')
             table_dfs_cds.append(result_df)
         table_df_cds = pd.concat(table_dfs_cds, ignore_index=True, axis=0)
-
         table_dfs_source = []
         for variantView in variantView_dfs_source:
             result_df = self.combine_labels_by_sample(variantView, 'source')
             table_dfs_source.append(result_df)
         table_df_source = pd.concat(table_dfs_source, ignore_index=True, axis=0)
-
         df = pd.merge(table_df_cds, table_df_source,
-                      how="inner",
+                      how="outer",
                       on=['sample.id', 'sample.name', 'reference.accession', "reference.id"])
-
         propertyView_df = pd.concat(propertyView_dfs, ignore_index=True, axis=0)
         df = self._merge_variantView_with_propertyView(df, propertyView_df)
         df = df[self.table_columns]
         if df.empty:
             df = pd.DataFrame(
-                [],
-                columns=[self.table_columns]
+                columns=self.table_columns
             )
         df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
         return df
@@ -228,8 +233,6 @@ class VariantMapAndPlots(object):
             if genes or clicked_country:
                 raise ValueError("Instance is not correct initialized, map plotting does not require gene and click country information")
         elif plot_type == "detail":
-            if not genes or not clicked_country:
-                raise ValueError("Instance is not correct initialized, detail plots require gene information")
             self.location_name, \
             self.number_selected_sequences, \
             self.seq_with_mut = self.select_country_for_detail_plots_and_nb_filtered_seq(clicked_country, genes)
@@ -272,6 +275,7 @@ class VariantMapAndPlots(object):
         interval days)
         """
         location_name = clicked_country
+        print(location_name)
         number_selected_sequences = 0
         seq_with_mut = 0
         if self.countries:
@@ -284,6 +288,7 @@ class VariantMapAndPlots(object):
         else:
             countries_to_check_for_seq = [location_name]
 
+        print(countries_to_check_for_seq)
         for country in countries_to_check_for_seq:
             number_selected_sequences, seq_with_mut = self.get_nb_filtered_seq(
                 [country],
@@ -735,17 +740,25 @@ class VariantMapAndPlots(object):
 
 
 class DateSlider:
-    def __init__(self, dates):
+    def __init__(self, df_dict):
         """
         param dates: propertyView["COLLECTION_DATE"], type 'datetime.date' (YYYY, M, D)
         """
         # TODO min date = 1978, max 2202-07-01
+        dates_in_propertyViews = sorted(
+            list(
+                {i for s in [set(df["COLLECTION_DATE"]) for df in [
+                    df_dict["propertyView"]['complete'],
+                    df_dict["propertyView"]['partial']
+                ]] for i in s}
+            )
+        )
         defined_min_date = datetime.strptime("2022-01-01", "%Y-%m-%d").date()  # min(dates)
-        if min(dates) < defined_min_date:
+        if min(dates_in_propertyViews) < defined_min_date:
             self.min_date = defined_min_date
         else:
-            self.min_date = min(dates)
-        self.max_date = max(dates)
+            self.min_date = min(dates_in_propertyViews)
+        self.max_date = max(dates_in_propertyViews)
         self.date_list = [
             self.max_date - timedelta(days=x)
             for x in reversed(range((self.max_date - self.min_date).days + 1))
@@ -782,6 +795,9 @@ class DateSlider:
         return date_list
 
     def get_all_dates_in_interval(self, dates, interval):
+        """
+        uses second date and interval for preparing date list
+        """
         second_date = DateSlider.unix_to_date(dates[1])
         if interval is None:
             interval = 0

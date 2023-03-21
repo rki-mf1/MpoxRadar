@@ -16,7 +16,7 @@ def to_date(d):
 class TestDbPreprocessing(unittest.TestCase):
     def setUp(self):
         self.db_name = "mpx_test_04"
-        self.processed_df_dict = load_all_sql_files(self.db_name)
+        self.processed_df_dict = load_all_sql_files(self.db_name, caching=False)
         self.countries = DbProperties.country_entries_cds_per_country.keys()
 
     def test_df_dict_structure(self):
@@ -49,18 +49,23 @@ class TestDbPreprocessing(unittest.TestCase):
                 assert list(world_dfs[completeness][reference].columns) == DbProperties.world_df_columns
         # test nb entries per country
                 for country in self.countries:
-                    assert len(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]) \
+                    assert len(world_dfs[completeness][reference][
+                                   world_dfs[completeness][reference]['COUNTRY'] == country]) \
                            == DbProperties.country_entries_cds_per_country[country][completeness][reference]
-                    assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['variant.label']) \
+                    assert set(world_dfs[completeness][reference][
+                                   world_dfs[completeness][reference]['COUNTRY'] == country]['variant.label']) \
                            == DbProperties.variants_cds_per_country[country][completeness][reference]
-                    assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['gene:variant']) \
+                    assert set(world_dfs[completeness][reference][
+                                   world_dfs[completeness][reference]['COUNTRY'] == country]['gene:variant']) \
                            == DbProperties.gene_variants_cds_per_country[country][completeness][reference]
 
         # test different seq_techs per country
-                    assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['SEQ_TECH'])\
+                    assert set(world_dfs[completeness][reference][
+                                   world_dfs[completeness][reference]['COUNTRY'] == country]['SEQ_TECH'])\
                            == DbProperties.seq_techs_cds_per_country[country][completeness][reference]
 
-                    assert set(world_dfs[completeness][reference][world_dfs[completeness][reference]['COUNTRY'] == country]['element.symbol']) \
+                    assert set(world_dfs[completeness][reference][
+                                   world_dfs[completeness][reference]['COUNTRY'] == country]['element.symbol']) \
                            == DbProperties.genes_per_country[country][completeness][reference]
                     samples = set([item for sublist in [
                         x.split(',')

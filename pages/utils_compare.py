@@ -2,7 +2,7 @@ import datetime
 
 import pandas as pd
 
-from pages.utils_filters import select_propertyView_dfs
+from pages.utils_filters import select_propertyView_dfs, get_frequency_sorted_mutation_by_df
 from pages.utils_filters import select_variantView_dfs
 from pages.utils_worldMap_explorer import DateSlider
 
@@ -17,6 +17,92 @@ overview_column_names = [
     'shared variants of both selections', "# seq left", "# seq right",
     'unique variants for right selection', "# seq right",
 ]
+
+def set_difference(set1, set2):
+    return set1 - set2
+
+def set_intersection(set1, set2):
+    return set1 & set2
+
+def find_unique_and_shared_variants(
+        df_dict,
+        color_dict,
+        complete_partial_radio,
+        reference_value,
+        aa_nt_radio,
+        gene_value_1,
+        seqtech_value_1,
+        country_value_1,
+        start_date_1,
+        end_date_1,
+        gene_value_2,
+        seqtech_value_2,
+        country_value_2,
+        start_date_2,
+        end_date_2,
+):
+    if aa_nt_radio == "cds":
+        variant_columns = ["gene:variant", "element.symbol"]
+    else:
+        variant_columns = ["variant.label"]
+    variantView_dfs = select_variantView_dfs(df_dict, complete_partial_radio, reference_value,
+                                             aa_nt_radio)
+    propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
+
+    # LEFT OPTIONS
+    df_mutations_1 = create_mutation_dfs_for_comparison(aa_nt_radio,
+                                                        gene_value_1,
+                                                        seqtech_value_1,
+                                                        country_value_1,
+                                                        start_date_1,
+                                                        end_date_1,
+                                                        variantView_dfs,
+                                                        propertyView_dfs,
+                                                        )
+    df_mutations_1 = df_mutations_1[['sample.id'] + variant_columns]
+    # RIGHT OPTIONS
+    df_mutations_2 = create_mutation_dfs_for_comparison(aa_nt_radio,
+                                                        gene_value_2,
+                                                        seqtech_value_2,
+                                                        country_value_2,
+                                                        start_date_2,
+                                                        end_date_2,
+                                                        variantView_dfs,
+                                                        propertyView_dfs,
+                                                        )
+    df_mutations_2 = df_mutations_2[['sample.id'] + variant_columns]
+
+    # DIFFERENCES
+    mut_left = set_difference(set(df_mutations_1[variant_columns[0]]), set(df_mutations_2[variant_columns[0]]))
+    gene_mutations_df_left = df_mutations_1[df_mutations_1[variant_columns[0]].isin(mut_left)]
+    mut_options_left, max_freq_nb_left = get_frequency_sorted_mutation_by_df(
+        gene_mutations_df_left, color_dict, variant_columns, aa_nt_radio
+    )
+    mut_value_left = [v["value"] for v in mut_options_left]
+
+    mut_right = set_difference(set(df_mutations_2[variant_columns[0]]), set(df_mutations_1[variant_columns[0]]))
+    gene_mutations_df_right = df_mutations_2[df_mutations_2[variant_columns[0]].isin(mut_right)]
+    mut_options_right, max_freq_nb_right = get_frequency_sorted_mutation_by_df(
+        gene_mutations_df_right, color_dict, variant_columns, aa_nt_radio
+    )
+    mut_value_right = [v["value"] for v in mut_options_right]
+
+    mut_both = set_intersection(set(df_mutations_2[variant_columns[0]]), set(df_mutations_1[variant_columns[0]]))
+    gene_mutations_df_both = pd.concat(
+        [
+            df_mutations_1[df_mutations_1[variant_columns[0]].isin(mut_both)],
+            df_mutations_2[df_mutations_2[variant_columns[0]].isin(mut_both)]
+        ],
+        ignore_index=True, axis=0
+    )
+    mut_options_both, max_freq_nb_both = get_frequency_sorted_mutation_by_df(
+        gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
+    )
+    mut_value_both = [v["value"] for v in mut_options_both]
+    return mut_options_left, mut_options_right, mut_options_both, \
+           mut_value_left, mut_value_right, mut_value_both, \
+           max_freq_nb_left, max_freq_nb_right, max_freq_nb_both
+
 
 
 def merge_df(variantView, propertyView, aa_nt_radio):

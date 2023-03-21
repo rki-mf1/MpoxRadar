@@ -55,15 +55,7 @@ from .utils import get_color_dict
 from .utils_compare import overview_columns, overview_column_names
 
 df_dict = load_all_sql_files()
-dates_in_propertyViews = sorted(
-    list(
-        {i for s in [set(df["COLLECTION_DATE"]) for df in [
-            df_dict["propertyView"]['complete'],
-            df_dict["propertyView"]['partial']
-        ]] for i in s}
-    )
-)
-date_slider = DateSlider(dates_in_propertyViews)
+date_slider = DateSlider(df_dict)
 table_explorer = TableFilter()
 color_dict = get_color_dict(df_dict)
 

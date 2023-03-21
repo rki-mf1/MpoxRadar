@@ -120,26 +120,26 @@ needed_columns = {
 }
 
 
-def get_database_connection():
+def get_database_connection(db_name):
     # DB configuration
     parsed_db_url = urlparse(DB_URL)
     user = parsed_db_url.username
     ip = parsed_db_url.hostname
     pw = parsed_db_url.password
     # port = parsed_db_url.port
-    db_database = parsed_db_url.path.replace("/", "")
-    return create_engine(f"mysql+pymysql://{user}:{pw}@{ip}/{db_database}")
+    return create_engine(f"mysql+pymysql://{user}:{pw}@{ip}/{db_name}")
 
 
 class DataFrameLoader:
-    def __init__(self):
+    def __init__(self, db_name):
+        self.db_name = db_name
         self.tables = tables
         self.needed_columns = needed_columns
         self.column_dtypes = column_dtypes
 
     def load_db_from_sql(self, table_name):
         start = perf_counter()
-        db_connection = get_database_connection()
+        db_connection = get_database_connection(self.db_name)
         # df_dict = {}
         try:
             # we cannot use read_sql_table because it doesn't allow difining dtypes
@@ -248,7 +248,7 @@ class DataFrameLoader:
         return df_dict
 
 
-def create_property_view(df, dummy_date="2021-12-31"):
+def create_property_view(df):
     #  all dates and integer values into value_date column for unstacking
     df["value_text"] = df.apply(
         lambda row: row["value_date"]
@@ -370,7 +370,7 @@ def remove_seq_errors_and_add_gene_var_column(variantViewPartial, reference_id, 
     return df
 
 
-def load_all_sql_files():
+def load_all_sql_files(db_name=None, path_to_cache=None, caching=True):
     """
     to handle big db size: split into multiple tables in processed_df_dict:
     processed_df_dict["propertyView"]["complete" OR "partial"]
@@ -380,19 +380,22 @@ def load_all_sql_files():
     size partial cds = 306693 + 304234 + 312285 = 923.212 (x7)
     size partial source = 2123599 + 2078227 + 2114735 = 6.316.561 (x17)
     """
-    loader = DataFrameLoader()
+    if not db_name:
+        db_name = urlparse(DB_URL).path.replace("/", "")
+    path_to_cache = CACHE_DIR if not path_to_cache else path_to_cache
+    loader = DataFrameLoader(db_name)
 
     # NOTE:
     # TODO automated update of pickle file with new database
     # 1. Using Pickle should only be used on 100% trusted data
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
-    if redis_manager and redis_manager.exists("df_dict"):
+    if redis_manager and redis_manager.exists("df_dict") and caching:
     # if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
-        processed_df_dict = load_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"))
+        processed_df_dict = load_Cpickle(os.path.join(path_to_cache, "df_dict.pickle"))
     else:
         # PROBLEM: query for variantView tooo long.
         print("Load data from database...")
@@ -441,7 +444,6 @@ def load_all_sql_files():
                 processed_df_dict["propertyView"]["partial"])
 
         if redis_manager:
-            print("Create a new cache")
             # NOTE: set pickle cache, however the limitation of redis
             # is.... the tool can store data size up to 512MB
             # 1 sec
@@ -455,8 +457,10 @@ def load_all_sql_files():
 
             # HACK: 2. Using Cpickle only
             # 30 secs, 419 MB
-            write_Cpickle(os.path.join(CACHE_DIR, "df_dict.pickle"), processed_df_dict)
-            redis_manager.set("df_dict", 1, ex=3600 * 23)
+            if caching:
+                print("Create a new cache")
+                write_Cpickle(os.path.join(path_to_cache, "df_dict.pickle"), processed_df_dict)
+                redis_manager.set("df_dict", 1, ex=3600 * 23)
 
             # df_dict["propertyView"].to_pickle(".cache/propertyView.pkl")
             # df_dict["variantView"].to_pickle(".cache/variantView.pkl")

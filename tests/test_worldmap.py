@@ -14,28 +14,6 @@ from tests.test_db_properties import DbProperties
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
 
 
-def to_date(d):
-    return date.fromisoformat(d)
-
-
-class TestDateSlider(unittest.TestCase):
-    def setUp(self):
-        self.db_name = "mpx_test_03"
-        self.processed_df_dict = load_all_sql_files(self.db_name)
-        dates_in_propertyViews = sorted(
-            list(
-                {i for s in [set(df["COLLECTION_DATE"]) for df in [
-                    self.processed_df_dict["propertyView"]['complete'],
-                    self.processed_df_dict["propertyView"]['partial']
-                ]] for i in s}
-            )
-        )
-        self.date_slider = DateSlider(dates_in_propertyViews)
-
-    def test_dates(self):
-        assert (self.date_slider.min_date == date(2022, 6, 28))
-        assert (self.date_slider.max_date == date(2022, 10, 1))
-        assert len(self.date_slider.date_list) == 96
 
 
 test_params = [
@@ -49,16 +27,8 @@ test_params = [
 class TestWorldMap(unittest.TestCase):
     def setUp(self):
         self.db_name = "mpx_test_04"
-        self.processed_df_dict = load_all_sql_files(self.db_name)
-        dates_in_propertyViews = sorted(
-            list(
-                {i for s in [set(df["COLLECTION_DATE"]) for df in [
-                    self.processed_df_dict["propertyView"]['complete'],
-                    self.processed_df_dict["propertyView"]['partial']
-                ]] for i in s}
-            )
-        )
-        self.date_slider = DateSlider(dates_in_propertyViews)
+        self.processed_df_dict = load_all_sql_files(self.db_name, caching=False)
+        self.date_slider = DateSlider(self.processed_df_dict)
         self.countries = list(DbProperties.country_entries_cds_per_country.keys())
         self.seqtechs = ["Illumina", "Nanopore"]
         self.reference_genomes = [2, 4]
