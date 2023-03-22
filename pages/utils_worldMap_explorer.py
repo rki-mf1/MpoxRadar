@@ -1,183 +1,12 @@
+import math
+import time
+import pandas as pd
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
-import math
-import time
-
-import pandas as pd
 from plotly import graph_objects as go
 import plotly.express as px
 from scipy.stats import linregress
-
-from pages.utils_filters import select_propertyView_dfs
-from pages.utils_filters import select_variantView_dfs
-
-
-# table results for filter
-class TableFilter(object):
-    """
-    returns df for table output: sample.name, COLLECTION_DATE, RELEASE_DATE, ISOLATE, LENGTH, SEQ_TECH, COUNTRY,
-    GEO_LOCATION, HOST, REFERENCE_ACCESSION, NUC_PROFILE, AA_PROFILE
-    for samples matching filter options, all nucleotide and aminoacid variants are returned
-    """
-
-    def __init__(self):
-        """
-        """
-        # TODO length column unfilled
-        super(TableFilter, self).__init__()
-        self.table_columns = [
-            "sample.name",
-            "NUC_PROFILE",
-            "AA_PROFILE",
-            "IMPORTED",
-            "COLLECTION_DATE",
-            "RELEASE_DATE",
-            "ISOLATE",
-            "LENGTH",
-            "SEQ_TECH",
-            "COUNTRY",
-            "GEO_LOCATION",
-            "HOST",
-            "GENOME_COMPLETENESS",
-            "reference.accession",
-        ]
-
-    def _get_filtered_samples(
-            self,
-            propertyView_dfs,
-            variantView_dfs,
-            seq_tech_list,
-            dates,
-            countries,
-            mut_value,
-    ):
-        sample_set = set()
-        for i, df in enumerate(variantView_dfs):
-            samples = set(propertyView_dfs[i][
-                              propertyView_dfs[i]["COLLECTION_DATE"].isin(dates)
-                              & propertyView_dfs[i]["SEQ_TECH"].isin(seq_tech_list)
-                              & propertyView_dfs[i]["COUNTRY"].isin(countries)
-                              ]["sample.id"])
-            sample_set = sample_set.union(
-                set(
-                    df[
-                        df["sample.id"].isin(samples)
-                        & df["gene:variant"].isin(mut_value)
-                        ]["sample.id"]
-                )
-            )
-        return sample_set
-
-    def _merge_variantView_with_propertyView(self, variantView, propertyView):
-        return pd.merge(
-            variantView, propertyView,
-            how="left",
-            on=["sample.id", "sample.name"]
-        )
-
-    def combine_labels_by_sample(self, df, aa_nt):
-        if aa_nt == "cds":
-            cols = [
-                "reference.id",
-                "reference.accession",
-                "sample.name",
-                "sample.id",
-                "gene:variant",
-            ]
-            df = df[cols]
-            df = (
-                df.groupby(
-                    cols[0:-1],
-                    dropna=False,
-                    group_keys=True
-                )["gene:variant"]
-                    .apply(lambda x: ",".join([str(y) for y in set(x)]))
-                    .reset_index()
-                    .rename(columns={"gene:variant": "AA_PROFILE"})
-            )
-
-        elif aa_nt == "source":
-            cols = [
-                "reference.id",
-                "reference.accession",
-                "sample.name",
-                "sample.id",
-                "variant.label",
-            ]
-            df = df[cols]
-            df = (
-                df.groupby(
-                    cols[0:-1],
-                    dropna=False,
-                    group_keys=True
-                )["variant.label"]
-                    .apply(lambda x: ",".join([str(y) for y in set(x)]))
-                    .reset_index()
-                    .rename(columns={"variant.label": "NUC_PROFILE"})
-            )
-        return df
-
-    def get_filtered_table(
-            self,
-            df_dict,
-            complete_partial_radio,
-            mutation_list,
-            seq_tech_list,
-            reference_id,
-            dates,
-            countries,
-    ):
-        """
-        param df_dict: all pre-processed pandas df
-        param complete_partial_radio: complete OR partial (= using complete AND partial dfs)
-        param mutation_list: mutations of style "gene:variant" (user selected)
-        param seq_tech_list: seq tech list of filter, type list of str
-        param reference_id: int
-        param dates: list of dates (date slider chosen date + interval)
-        param countries: country list of filter, type list of str
-        """
-        variantView_dfs_cds = select_variantView_dfs(
-            df_dict, complete_partial_radio, reference_id, 'cds'
-        )
-        variantView_dfs_source = select_variantView_dfs(
-            df_dict, complete_partial_radio, reference_id, 'source'
-        )
-        propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
-        samples = self._get_filtered_samples(
-            propertyView_dfs,
-            variantView_dfs_cds,
-            seq_tech_list,
-            dates,
-            countries,
-            mutation_list,
-        )
-        variantView_dfs_cds = [variantView[variantView["sample.id"].isin(samples)]
-                               for variantView in variantView_dfs_cds]
-        variantView_dfs_source = [variantView[variantView["sample.id"].isin(samples)]
-                                  for variantView in variantView_dfs_source]
-        table_dfs_cds = []
-        for variantView in variantView_dfs_cds:
-            result_df = self.combine_labels_by_sample(variantView, 'cds')
-            table_dfs_cds.append(result_df)
-        table_df_cds = pd.concat(table_dfs_cds, ignore_index=True, axis=0)
-        table_dfs_source = []
-        for variantView in variantView_dfs_source:
-            result_df = self.combine_labels_by_sample(variantView, 'source')
-            table_dfs_source.append(result_df)
-        table_df_source = pd.concat(table_dfs_source, ignore_index=True, axis=0)
-        df = pd.merge(table_df_cds, table_df_source,
-                      how="outer",
-                      on=['sample.id', 'sample.name', 'reference.accession', "reference.id"])
-        propertyView_df = pd.concat(propertyView_dfs, ignore_index=True, axis=0)
-        df = self._merge_variantView_with_propertyView(df, propertyView_df)
-        df = df[self.table_columns]
-        if df.empty:
-            df = pd.DataFrame(
-                columns=self.table_columns
-            )
-        df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
-        return df
 
 
 class VariantMapAndPlots(object):
@@ -275,7 +104,6 @@ class VariantMapAndPlots(object):
         interval days)
         """
         location_name = clicked_country
-        print(location_name)
         number_selected_sequences = 0
         seq_with_mut = 0
         if self.countries:
@@ -288,7 +116,6 @@ class VariantMapAndPlots(object):
         else:
             countries_to_check_for_seq = [location_name]
 
-        print(countries_to_check_for_seq)
         for country in countries_to_check_for_seq:
             number_selected_sequences, seq_with_mut = self.get_nb_filtered_seq(
                 [country],

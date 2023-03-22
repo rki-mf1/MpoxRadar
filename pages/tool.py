@@ -44,7 +44,7 @@ from pages.utils_filters import get_all_references
 from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
 from pages.utils_worldMap_explorer import DateSlider
-from pages.utils_worldMap_explorer import TableFilter
+from pages.utils_tables import TableFilter, OverviewTable
 from .app_controller import get_freq_mutation
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
@@ -52,11 +52,10 @@ from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
-from .utils_compare import overview_columns, overview_column_names
+
 
 df_dict = load_all_sql_files()
 date_slider = DateSlider(df_dict)
-table_explorer = TableFilter()
 color_dict = get_color_dict(df_dict)
 
 # initialize explore tool
@@ -100,9 +99,8 @@ nb_shown_options = len(start_colored_mutation_options_dict) if len(start_colored
                                                                < start_cond_len_shown_mut else start_cond_len_shown_mut
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
-compare_columns = TableFilter().table_columns
-compare_columns.remove("NUC_PROFILE")
-
+compare_columns = TableFilter('compare', []).table_columns
+explore_columns = TableFilter('explorer', []).table_columns
 
 tab_explored_tool = html.Div(
     [
@@ -176,7 +174,7 @@ tab_explored_tool = html.Div(
                 ),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
-                html.Div(html_table(pd.DataFrame(columns=TableFilter().table_columns),
+                html.Div(html_table(pd.DataFrame(columns=explore_columns),
                                     "Properties of filtered samples.", 'explorer')),
             ],
             id="div_elem_standard",
@@ -319,8 +317,8 @@ tab_compare_tool = (
                     ),
                     dbc.Row(
                         overview_table(
-                            pd.DataFrame(columns=overview_columns),
-                            overview_column_names,
+                            pd.DataFrame(columns=OverviewTable.table_columns),
+                            OverviewTable.column_names,
                             title="Overview Table",
                             tool="compare_0"
                                     ),

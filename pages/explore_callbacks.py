@@ -8,11 +8,9 @@ from pages.utils_filters import actualize_filters
 from pages.utils_filters import get_frequency_sorted_mutation_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import VariantMapAndPlots
-from pages.utils_worldMap_explorer import TableFilter
+from pages.utils_tables import TableFilter
 
 
-
-# This is the EXPLORE TOOL PART
 def get_explore_callbacks(  # noqa: C901
         df_dict, date_slider, color_dict, location_coordinates
 ):
@@ -475,11 +473,10 @@ def get_explore_callbacks(  # noqa: C901
         if reference_id is None:
             reference_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
 
-        table_explorer = TableFilter()
-        table_df = table_explorer.get_filtered_table(
+        table_explorer = TableFilter('explorer', mutation_list)
+        table_df = table_explorer.create_explore_table(
             df_dict,
             complete_partial_radio,
-            mutation_list,
             seq_tech_list,
             reference_id,
             date_list,
