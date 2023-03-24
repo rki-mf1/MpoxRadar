@@ -322,6 +322,13 @@ class OverviewTable:
         df = pd.DataFrame.from_records(mut_options, columns=['value', 'freq'])
         return df[df['value'].isin(mut_values)]
 
+    def create_df_from_json(self, variantView_df_both_json, mut_value_both):
+        df_both = pd.read_json(variantView_df_both_json, orient='split')
+        df_both = df_both[df_both[self.single_table_cols[0]]
+            .isin(mut_value_both)] \
+            .reset_index(drop=True)
+        return df_both
+
     def create_overview_table(self, df_left, df_both, df_right):
         table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
         table_df.columns = self.table_columns

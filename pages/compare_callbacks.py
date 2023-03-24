@@ -280,11 +280,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         overviewTable = OverviewTable(aa_nt_radio)
         df_left = overviewTable.create_df_from_mutation_options(mut_options_left, mut_value_left)
         df_right = overviewTable.create_df_from_mutation_options(mut_options_right, mut_value_right)
-
-        df_both = pd.read_json(variantView_df_both_json, orient='split')
-        df_both = df_both[df_both[overviewTable.single_table_cols[0]].isin(mut_value_both)]
-        # df_both = overviewTable.create_df_from_mutation_options(mut_options_both, mut_value_both)
-
+        df_both = overviewTable.create_df_from_json(variantView_df_both_json, mut_value_both)
         table_df_records, column_names = overviewTable.create_overview_table(df_left, df_both, df_right)
 
         return (

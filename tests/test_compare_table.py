@@ -9,6 +9,7 @@ from data import load_all_sql_files
 from pages.utils import get_color_dict
 from pages.utils_compare import create_comparison_tables
 from pages.utils_compare import find_unique_and_shared_variants
+from pages.utils_tables import OverviewTable
 from tests.test_db_properties import DbProperties
 
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
@@ -26,9 +27,9 @@ correct_result_dict = {'cds': {
                        'value': 'OPG113:D723G', 'freq': 2}],
     "mut_opt_both": [{'label': Span(children='OPG193:L263F', style={'color': '#750D86'}),
                       'value': 'OPG193:L263F', 'freq': 229}],
-    "seq_tech_left":  ['Illumina'],
-    "seq_tech_right":  ['Nanopore'],
-    "seq_tech_both":  ['Illumina', 'Nanopore'],
+    "seq_tech_left": ['Illumina'],
+    "seq_tech_right": ['Nanopore'],
+    "seq_tech_both": ['Illumina', 'Nanopore'],
     "max_freq_nb_left": 1,
     "max_freq_nb_right": 3,
     "max_freq_nb_both": 0,
@@ -38,8 +39,19 @@ correct_result_dict = {'cds': {
     "len_table_left": 1,
     "len_table_right": 5,
     "len_table_both": 229,
-    "variantView_df_both": pd.DataFrame([["OPG193:L263F", 204, 25]],
-                                        columns=["gene:variant", "freq l", "freq r"]),
+    "variantView_df_both": pd.DataFrame([["OPG193:L263F", 204, 25]], columns=["gene:variant", "freq l", "freq r"]),
+
+    "variantView_df_both_json": '{"columns":["gene:variant","freq l","freq r"],"index":[0],"data":[["OPG193:L263F",204,25]]}',
+    "table_df_records": [
+        {'unique left': 'OPG151:L263F', '# left': 1.0, 'shared': 'OPG193:L263F', '# l': 204.0, '# r': 25.0,
+         'unique right': 'OPG193:A233G', '# right': 3},
+        {'unique left': float('nan'), '# left': float('nan'), 'shared': float('nan'), '# l': float('nan'), '# r': float('nan'), 'unique right': 'OPG113:D723G',
+         '# right': 2}],
+
+    "overview_left": pd.DataFrame([['OPG151:L263F', 1]], columns=['value', 'freq']),
+    "overview_right": pd.DataFrame([['OPG193:A233G', 3], ['OPG113:D723G', 2]], columns=['value', 'freq']),
+    "overview_both": pd.DataFrame([['OPG193:L263F', 204, 25]], columns=['gene:variant', 'freq l', 'freq r']),
+
 },
     'source': {
         "correct_cols": ["sample.name", "NUC_PROFILE", "IMPORTED", "COLLECTION_DATE", "RELEASE_DATE", "ISOLATE",
@@ -53,9 +65,9 @@ correct_result_dict = {'cds': {
                          {'label': 'G173318A', 'value': 'G173318A', 'freq': 1}],
         "mut_opt_right": [{'label': 'del:150586-150602', 'value': 'del:150586-150602', 'freq': 25}],
         "mut_opt_both": [],
-        "seq_tech_left":  ['Illumina'],
-        "seq_tech_right":  ['Nanopore'],
-        "seq_tech_both":  [],
+        "seq_tech_left": ['Illumina'],
+        "seq_tech_right": ['Nanopore'],
+        "seq_tech_both": [],
         "max_freq_nb_left": 37,
         "max_freq_nb_right": 25,
         "max_freq_nb_both": 0,
@@ -65,7 +77,27 @@ correct_result_dict = {'cds': {
         "len_table_left": 53,
         "len_table_right": 25,
         "len_table_both": 0,
-        "variantView_df_both": pd.DataFrame(columns=["variant.label", "freq l", "freq r"], index=pd.RangeIndex(0, 0, 1))
+        "variantView_df_both": pd.DataFrame(columns=["variant.label", "freq l", "freq r"],
+                                            index=pd.RangeIndex(0, 0, 1)),
+        "variantView_df_both_json": '{"columns":["variant.label","freq l","freq r"],"index":[],"data":[]}',
+        "table_df_records": [{'unique left': 'G74360A', '# left': 37, 'shared': float('nan'), '# l': float('nan'), '# r': float('nan'),
+                              'unique right': 'del:150586-150602', '# right': 25.0},
+                             {'unique left': 'C70780T', '# left': 12, 'shared': float('nan'), '# l': float('nan'), '# r': float('nan'),
+                              'unique right': float('nan'), '# right': float('nan')},
+                             {'unique left': 'G8020A', '# left': 2, 'shared': float('nan'), '# l': float('nan'), '# r': float('nan'),
+                              'unique right': float('nan'), '# right': float('nan')},
+                             {'unique left': 'C11343A', '# left': 1, 'shared': float('nan'), '# l': float('nan'), '# r': float('nan'),
+                              'unique right': float('nan'), '# right': float('nan')},
+                             {'unique left': 'G173318A', '# left': 1, 'shared': float('nan'), '# l': float('nan'), '# r': float('nan'),
+                              'unique right': float('nan'), '# right': float('nan')}],
+        "overview_left": pd.DataFrame([['G74360A', 37],
+                                       ['C70780T', 12],
+                                       ['G8020A', 2],
+                                       ['C11343A', 1],
+                                       ['G173318A', 1]], columns=['value', 'freq']),
+        "overview_right": pd.DataFrame([['del:150586-150602', 25]], columns=['value', 'freq']),
+        "overview_both": pd.DataFrame(columns=['variant.label', 'freq l', 'freq r'],
+                                       index=pd.RangeIndex(0, 0, 1)),
     }
 }
 
@@ -185,20 +217,56 @@ class TestCompareTable(unittest.TestCase):
             assert df.empty
             self.assertListEqual(list(df.columns), correct_result_dict[aa_nt]["correct_cols"])
         assert variantView_df_both.empty
-        self.assertListEqual(list(variantView_df_both.columns), correct_result_dict[aa_nt]["correct_cols_overview_variant"])
+        self.assertListEqual(list(variantView_df_both.columns),
+                             correct_result_dict[aa_nt]["correct_cols_overview_variant"])
 
 
 class TestOverviewTable(unittest.TestCase):
     def setUp(self):
-        self.db_name = "mpx_test_04"
-        self.processed_df_dict = load_all_sql_files(self.db_name, caching=False)
-        self.countries = DbProperties.country_entries_cds_per_country.keys()
-        self.color_dict = get_color_dict(self.processed_df_dict)
-        self.genes_left = ['OPG193', 'OPG151']
-        self.seq_tech_left = ['Illumina']
-        self.genes_right = ['OPG106', 'OPG193', 'OPG113']
-        self.seq_tech_right = ['Nanopore']
-        self.completeness = "partial"
-        self.reference = 2
-        self.start_date = "2022-6-28"
-        self.end_date = "2022-10-28"
+        self.column_names_overview = [{'name': 'unique variants for left selection', 'id': 'unique left'},
+                                      {'name': '# seq left', 'id': '# left'},
+                                      {'name': 'shared variants of both selections', 'id': 'shared'},
+                                      {'name': '# seq left', 'id': '# l'},
+                                      {'name': '# seq right', 'id': '# r'},
+                                      {'name': 'unique variants for right selection', 'id': 'unique right'},
+                                      {'name': '# seq right', 'id': '# right'}]
+
+    @parameterized.expand(test_params)
+    def test_create_df_from_mutation_options(self, aa_nt):
+        overviewTable = OverviewTable(aa_nt)
+        df_left = overviewTable.create_df_from_mutation_options(correct_result_dict[aa_nt]["mut_opt_left"],
+                                                                correct_result_dict[aa_nt]["mut_value_left"], )
+        df_right = overviewTable.create_df_from_mutation_options(correct_result_dict[aa_nt]["mut_opt_right"],
+                                                                 correct_result_dict[aa_nt]["mut_value_right"], )
+        assert_frame_equal(df_left, correct_result_dict[aa_nt]["overview_left"])
+        assert_frame_equal(df_right, correct_result_dict[aa_nt]["overview_right"])
+
+    @parameterized.expand(test_params)
+    def test_create_df_from_json(self, aa_nt):
+        overviewTable = OverviewTable(aa_nt)
+        df_both = overviewTable.create_df_from_json(
+            correct_result_dict[aa_nt]["variantView_df_both_json"],
+            correct_result_dict[aa_nt]["mut_value_both"]
+        )
+        assert_frame_equal(df_both, correct_result_dict[aa_nt]["overview_both"], check_dtype=False)
+
+    @parameterized.expand(test_params)
+    def test_create_overview_table(self, aa_nt):
+        overviewTable = OverviewTable(aa_nt)
+        df_left = overviewTable.create_df_from_mutation_options(correct_result_dict[aa_nt]["mut_opt_left"],
+                                                                correct_result_dict[aa_nt]["mut_value_left"], )
+        df_right = overviewTable.create_df_from_mutation_options(correct_result_dict[aa_nt]["mut_opt_right"],
+                                                                 correct_result_dict[aa_nt]["mut_value_right"], )
+
+        df_both = overviewTable.create_df_from_json(
+            correct_result_dict[aa_nt]["variantView_df_both_json"],
+            correct_result_dict[aa_nt]["mut_value_both"]
+        )
+        table_df_records, column_names = overviewTable.create_overview_table(df_left, df_both, df_right)
+        for i, d in enumerate(correct_result_dict[aa_nt]["table_df_records"]):
+            for key in d.keys():
+                if pd.isna(d[key]):
+                    assert pd.isna(table_df_records[i][key])
+                else:
+                    assert d[key] == table_df_records[i][key]
+        self.assertListEqual(column_names, self.column_names_overview)
