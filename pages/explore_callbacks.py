@@ -56,7 +56,7 @@ def get_explore_callbacks(  # noqa: C901
             max_select = len(mut_options)
 
         else:
-            mut_options, max_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
+            mut_options, max_nb_freq, min_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
                 df_dict,
                 seqtech_value,
                 country_value,
@@ -72,10 +72,6 @@ def get_explore_callbacks(  # noqa: C901
             else:
                 select_x_mut = 20
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
-            if min_nb_freq > max_nb_freq:
-                min_nb_freq = max_nb_freq
-            if min_nb_freq == 0 and max_nb_freq > 0:
-                min_nb_freq = 1
             text_freq = f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
         text_nb_mut = (
             f"Select n-th most frequent variants. Number variants matching filters: {len(mut_options)}"

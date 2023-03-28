@@ -196,14 +196,14 @@ def get_frequency_sorted_cds_mutation_by_filters(
         )
         merged_df = pd.concat([merged_df, merged_df_2], ignore_index=True, axis=0)
 
-    sorted_mutation_options, max_nb_freq = get_frequency_sorted_mutation_by_df(
+    sorted_mutation_options, max_nb_freq, min_nb_freq = get_frequency_sorted_mutation_by_df(
         merged_df,
         color_dict,
         ["gene:variant", "element.symbol"],
         "cds",
         min_nb_freq
     )
-    return sorted_mutation_options, max_nb_freq
+    return sorted_mutation_options, max_nb_freq, min_nb_freq
 
 
 def get_frequency_sorted_mutation_by_df(df, color_dict, variant_columns, mut_type, min_nb_freq=None):
@@ -217,6 +217,10 @@ def get_frequency_sorted_mutation_by_df(df, color_dict, variant_columns, mut_typ
     if not df.empty:
         max_freq_nb = df.iloc[0, -1]
         if min_nb_freq:
+            if min_nb_freq > max_freq_nb:
+                min_nb_freq = max_freq_nb
+            if min_nb_freq == 0 and max_freq_nb > 0:
+                min_nb_freq = 1
             df = df[df["count"] >= min_nb_freq]
     else:
         max_freq_nb = 0
@@ -248,7 +252,7 @@ def get_frequency_sorted_mutation_by_df(df, color_dict, variant_columns, mut_typ
             )
         ]
 
-    return sorted_mutation_options, max_freq_nb
+    return sorted_mutation_options, max_freq_nb, min_nb_freq
 
 
 def get_sample_and_seqtech_df(variantView, propertyView, aa_nt_radio, gene_value, min_date=None):

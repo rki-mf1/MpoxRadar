@@ -93,14 +93,14 @@ def find_unique_and_shared_variants(
     # DIFFERENCES
     mut_left = set_difference(set(df_mutations_1[variant_columns[0]]), set(df_mutations_2[variant_columns[0]]))
     gene_mutations_df_left = df_mutations_1[df_mutations_1[variant_columns[0]].isin(mut_left)]
-    mut_options_left, max_freq_nb_left = get_frequency_sorted_mutation_by_df(
+    mut_options_left, max_freq_nb_left, min_nb_freq = get_frequency_sorted_mutation_by_df(
         gene_mutations_df_left, color_dict, variant_columns, aa_nt_radio
     )
     mut_value_left = [v["value"] for v in mut_options_left]
 
     mut_right = set_difference(set(df_mutations_2[variant_columns[0]]), set(df_mutations_1[variant_columns[0]]))
     gene_mutations_df_right = df_mutations_2[df_mutations_2[variant_columns[0]].isin(mut_right)]
-    mut_options_right, max_freq_nb_right = get_frequency_sorted_mutation_by_df(
+    mut_options_right, max_freq_nb_right, min_nb_freq = get_frequency_sorted_mutation_by_df(
         gene_mutations_df_right, color_dict, variant_columns, aa_nt_radio
     )
     mut_value_right = [v["value"] for v in mut_options_right]
@@ -113,7 +113,7 @@ def find_unique_and_shared_variants(
         ],
         ignore_index=True, axis=0
     )
-    mut_options_both, max_freq_nb_both = get_frequency_sorted_mutation_by_df(
+    mut_options_both, max_freq_nb_both, min_nb_freq = get_frequency_sorted_mutation_by_df(
         gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
     )
     mut_value_both = [v["value"] for v in mut_options_both]

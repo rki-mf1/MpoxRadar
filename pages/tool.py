@@ -85,7 +85,7 @@ start_country_options = get_all_frequency_sorted_countries_by_filters(df_dict,
                                                                       start_cond_aa_nt)
 
 start_country_value = [i["value"] for i in start_country_options]
-start_colored_mutation_options_dict, max_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
+start_colored_mutation_options_dict, max_nb_freq, min_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
     df_dict,
     start_seq_tech_values,
     start_country_value,
