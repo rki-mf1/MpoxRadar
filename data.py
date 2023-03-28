@@ -28,7 +28,7 @@ column_dtypes = {
         "sample.id": intType,  # needed
         "sample.name": stringType,  # needed
         "property.id": intType,
-        "property.name": stringType,  # needed
+        "property.name": stringType,  # needed COUNTRY, IMPORTED, COLLECTION_DATE , RELEASE_DATE , ISOLATE, LENGTH, SEQ_TECH, COUNTRY , GEO_LOCATION, HOST, GENOME_COMPLETENESS
         "propery.querytype": stringType,
         "property.datatype": stringType,
         "property.standard": stringType,  # ---- this one is always NULL

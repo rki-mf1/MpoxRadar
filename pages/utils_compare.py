@@ -131,6 +131,9 @@ def create_mutation_dfs_for_comparison(aa_nt_radio,
                                        variantView_dfs,
                                        propertyView_dfs,
                                        ):
+    """
+    return merged variantView and propertyView filtered for seqtech, country, dates, genes
+    """
     if aa_nt_radio == 'cds':
         variantView_dfs = [df[df["element.symbol"].isin(gene_value)] for df in variantView_dfs]
 

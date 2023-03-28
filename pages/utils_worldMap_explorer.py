@@ -571,7 +571,6 @@ class DateSlider:
         """
         param dates: propertyView["COLLECTION_DATE"], type 'datetime.date' (YYYY, M, D)
         """
-        # TODO min date = 1978, max 2202-07-01
         dates_in_propertyViews = sorted(
             list(
                 {i for s in [set(df["COLLECTION_DATE"]) for df in [
@@ -580,6 +579,7 @@ class DateSlider:
                 ]] for i in s}
             )
         )
+        # TODO hard coded min date
         defined_min_date = datetime.strptime("2022-01-01", "%Y-%m-%d").date()  # min(dates)
         if min(dates_in_propertyViews) < defined_min_date:
             self.min_date = defined_min_date

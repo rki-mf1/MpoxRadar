@@ -5,7 +5,7 @@ from dash import Output
 from dash import State
 
 from pages.utils_filters import actualize_filters
-from pages.utils_filters import get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_cds_mutation_by_filters
 from pages.utils_worldMap_explorer import DateSlider
 from pages.utils_worldMap_explorer import VariantMapAndPlots
 from pages.utils_tables import TableFilter
@@ -56,7 +56,7 @@ def get_explore_callbacks(  # noqa: C901
             max_select = len(mut_options)
 
         else:
-            mut_options, max_nb_freq = get_frequency_sorted_mutation_by_filters(
+            mut_options, max_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
                 df_dict,
                 seqtech_value,
                 country_value,
@@ -142,7 +142,7 @@ def get_explore_callbacks(  # noqa: C901
             gene_value,
             country_value,
             seq_tech_value,
-            min_date="2022-01-01"
+            str(date_slider.min_date)
         )
 
     # update map by change of filters or moving slider
