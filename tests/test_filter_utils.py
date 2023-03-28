@@ -389,7 +389,7 @@ class TestFilterUtils(unittest.TestCase):
                     {'label': Span(children='OPG151:Q436P', style={'color': '#222A2A'}), 'value': 'OPG151:Q436P', 'freq': 7}],
                 'freq': 13},
         }
-        sorted_mutation_options, max_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
+        sorted_mutation_options, max_nb_freq, min_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
             self.processed_df_dict,
             ['Illumina', 'Nanopore'],
             ['USA', 'Germany'],
@@ -404,7 +404,7 @@ class TestFilterUtils(unittest.TestCase):
             assert option['value'] == correct_df_dict[complete_partial_radio]['options'][i]['value']
             assert option['freq'] == correct_df_dict[complete_partial_radio]['options'][i]['freq']
 
-        sorted_mutation_options_2, max_nb_freq_2 = get_frequency_sorted_cds_mutation_by_filters(
+        sorted_mutation_options_2, max_nb_freq_2, min_nb_freq  = get_frequency_sorted_cds_mutation_by_filters(
             self.processed_df_dict,
             ['Illumina', 'Nanopore'],
             ['USA', 'Germany'],
@@ -450,7 +450,7 @@ class TestFilterUtils(unittest.TestCase):
             self.processed_df_dict['variantView']['complete'][2][mut_type],
             how="inner",
             on="sample.id")
-        sorted_mutation_options, max_freq_nb = get_frequency_sorted_mutation_by_df(
+        sorted_mutation_options, max_freq_nb, min_nb_freq = get_frequency_sorted_mutation_by_df(
             merged_df,
             self.color_dict,
             variant_columns,
