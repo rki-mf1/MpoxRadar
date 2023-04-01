@@ -124,22 +124,6 @@ class DBManager(object):
         self.cursor.close()
         self.connection.close()
 
-    @property
-    def references(self):
-        """
-        return all references
-
-        """
-        if self.__references == {}:
-            sql = "SELECT `id`, `accession`, `description`, `organism` FROM reference;"
-            self.cursor.execute(sql)
-            rows = self.cursor.fetchall()
-            if rows:
-                self.__references = rows
-            else:
-                self.__references = {}
-        return self.__references
-
     def get_all_SeqTech(self):
         sql = "SELECT DISTINCT(value_text) FROM propertyView WHERE `property.name` = 'SEQ_TECH' ORDER BY value_text;"
         self.cursor.execute(sql)
@@ -239,3 +223,78 @@ class DBManager(object):
         self.cursor.execute(sql)
         _rows = self.cursor.fetchall()
         return _rows
+
+    def get_mutation_signature(self):
+
+        sql = (
+            "SELECT  COUNT(`sample.name`) as count, "
+            "`reference.accession`, `variant.ref`, `variant.alt`, "
+            "`variant.start`, `variant.end` "
+            "FROM  variantView "
+            "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'G') "
+            "GROUP BY  `reference.accession`, `variant.ref`, `variant.alt` ;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def get_raw_mutation_signature(self):
+
+        sql = (
+            "SELECT  "
+            "`reference.accession`, `variant.ref`, `variant.alt`, "
+            "`variant.start`, `variant.end` "
+            "FROM  variantView "
+            "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'G');"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def count_unique_NT_Mut_Ref(self):
+        """
+        Count total mutations of NT for each reference.
+        """
+        sql = (
+            "SELECT `reference.accession`,  COUNT(`variant.label`) AS Freq "
+            "FROM   variantView "
+            "WHERE `element.type` != 'cds' AND `variant.alt` != 'N' "
+            "GROUP BY `reference.accession` "
+            "ORDER BY Freq DESC; "
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    @property
+    def references(self):
+        """
+        return all references
+
+        """
+        if self.__references == {}:
+            sql = (
+                "SELECT reference.`id`, reference.`accession`, "
+                "element.sequence "
+                "FROM reference "
+                "JOIN element "
+                "ON reference.accession = element.accession "
+                "AND element.type = 'source'; "
+            )
+            self.cursor.execute(sql)
+            rows = self.cursor.fetchall()
+            if rows:
+                self.__references = rows
+            else:
+                self.__references = {}
+        return self.__references

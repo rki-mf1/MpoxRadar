@@ -9,6 +9,7 @@ import pandas as pd
 
 from pages.config import DB_URL
 from pages.DBManager import DBManager
+from pages.utils import generate_96_mutation_types
 from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
 from .libs.mpxsonar.src.mpxsonar.dbm import sonarDBManager
 
@@ -336,3 +337,100 @@ def count_unique_MutRef():
     last_dict = list_dict[-1]
     return_string = f"{last_dict['max_each_ref']} - {first_dict['max_each_ref']}"
     return return_string
+
+
+# NOTE: we can move to prebuild cache step.
+def calculate_tri_mutation_sig():
+    with DBManager() as dbm:
+        data_ = dbm.get_raw_mutation_signature()
+        total_ = dbm.count_unique_NT_Mut_Ref()
+        all_references_dict = {x["accession"]: x["sequence"] for x in dbm.references}
+    final_dict = {}
+    # calculate freq.
+    for mutation in data_:
+        accession = mutation["reference.accession"]
+
+        if accession not in final_dict:
+            final_dict[accession] = generate_96_mutation_types()
+
+        ref = mutation["variant.ref"]
+        alt = mutation["variant.alt"]
+        mutation_pos_before = mutation["variant.start"] - 1
+        mutation_pos_after = mutation["variant.start"] + 1
+
+        # get NT from position.
+        ref_seq = all_references_dict[accession]
+        try:
+            nt_before = ref_seq[mutation_pos_before]
+            nt_after = ref_seq[mutation_pos_after]
+        except IndexError:
+            print(mutation)
+            print(
+                "IndexError:",
+                nt_before,
+                mutation_pos_before,
+                nt_after,
+                mutation_pos_after,
+            )
+            continue
+        mutation_type = f"{ref}>{alt}"
+        _type = f"{nt_before}{ref}>{alt}{nt_after}"
+
+        try:
+            final_dict[accession][mutation_type][_type] += 1
+        except KeyError:
+            print("mutation_type:", mutation_type)
+            print("_type:", _type)
+            print("final_dict ->", final_dict[accession][mutation_type][_type])
+            raise
+    # normalize the total number of mutations for each reference accession
+    total_mutations = {x["reference.accession"]: x["Freq"] for x in total_}
+    # Calculate the mutation signature for each reference accession
+
+    for accession in final_dict:
+        for mutation_type in final_dict[accession]:
+            for _type in final_dict[accession][mutation_type]:
+                count = final_dict[accession][mutation_type][_type]
+                freq = round(count / total_mutations[accession], 6)
+                final_dict[accession][mutation_type][_type] = freq
+
+    return final_dict
+
+
+# NOTE: we can move to prebuild cache step.
+def calculate_mutation_sig():
+    with DBManager() as dbm:
+        data_ = dbm.get_mutation_signature()
+        total_ = dbm.count_unique_NT_Mut_Ref()
+
+    # Define a dictionary to store the mutation counts for each reference accession
+    mutation_counts = {}
+
+    # Loop through the mutation data and increment the appropriate mutation count
+    for mutation in data_:
+        accession = mutation["reference.accession"]
+        ref = mutation["variant.ref"]
+        alt = mutation["variant.alt"]
+        mutation_type = f"{ref}>{alt}"
+
+        if accession not in mutation_counts:
+            mutation_counts[accession] = {}
+        if mutation_type not in mutation_counts[accession]:
+            mutation_counts[accession][mutation_type] = 0
+
+        mutation_counts[accession][mutation_type] += mutation["count"]
+
+    # normalize the total number of mutations for each reference accession
+    total_mutations = {x["reference.accession"]: x["Freq"] for x in total_}
+
+    # Calculate the mutation signature for each reference accession
+    mutation_signature = {}
+    for accession in mutation_counts:
+        signature = {}
+        for mutation_type in mutation_counts[accession]:
+            count = mutation_counts[accession][mutation_type]
+            freq = round(count / total_mutations[accession], 4)
+            signature[mutation_type] = freq
+        mutation_signature[accession] = signature
+    # print(mutation_signature)
+    return mutation_signature
