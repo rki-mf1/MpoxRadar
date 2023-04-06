@@ -12,9 +12,8 @@ from scipy.stats import linregress
 from pages.utils_filters import select_propertyView_dfs
 from pages.utils_filters import select_variantView_dfs
 
+
 # table results for filter
-
-
 class TableFilter(object):
     """
     returns df for table output: sample.name, COLLECTION_DATE, RELEASE_DATE, ISOLATE, LENGTH, SEQ_TECH, COUNTRY,
@@ -30,6 +29,7 @@ class TableFilter(object):
             "sample.name",
             "NUC_PROFILE",
             "AA_PROFILE",
+            "IMPORTED",
             "COLLECTION_DATE",
             "RELEASE_DATE",
             "ISOLATE",
@@ -50,7 +50,6 @@ class TableFilter(object):
         dates,
         countries,
         mut_value,
-        gene_dropdown,
     ):
         sample_set = set()
         for i, df in enumerate(variantView_dfs):
@@ -65,8 +64,7 @@ class TableFilter(object):
                 set(
                     df[
                         df["sample.id"].isin(samples)
-                        & df["variant.label"].isin(mut_value)
-                        & df["element.symbol"].isin(gene_dropdown)
+                        & df["gene:variant"].isin(mut_value)
                     ]["sample.id"]
                 )
             )
@@ -119,7 +117,6 @@ class TableFilter(object):
         seq_tech_list,
         reference_id,
         dates,
-        gene_dropdown,
         countries,
     ):
         variantView_dfs_cds = select_variantView_dfs(
@@ -136,7 +133,6 @@ class TableFilter(object):
             dates,
             countries,
             mutation_list,
-            gene_dropdown,
         )
         variantView_dfs_cds = [
             variantView[variantView["sample.id"].isin(samples)]
@@ -205,16 +201,31 @@ class DfsAndDetailPlot(object):
         else:
             return len(seq_set)
 
-    def filter_df(self, df, mutations, seq_tech_list, dates, countries, genes):
-        # TODO exist ' in mpx too?
-        mutations = [var[1:-1] if "`" in var else var for var in mutations]
-        pd.set_option("display.max_columns", None)
+    def get_nb_filtered_seq(self, seq_tech_list, dates, countries, genes, mutations):
+        samples_1 = set()
+        samples_2 = set()
+        for world_df in self.world_dfs:
+            df = world_df[
+                world_df["COLLECTION_DATE"].isin(dates)
+                & world_df["SEQ_TECH"].isin(seq_tech_list)
+                & world_df["COUNTRY"].isin(countries)
+                & world_df["element.symbol"].isin(genes)
+            ].copy()
+            df.sample_id_list = df.sample_id_list.map(lambda x: x.split(","))
+            df2 = df[df["gene:variant"].isin(mutations)]
+
+            for sample_list in df["sample_id_list"].tolist():
+                samples_1.update(sample_list)
+            for sample_list in df2["sample_id_list"].tolist():
+                samples_2.update(sample_list)
+        return len(samples_1), len(samples_2)
+
+    def filter_df(self, df, mutations, seq_tech_list, dates, countries):
         df = df[
             df["COLLECTION_DATE"].isin(dates)
             & df["SEQ_TECH"].isin(seq_tech_list)
-            & df["variant.label"].isin(mutations)
+            & df["gene:variant"].isin(mutations)
             & df["COUNTRY"].isin(countries)
-            & df["element.symbol"].isin(genes)
         ]
         return df
 
@@ -339,16 +350,14 @@ class DfsAndDetailPlot(object):
         return fig
 
     # plot methods
-    def get_frequency_bar_chart(
-        self, mutations, seqtech_list, dates, location_name, genes
-    ):
+    def get_frequency_bar_chart(self, mutations, seqtech_list, dates, location_name):
         """
         :return fig bar chart showing mutation information of last hovered plz
         """
         if location_name:
             filtered_dfs = [
                 self.filter_df(
-                    world_df, mutations, seqtech_list, dates, [location_name], genes
+                    world_df, mutations, seqtech_list, dates, [location_name]
                 )
                 for world_df in self.world_dfs
             ]
@@ -390,11 +399,11 @@ class DfsAndDetailPlot(object):
         )
         return fig
 
-    def get_slope_bar_plot(self, dates, mutations, seqtech_list, location_name, genes):
+    def get_slope_bar_plot(self, dates, mutations, seqtech_list, location_name):
         if location_name:
             filtered_dfs = [
                 self.filter_df(
-                    world_df, mutations, seqtech_list, dates, [location_name], genes
+                    world_df, mutations, seqtech_list, dates, [location_name]
                 )
                 for world_df in self.world_dfs
             ]
@@ -469,14 +478,13 @@ class DfsAndDetailPlot(object):
         seqtech_list,
         dates,
         location_name,
-        genes,
         axis_type="lin",
     ):
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
         if location_name:
             filtered_dfs = [
                 self.filter_df(
-                    world_df, mutations, seqtech_list, dates, [location_name], genes
+                    world_df, mutations, seqtech_list, dates, [location_name]
                 )
                 for world_df in self.world_dfs
             ]
@@ -526,25 +534,29 @@ class WorldMap(DfsAndDetailPlot):
     def __init__(self, world_dfs, color_dict, location_coordinates):
         """
         creates df for maps and map figures
-
+        param world_dfs: list of dfs, [partial_df] OR  [partial AND complete df]
+                df.columns = COUNTRY,COLLECTION_DATE,SEQ_TECH,sample_id_list,variant.label,number_sequences,element.symbol,gene:variant
+                column types: str, str, datetime.date, str, str, str, int, str, str
+                sample_id_list: comma seperated sample ids e.g. "3,45,67" or "3"
         """
         super(WorldMap, self).__init__(world_dfs, color_dict, location_coordinates)
 
-    def get_world_map_df(
-        self, method, mutations, seq_tech_list, dates, countries, genes
-    ):
+    def get_world_map_df(self, method, mutations, seq_tech_list, dates, countries):
         """
         :param method: 'Frequency' or 'Increase'
-        :param mutations: list of selected voc mutations
+        :param mutations: list of selected voc mutations gene:mut
         :param seq_tech_list: list of selected sequencing technologies
         :param method: 'Frequency' or 'Increase' (from dropdown left menu)
         :param dates: all selected dates in interval (date slider)
         :param countries: list of selected countries
+        return frequency OR increase  df: frequency_df.columns = COUNTRY,number_sequences,ISO_Code
+                                         increase_df.columns = COUNTRY,slope,ISO_Code
+
         """
         if countries is None:
             countries = []
         filtered_dfs = [
-            self.filter_df(world_df, mutations, seq_tech_list, dates, countries, genes)
+            self.filter_df(world_df, mutations, seq_tech_list, dates, countries)
             for world_df in self.world_dfs
         ]
 
@@ -552,7 +564,7 @@ class WorldMap(DfsAndDetailPlot):
             df = pd.concat(filtered_dfs, ignore_index=True, axis=0)
             countries = []
             number_sequences = []
-            for name, group in df.groupby(["COUNTRY"]):
+            for name, group in df.groupby("COUNTRY"):
                 sample_set = {
                     item
                     for sublist in [
@@ -595,7 +607,14 @@ class WorldMap(DfsAndDetailPlot):
             color_continuous_scale=px.colors.sequential.Plasma,
             hover_name="COUNTRY",
             hover_data=shown_hover_data,
-            labels={el: el.replace(".", " ").title() for el in df.columns},
+            labels={
+                el: (
+                    el.replace(".", " ").title()
+                    if el != "number_sequences"
+                    else "number of sequences"
+                )
+                for el in df.columns
+            },
         )
         fig.update_layout(
             margin={"r": 0, "t": 0, "l": 0, "b": 0},
@@ -643,21 +662,20 @@ class WorldMap(DfsAndDetailPlot):
         )
         return fig
 
-    def get_world_map(self, mutations, seq_tech_list, method, dates, countries, genes):
+    def get_world_map(self, mutations, seq_tech_list, method, dates, countries):
         """
-        :param mutations: list of str mutations (from dropdown left menu)
+        :param mutations: list of str mutations (from dropdown left menu) gene:mut
         :param seq_tech_list: list of selected sequencing technologies
         :param method: 'Frequency' or 'Increase' (from dropdown left menu)
         :param dates: all selected dates in interval (date slider)
         :param countries: list of selected countries
-        :param genes: list of selected gene names
         :return fig:
             frequency method: choropleth map with number of sequences with selected properties per country
             increase method: choropleth map showing decrease/increase of mutation with strongest increase in selected interval
                             (zero values = one time point are excluded)
         """
         df, column_of_interest = self.get_world_map_df(
-            method, mutations, seq_tech_list, dates, countries, genes
+            method, mutations, seq_tech_list, dates, countries
         )
         if method == "Frequency":
             shown_hover_data = {

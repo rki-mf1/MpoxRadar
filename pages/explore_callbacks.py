@@ -22,6 +22,8 @@ def get_explore_callbacks(  # noqa: C901
             Output("max_nb_txt_0", "children"),
             Output("select_x_frequent_mut_0", "max"),
             Output("select_x_frequent_mut_0", "value"),
+            Output("select_min_nb_frequent_mut_0", "value"),
+            Output("min_nb_freq_0", "children"),
         ],
         [
             Input("reference_radio_0", "value"),
@@ -30,10 +32,9 @@ def get_explore_callbacks(  # noqa: C901
             Input("country_dropdown_0", "value"),
             Input("select_x_frequent_mut_0", "value"),
             Input("complete_partial_radio_explore", "value"),
+            Input("select_min_nb_frequent_mut_0", "value"),
         ],
-        [
-            State("mutation_dropdown_0", "options"),
-        ],
+        [State("mutation_dropdown_0", "options"), State("min_nb_freq_0", "children")],
         prevent_initial_call=False,
     )
     def actualize_mutation_filter(
@@ -43,7 +44,9 @@ def get_explore_callbacks(  # noqa: C901
         country_value,
         select_x_mut,
         complete_partial_radio,
+        min_nb_freq,
         mut_options,
+        text_freq,
     ):
         # TODO now return top x mut without checking for mutations with same number
         if ctx.triggered_id == "select_x_frequent_mut_0":
@@ -51,7 +54,7 @@ def get_explore_callbacks(  # noqa: C901
             max_select = len(mut_options)
 
         else:
-            mut_options = get_frequency_sorted_mutation_by_filters(
+            mut_options, max_nb_freq = get_frequency_sorted_mutation_by_filters(
                 df_dict,
                 seqtech_value,
                 country_value,
@@ -59,6 +62,7 @@ def get_explore_callbacks(  # noqa: C901
                 complete_partial_radio,
                 reference_value,
                 color_dict,
+                min_nb_freq,
             )
             max_select = len(mut_options)
             if len(mut_options) < 20:
@@ -66,12 +70,25 @@ def get_explore_callbacks(  # noqa: C901
             else:
                 select_x_mut = 20
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
+            if min_nb_freq > max_nb_freq:
+                min_nb_freq = max_nb_freq
+            if min_nb_freq == 0 and max_nb_freq > 0:
+                min_nb_freq = 1
+            text_freq = (
+                f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
+            )
 
-        text = (
-            f"Select x most frequent sequences. Maximum number of mutations (including unique mutations) with chosen "
-            f"filter options: {len(mut_options)}"
+        text_nb_mut = f"Select n-th most frequent variants. Number variants matching filters: {len(mut_options)}"
+
+        return (
+            mut_options,
+            mut_value,
+            text_nb_mut,
+            max_select,
+            select_x_mut,
+            min_nb_freq,
+            text_freq,
         )
-        return mut_options, mut_value, text, max_select, select_x_mut
 
     @callback(
         [
@@ -146,7 +163,6 @@ def get_explore_callbacks(  # noqa: C901
             Input("selected_interval", "value"),
             Input("date_slider", "value"),
             Input("country_dropdown_0", "value"),
-            Input("gene_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
         ],
         [
@@ -163,7 +179,6 @@ def get_explore_callbacks(  # noqa: C901
         interval,
         dates,
         countries,
-        genes,
         complete_partial_radio,
         layout,
     ):
@@ -178,7 +193,6 @@ def get_explore_callbacks(  # noqa: C901
             method,
             date_list,
             countries,
-            genes,
         )
         # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
         # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
@@ -302,6 +316,7 @@ def get_explore_callbacks(  # noqa: C901
             Output("results_per_location", "figure"),
             Output("chosen_location", "children"),
             Output("header_upper_plot", "children"),
+            Output("sequence_information", "children"),
         ],
         [
             Input("world_map_explorer", "clickData"),
@@ -312,9 +327,11 @@ def get_explore_callbacks(  # noqa: C901
             Input("date_slider", "value"),
             Input("selected_interval", "value"),
             Input("gene_dropdown_0", "value"),
-            Input("complete_partial_radio_explore", "value"),
-            Input("country_dropdown_0", "value"),
             #   Input('yaxis_type', 'value')
+        ],
+        [
+            State("complete_partial_radio_explore", "value"),
+            State("country_dropdown_0", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -342,23 +359,32 @@ def get_explore_callbacks(  # noqa: C901
         # date from slider
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         # title text
-        title_text = location_name if location_name else ""
+        country = location_name if location_name else ""
+        title_text = f"Detailed look at the sequences with the chosen mutations for the selected country: {country}"
         world_dfs = [df_dict["world_map"]["complete"][reference_id]]
         if complete_partial_radio == "partial":
             world_dfs.append(df_dict["world_map"]["partial"][reference_id])
         world_map = WorldMap(world_dfs, color_dict, location_coordinates)
+        number_selected_sequences, seq_with_mut = world_map.get_nb_filtered_seq(
+            seqtech_list, date_list, [location_name], genes, mutations
+        )
+        info_header = (
+            f"Number sequences for country {location_name} and selected properties  between "
+            f"{date_list[0]} - {date_list[-1]}: {number_selected_sequences} "
+            f"of which {seq_with_mut} sequences carry at least one of the selected mutations."
+        )
         # 1. plot
         if method == "Increase":
             fig = world_map.get_slope_bar_plot(
-                date_list, mutations, seqtech_list, location_name, genes
+                date_list, mutations, seqtech_list, location_name
             )
             plot_header = "Slope mutations"
         elif method == "Frequency":
             fig = world_map.get_frequency_bar_chart(
-                mutations, seqtech_list, date_list, location_name, genes
+                mutations, seqtech_list, date_list, location_name
             )
             plot_header = "Number Sequences"
-        return fig, title_text, plot_header
+        return fig, title_text, plot_header, info_header
 
     @callback(
         Output("mutation_development", "figure"),
@@ -370,7 +396,6 @@ def get_explore_callbacks(  # noqa: C901
             Input("date_slider", "value"),
             Input("selected_interval", "value"),
             Input("results_per_location", "clickData"),
-            Input("gene_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
             Input("country_dropdown_0", "value"),
         ],
@@ -384,7 +409,6 @@ def get_explore_callbacks(  # noqa: C901
         dates,
         interval,
         clickDataBoxPlot,
-        genes,
         complete_partial_radio,
         countries,
     ):
@@ -404,7 +428,7 @@ def get_explore_callbacks(  # noqa: C901
             world_dfs.append(df_dict["world_map"]["partial"][reference_id])
         world_map = WorldMap(world_dfs, color_dict, location_coordinates)
         fig_develop = world_map.get_frequency_development_scatter_plot(
-            mutations, seqtech_list, date_list, location_name, genes
+            mutations, seqtech_list, date_list, location_name
         )
         return fig_develop
 
@@ -420,7 +444,6 @@ def get_explore_callbacks(  # noqa: C901
             Input("seq_tech_dropdown_0", "value"),
             Input("selected_interval", "value"),
             Input("date_slider", "value"),
-            Input("gene_dropdown_0", "value"),
             Input("country_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
         ],
@@ -433,7 +456,6 @@ def get_explore_callbacks(  # noqa: C901
         seq_tech_list,
         interval,
         dates,
-        gene_values,
         countries,
         complete_partial_radio,
     ):
@@ -457,7 +479,6 @@ def get_explore_callbacks(  # noqa: C901
             seq_tech_list,
             reference_id,
             date_list,
-            gene_values,
             countries,
         )
         return table_df.to_dict("records"), [
