@@ -39,7 +39,15 @@ def create_TRIMTSIG_graph():  #
         fig.add_trace(trace, row=i + 1, col=1)
 
     # Update the layout for the plot
-    fig.update_layout(height=800, autosize=True, showlegend=False)
+    fig.update_layout(
+        height=800,
+        autosize=True,
+        showlegend=False,
+    )
+    fig.update_xaxes(
+        tickangle=-45,  # rotate the labels
+        tickfont=dict(size=10),  # set the font size of the labels
+    )
     # fig.update_layout(annotations=[dict(xshift=-60)])
 
     return fig
@@ -96,11 +104,40 @@ mataion_signature_layout = html.Div(
                 dbc.CardBody(
                     [
                         dbc.Row(dbc.Col(html.H3("Mutation signature"))),
+                        dbc.Row(
+                            dbc.Col(
+                                html.P(
+                                    "Only consider six classes of base substitution: C>A, C>G, C>T, T>A, T>C and T>G.",
+                                    className="mb-0",
+                                ),
+                            )
+                        ),
                         dbc.Row(dbc.Col(dcc.Graph(figure=create_MTSIG_graph()))),
                         dbc.Row(
                             dbc.Col(
                                 html.H3("Mutation signature: Trinucleotide context")
                             )
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                html.P(
+                                    "A total of 96 possible mutation types (e.g. A[C>A]A, A[C>A]T, etc.).",
+                                    className="mb-0",
+                                ),
+                            )
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                [
+                                    html.I(
+                                        className="fa-solid fa-computer-mouse",
+                                    ),
+                                    dbc.FormText(
+                                        " Note:Please use the zoom-in button, click and drag from the centre of the x-axis to see all labels.",
+                                        color="primary",
+                                    ),
+                                ],
+                            ),
                         ),
                         dbc.Row(dbc.Col(dcc.Graph(figure=create_TRIMTSIG_graph()))),
                     ]

@@ -4,10 +4,12 @@
 # DEPENDENCIES
 import sys
 from textwrap import fill
+import time
 
 import pandas as pd
 
 from pages.config import DB_URL
+from pages.config import logging_radar
 from pages.DBManager import DBManager
 from pages.utils import generate_96_mutation_types
 from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
@@ -341,6 +343,11 @@ def count_unique_MutRef():
 
 # NOTE: we can move to prebuild cache step.
 def calculate_tri_mutation_sig():
+    """
+    List all 96 possible mutation types
+    (e.g. A[C>A]A, A[C>A]T, etc.).
+    """
+    start = time.time()
     with DBManager() as dbm:
         data_ = dbm.get_raw_mutation_signature()
         total_ = dbm.count_unique_NT_Mut_Ref()
@@ -356,7 +363,7 @@ def calculate_tri_mutation_sig():
         ref = mutation["variant.ref"]
         alt = mutation["variant.alt"]
         mutation_pos_before = mutation["variant.start"] - 1
-        mutation_pos_after = mutation["variant.start"] + 1
+        mutation_pos_after = mutation["variant.end"]
 
         # get NT from position.
         ref_seq = all_references_dict[accession]
@@ -364,6 +371,7 @@ def calculate_tri_mutation_sig():
             nt_before = ref_seq[mutation_pos_before]
             nt_after = ref_seq[mutation_pos_after]
         except IndexError:
+            logging_radar.error("IndexError")
             print(mutation)
             print(
                 "IndexError:",
@@ -372,6 +380,7 @@ def calculate_tri_mutation_sig():
                 nt_after,
                 mutation_pos_after,
             )
+            print("---------")
             continue
         mutation_type = f"{ref}>{alt}"
         _type = f"{nt_before}{ref}>{alt}{nt_after}"
@@ -393,12 +402,19 @@ def calculate_tri_mutation_sig():
                 count = final_dict[accession][mutation_type][_type]
                 freq = round(count / total_mutations[accession], 6)
                 final_dict[accession][mutation_type][_type] = freq
-
+    # print(final_dict)
+    end = time.time()
+    print("calculate_tri_mutation_sig", round(end - start, 4))
     return final_dict
 
 
 # NOTE: we can move to prebuild cache step.
 def calculate_mutation_sig():
+    """
+    Calculate the
+    six classes of base substitution: C>A, C>G, C>T, T>A, T>C, T>G.
+    """
+    start = time.time()
     with DBManager() as dbm:
         data_ = dbm.get_mutation_signature()
         total_ = dbm.count_unique_NT_Mut_Ref()
@@ -433,4 +449,6 @@ def calculate_mutation_sig():
             signature[mutation_type] = freq
         mutation_signature[accession] = signature
     # print(mutation_signature)
+    end = time.time()
+    print("calculate_mutation_sig", round(end - start, 4))
     return mutation_signature
