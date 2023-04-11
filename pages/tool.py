@@ -26,6 +26,7 @@ from pages.html_data_explorer import create_world_map_explorer
 from pages.html_data_explorer import html_elem_dropdown_aa_mutations
 from pages.html_data_explorer import html_elem_method_radioitems
 from pages.html_data_explorer import html_interval
+from pages.html_more_viz import tab_more_tool
 from pages.html_shared import html_complete_partial_radio
 from pages.html_shared import html_disclaimer_seq_errors
 from pages.html_shared import html_elem_checklist_seq_tech
@@ -468,6 +469,7 @@ layout = html.Div(
                                 dbc.Tab(tab_explored_tool, label="Explore Tool"),
                                 dbc.Tab(tab_advanced_tool, label="Advanced Tool"),
                                 dbc.Tab(tab_compare_tool, label="Compare Tool"),
+                                dbc.Tab(tab_more_tool, label="More Tools"),
                             ]
                         ),  # end tabs
                     ]
