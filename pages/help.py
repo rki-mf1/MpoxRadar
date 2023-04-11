@@ -138,7 +138,7 @@ tab_1 = [
                                             html.Li(
                                                 [
                                                     html.Strong(
-                                                        "Increasing / Decreasing / Constant trend"
+                                                        "Increasing / Decreasing trend"
                                                     ),
                                                     """ with one of these options, you can visualise the trend of the mutations growth. These are calculated using linear regression in the backend. """,
                                                 ]
@@ -172,7 +172,7 @@ tab_1 = [
                                 [
                                     "Users can also directly give in a ",
                                     html.Strong("query using the MpoxSonar notation"),
-                                    ". You can read more about the possible commands below.",
+                                    ". You can read more about the possible commands in the next tab.",
                                 ]
                             ),
                             html.Li(html.Strong("Map:")),
@@ -180,21 +180,14 @@ tab_1 = [
                                 [
                                     html.Li(
                                         [
-                                            "The interactive map shows the spatial distribution of selected mutations within a given time span. If mutations are present, the plot displays a central data point for each country."
+                                            "The interactive map shows the spatial distribution of selected mutations within a given time span. If mutations are present, the country is given a colour based on the visualisation method chosen and legand shown."
                                         ]
                                     ),
                                     html.Li(
                                         [
-                                            "Clicking on a data point triggers the subplots to show additional information about the mutation distribution and the time course of the mutation frequencies for a specific region.",
+                                            "Clicking on a data point triggers the subplots to show additional information about the mutation distribution and the time course of the mutation frequencies for a specific country.",
                                         ]
                                     ),
-                                ]
-                            ),
-                            html.Li(
-                                [
-                                    "Users can press the “",
-                                    html.Strong("Play button"),
-                                    "” to see the visualisations of each day one after the other.",
                                 ]
                             ),
                             html.Li(
@@ -205,8 +198,8 @@ tab_1 = [
                             html.Li(
                                 [
                                     "The result are also downloadable using the button “",
-                                    html.Strong("Download results as a csv file"),
-                                    "”. With this function, we want to empower other scientists to conduct further research. ",
+                                    html.Strong("Export"),
+                                    "” to download the full table as a CSV file. With this function, we want to empower other scientists to conduct further research. ",
                                 ]
                             ),
                         ]
