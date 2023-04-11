@@ -261,6 +261,30 @@ class DBManager(object):
         _rows = self.cursor.fetchall()
         return _rows
 
+    def get_raw_snp_1(self):
+        """
+        This function tries to get all possible one-base substitutions.
+        """
+        sql = (
+            "SELECT `reference.accession`, `variant.ref`, `variant.alt`, `variant.start`, `variant.end` "
+            "FROM  variantView "
+            "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'A' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'A' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'A' AND `variant.alt` = 'C'); "
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
     def count_unique_NT_Mut_Ref(self):
         """
         Count total mutations of NT for each reference.

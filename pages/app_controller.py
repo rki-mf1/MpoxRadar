@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # DEPENDENCIES
+import json
 import sys
 from textwrap import fill
 import time
@@ -10,6 +11,7 @@ import pandas as pd
 
 from pages.config import DB_URL
 from pages.config import logging_radar
+from pages.config import redis_manager
 from pages.DBManager import DBManager
 from pages.utils import generate_96_mutation_types
 from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
@@ -341,17 +343,37 @@ def count_unique_MutRef():
     return return_string
 
 
-# NOTE: we can move to prebuild cache step.
-def calculate_tri_mutation_sig():
+def calculate_tri_mutation_sig():  # noqa: C901
     """
     List all 96 possible mutation types
     (e.g. A[C>A]A, A[C>A]T, etc.).
     """
     start = time.time()
-    with DBManager() as dbm:
-        data_ = dbm.get_raw_mutation_signature()
-        total_ = dbm.count_unique_NT_Mut_Ref()
-        all_references_dict = {x["accession"]: x["sequence"] for x in dbm.references}
+
+    if (
+        redis_manager
+        and redis_manager.exists("data_tri_mutation_sig")
+        and redis_manager.exists("total_tri_mutation_sig")
+    ):
+        data_ = json.loads(redis_manager.get("data_tri_mutation_sig"))
+        total_ = json.loads(redis_manager.get("total_tri_mutation_sig"))
+        with DBManager() as dbm:
+            all_references_dict = {
+                x["accession"]: x["sequence"] for x in dbm.references
+            }
+    else:
+        with DBManager() as dbm:
+            data_ = dbm.get_raw_mutation_signature()
+            total_ = dbm.count_unique_NT_Mut_Ref()
+            all_references_dict = {
+                x["accession"]: x["sequence"] for x in dbm.references
+            }
+            # Convert the list to a JSON string
+            redis_manager.set("data_tri_mutation_sig", json.dumps(data_), ex=3600 * 23)
+            redis_manager.set(
+                "total_tri_mutation_sig", json.dumps(total_), ex=3600 * 23
+            )
+
     final_dict = {}
     # calculate freq.
     for mutation in data_:
@@ -408,16 +430,26 @@ def calculate_tri_mutation_sig():
     return final_dict
 
 
-# NOTE: we can move to prebuild cache step.
 def calculate_mutation_sig():
     """
     Calculate the
     six classes of base substitution: C>A, C>G, C>T, T>A, T>C, T>G.
     """
     start = time.time()
-    with DBManager() as dbm:
-        data_ = dbm.get_mutation_signature()
-        total_ = dbm.count_unique_NT_Mut_Ref()
+    if (
+        redis_manager
+        and redis_manager.exists("data_mutation_sig")
+        and redis_manager.exists("total_mutation_sig")
+    ):
+        data_ = json.loads(redis_manager.get("data_mutation_sig"))
+        total_ = json.loads(redis_manager.get("total_mutation_sig"))
+    else:
+        with DBManager() as dbm:
+            data_ = dbm.get_mutation_signature()
+            total_ = dbm.count_unique_NT_Mut_Ref()
+            # Convert the list to a JSON string
+            redis_manager.set("data_mutation_sig", json.dumps(data_), ex=3600 * 23)
+            redis_manager.set("total_mutation_sig", json.dumps(total_), ex=3600 * 23)
 
     # Define a dictionary to store the mutation counts for each reference accession
     mutation_counts = {}
@@ -452,3 +484,138 @@ def calculate_mutation_sig():
     end = time.time()
     print("calculate_mutation_sig", round(end - start, 4))
     return mutation_signature
+
+
+def create_snp_table():  # noqa: C901
+    start = time.time()
+
+    if redis_manager and redis_manager.exists("data_snp_table"):
+        data_ = json.loads(redis_manager.get("data_snp_table"))
+
+        with DBManager() as dbm:
+            all_references_dict = {
+                x["accession"]: x["sequence"] for x in dbm.references
+            }
+    else:
+        with DBManager() as dbm:
+            data_ = dbm.get_raw_snp_1()
+            all_references_dict = {
+                x["accession"]: x["sequence"] for x in dbm.references
+            }
+            # Convert the list to a JSON string
+            redis_manager.set("data_snp_table", json.dumps(data_), ex=3600 * 23)
+
+    final_dict = {}
+    # calculate freq.
+    for mutation in data_:
+        accession = mutation["reference.accession"]
+        ref_seq = all_references_dict[accession]
+
+        if accession not in final_dict:
+            final_dict[accession] = {}
+
+        ref = mutation["variant.ref"]
+        alt = mutation["variant.alt"]
+        mutation_pos_before = mutation["variant.start"] - 1
+        mutation_pos_after = mutation["variant.end"]
+
+        # get NT from position.
+        # FIXME: There will be a problem if the end position is out of bound.
+        """
+        for example,
+        MPXRadar:2023-04-11 14:58:06 ERROR: IndexError
+        {'reference.accession': 'NC_063383.1', 'variant.ref': 'T',
+          'variant.alt': 'A', 'variant.start': 197208, 'variant.end': 197209}
+        IndexError: A 197207 A 197209
+        """
+        try:
+            nt_before = ref_seq[mutation_pos_before]
+
+        except IndexError:
+            logging_radar.warning("IndexError")
+            print(mutation)
+            print(
+                "IndexError before:",
+                nt_before,
+                mutation_pos_before,
+            )
+            print("---------")
+            nt_before = ""
+
+        try:
+            nt_after = ref_seq[mutation_pos_after]
+        except IndexError:
+            # logging_radar.warning("IndexError")
+            # print(mutation)
+            # print(
+            #    "IndexError after:",
+            #    nt_after,
+            #    mutation_pos_after,
+            # )
+            # print("---------")
+            nt_after = ""
+
+        # single NT
+        # C > T
+        try:
+            mutation_type = f"{ref}>{alt}"
+            _type = f"{ref}>{alt}"
+
+            if _type not in final_dict[accession]:
+                final_dict[accession][_type] = 0
+
+            final_dict[accession][_type] += 1
+        except KeyError:
+            print("mutation_type:", mutation_type)
+            print("single NT: _type:", _type)
+            print("final_dict ->", final_dict[accession][_type])
+            raise
+
+        # 2 NTs: End changes
+        # GC > GT
+        try:
+            mutation_type = f"{ref}>{alt}"
+            _type = f"{nt_before}{ref}>{nt_before}{alt}"
+
+            if _type not in final_dict[accession]:
+                final_dict[accession][_type] = 0
+
+            final_dict[accession][_type] += 1
+        except KeyError:
+            print("mutation_type:", mutation_type)
+            print("2 NTs: End changes:_type:", _type)
+            print("final_dict ->", final_dict[accession][_type])
+            raise
+
+        # 2 NTs: Begin changes
+        # CA > TA
+        try:
+            mutation_type = f"{ref}>{alt}"
+            _type = f"{ref}{nt_after}>{alt}{nt_after}"
+
+            if _type not in final_dict[accession]:
+                final_dict[accession][_type] = 0
+
+            final_dict[accession][_type] += 1
+        except KeyError:
+            print("mutation_type:", mutation_type)
+            print("2 NTs: Begin changes_type:", _type)
+            print("final_dict ->", final_dict[accession][_type])
+            raise
+
+    # Convert the dictionary to a dataframe
+    df = pd.DataFrame.from_dict(final_dict, orient="index")
+    # Add a column for genome assembly
+    df["genome_assembly"] = df.index
+    # Reset the index and add a column for the mutation
+    df = df.reset_index()
+    df = pd.melt(
+        df,
+        id_vars=["index", "genome_assembly"],
+        var_name="mutation",
+        value_name="count",
+    )
+    df.drop(columns=["index"], inplace=True)
+    end = time.time()
+    print("create_snp_table", round(end - start, 4))
+    return df

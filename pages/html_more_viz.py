@@ -1,3 +1,4 @@
+from dash import dash_table
 from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
@@ -6,6 +7,7 @@ from plotly.subplots import make_subplots
 
 from pages.app_controller import calculate_mutation_sig
 from pages.app_controller import calculate_tri_mutation_sig
+from pages.app_controller import create_snp_table
 
 
 def create_TRIMTSIG_graph():  #
@@ -96,6 +98,8 @@ def create_MTSIG_graph():  #
     return fig
 
 
+snp_table_df = create_snp_table()
+
 mataion_signature_layout = html.Div(
     [
         dbc.Card(
@@ -140,6 +144,28 @@ mataion_signature_layout = html.Div(
                             ),
                         ),
                         dbc.Row(dbc.Col(dcc.Graph(figure=create_TRIMTSIG_graph()))),
+                        dbc.Row(dbc.Col(html.H3("Free Search"))),
+                        dbc.Row(
+                            dbc.Col(
+                                [
+                                    dash_table.DataTable(
+                                        data=snp_table_df.to_dict("records"),
+                                        columns=[
+                                            {"id": c, "name": c}
+                                            for c in snp_table_df.columns
+                                        ],
+                                        filter_action="native",
+                                        sort_action="native",
+                                        sort_mode="multi",
+                                        page_size=20,  # we have less data in this example, so setting to 20
+                                        style_table={
+                                            "height": "300px",
+                                            "overflowY": "auto",
+                                        },
+                                    )
+                                ],
+                            ),
+                        ),
                     ]
                 ),
             ]
