@@ -1,0 +1,24 @@
+# .github/workflows/tests.yml
+name: Test-format-pre_commit
+on: push
+jobs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+        architecture: x64
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: 3.10
+        mamba-version: "*"
+        activate-environment: mpxradar
+        channels: conda-forge,bioconda,defaults
+        channel-priority: true
+    - uses: pre-commit/action@v3.0.0
+    - run: pip install poetry
+    - run: poetry install --with dev-dependencies
+    - name: Run format checks
+      run: pre-commit run --all-files

@@ -1,0 +1,56 @@
+# .github/workflows/tests.yml
+name: Test-format
+on: push
+jobs:
+    continuous-integration:
+      runs-on: ubuntu-latest
+      env:
+        DB_DATABASE: mpx
+        DB_USERNAME: root
+        DB_PASSWORD: password
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        REDIS_PORT: 6379
+        BROADCAST_DRIVER: log
+        CACHE_DRIVER: redis
+        QUEUE_CONNECTION: redis
+        SESSION_DRIVER: redis
+        MYSQL_ALLOW_EMPTY_PASSWORD: false
+        MYSQL_ROOT_PASSWORD: password
+        MYSQL_DATABASE: mpx
+      services:
+            mariadb:
+              image: mariadb:10.11
+      steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+          architecture: x64
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.10
+          mamba-version: "*"
+          activate-environment: covsonar
+          channels: conda-forge,bioconda,defaults
+          channel-priority: true
+
+      # mariadb
+      - uses: shogo82148/actions-setup-mysql@v1
+        with:
+          distribution: 'mariadb'
+          mysql-version: '10.11'
+          user: "user-test"
+          password: "123456"
+
+      # redis-server
+      - uses: shogo82148/actions-setup-mysql@v1
+        with:
+          distribution: 'mariadb'
+          mysql-version: '10.11'
+          user: "user-test"
+          password: "123456"
+
+      - run: pip install poetry
+      - run: poetry install
