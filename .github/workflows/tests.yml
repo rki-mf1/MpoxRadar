@@ -2,6 +2,7 @@
 name: Test-format-pre_commit
 on: push
 jobs:
+  format-checker:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
