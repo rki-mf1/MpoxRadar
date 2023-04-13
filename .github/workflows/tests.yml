@@ -20,4 +20,4 @@ jobs:
     - name: Run format checks
       uses: pre-commit/action@v3.0.0
       with:
-        extra_args: --all-files
+        extra_args: -c .pre-commit-config.yaml --all-files
