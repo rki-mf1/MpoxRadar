@@ -1,5 +1,5 @@
 # .github/workflows/tests.yml
-name: Test-format
+name: CI-CD process
 on: push
 jobs:
     continuous-integration:

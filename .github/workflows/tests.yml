@@ -1,6 +1,11 @@
 # .github/workflows/tests.yml
-name: Test-format-pre_commit
-on: push
+name: Test-format-flake8
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
 jobs:
   format-checker:
     runs-on: ubuntu-latest
@@ -10,6 +15,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.10'
-    - run: pip install flake8  poetry
-    - name: Run flake8
-      run: poetry run flake8
+    - run: pip install flake8 poetry
+    - name: Run flake8 - Code style check
+      run: poetry run flake8 . --config=.flake8 -v
