@@ -3,10 +3,9 @@ import os
 from pathlib import Path
 import shutil
 
-import pytest
-
 from mpxsonar.cache import sonarCache
 from mpxsonar.dbm import sonarDBManager
+import pytest
 
 
 def test_get_refseq_id_failcase(tmpfile_name, testdb):

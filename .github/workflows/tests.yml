@@ -2,23 +2,14 @@
 name: Test-format-pre_commit
 on: push
 jobs:
+  format-checker:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v3
       with:
-        python-version: 3.10
-        architecture: x64
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        python-version: 3.10
-        mamba-version: "*"
-        activate-environment: mpxradar
-        channels: conda-forge,bioconda,defaults
-        channel-priority: true
-    - uses: pre-commit/action@v3.0.0
-    - run: pip install poetry
-    - run: poetry install --with dev-dependencies
+        python-version: '3.10'
+    - run: pip install flake8 black zimports poetry pre-commit
     - name: Run format checks
-      run: pre-commit run --all-files
+      run: poetry run pre-commit run -c .pre-commit-config.yaml --all-files

@@ -3,9 +3,8 @@ import os
 from pathlib import Path
 import shutil
 
-import pytest
-
 from mpxsonar import sonar
+import pytest
 
 
 def test_check_file_not_exist(tmpfile_name):
