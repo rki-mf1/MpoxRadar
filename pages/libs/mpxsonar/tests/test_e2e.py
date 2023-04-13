@@ -3,9 +3,8 @@ from pathlib import Path
 import re
 import shutil
 
-import pytest
-
 from mpxsonar import sonar
+import pytest
 
 
 def split_cli(s):
