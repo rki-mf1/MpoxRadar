@@ -16,7 +16,7 @@ jobs:
         activate-environment: mpxradar
         channels: conda-forge,bioconda,defaults
         channel-priority: true
-    - run: pip install flake8 black zimports
+    - run: pip install flake8 black zimports poetry
     - name: Run format checks
       uses: pre-commit/action@v3.0.0
       with:
