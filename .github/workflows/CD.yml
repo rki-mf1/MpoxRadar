@@ -20,8 +20,8 @@ jobs:
         port: 22
         script: |
           cd /opt/MpoxRadar/
-          git checkout dev
-          git pull
+          sudo git checkout dev
+          sudo git pull
 
     - name: Restart the application after deployment
       uses: appleboy/ssh-action@master
