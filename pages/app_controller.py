@@ -583,7 +583,7 @@ def create_snp_table():  # noqa: C901
             final_dict[accession][_type] += 1
         except KeyError:
             print("mutation_type:", mutation_type)
-            print("2 NTs: End changes:_type:", _type)
+            print("2 NTs: End changes:", _type)
             print("final_dict ->", final_dict[accession][_type])
             raise
 
@@ -599,7 +599,23 @@ def create_snp_table():  # noqa: C901
             final_dict[accession][_type] += 1
         except KeyError:
             print("mutation_type:", mutation_type)
-            print("2 NTs: Begin changes_type:", _type)
+            print("2 NTs: Begin changes:", _type)
+            print("final_dict ->", final_dict[accession][_type])
+            raise
+
+        # 3 NTs: middle changes
+        # CA > TA
+        try:
+            mutation_type = f"{ref}>{alt}"
+            _type = f"{nt_before}{ref}>{alt}{nt_after}"
+
+            if _type not in final_dict[accession]:
+                final_dict[accession][_type] = 0
+
+            final_dict[accession][_type] += 1
+        except KeyError:
+            print("mutation_type:", mutation_type)
+            print("3 NTs: Middle changes:", _type)
             print("final_dict ->", final_dict[accession][_type])
             raise
 
