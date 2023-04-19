@@ -32,5 +32,4 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         port: 22
         script: |
-          sudo su
-          mpoxradar.reload\&restart.everything.sh
+          sudo mpoxradar.reload\&restart.everything.sh
