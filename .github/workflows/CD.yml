@@ -19,7 +19,6 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         port: 22
         script: |
-          sudo su
           cd /opt/MpoxRadar/
           git checkout dev
           git pull
