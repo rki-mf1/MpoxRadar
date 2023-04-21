@@ -14,9 +14,24 @@ class TableFilter(object):
     for samples matching filter options, all nucleotide and aminoacid variants are returned
     """
 
-    def __init__(self, table_type, mut_value, aa_nt_radio=None, seqtech=None, countries=None, start_date=None,
-                 end_date=None):
+    def __init__(
+        self, 
+        table_type:str, 
+        mut_value:list[str], 
+        aa_nt_radio:str=None, 
+        seqtech:list[str]=None, 
+        countries:list[str]=None, 
+        start_date:str=None,
+        end_date:str=None
+        ):
         """
+        :param table_type: two different tables for "Explore Tool" and "Compare Tool" with different columns
+        :param mut_value: user selected mutations
+        :param aa_nt_radio: user selected radio Amino Acids (="cds") or Nucleotides (="source")
+        :param seqtech: user selected sequencing technologies
+        :param countries: user selected countries
+        :param start_date: user selected start date compare tool
+        :param end_date: user selected end date compare tool
         """
         super(TableFilter, self).__init__()
         self.table_type = table_type
@@ -68,12 +83,12 @@ class TableFilter(object):
 
     def _get_samples_by_filters(
             self,
-            propertyView_dfs,
-            variantView_dfs,
-            seq_tech_list,
-            dates,
-            countries,
-    ):
+            propertyView_dfs: list[pd.DataFrame],
+            variantView_dfs: list[pd.DataFrame],
+            seq_tech_list: list[str],
+            dates: list[datetime.date],
+            countries: list[str],
+    ) -> set[int]:
         sample_set = set()
         for i, df in enumerate(variantView_dfs):
             samples = set(propertyView_dfs[i][
@@ -91,7 +106,7 @@ class TableFilter(object):
             )
         return sample_set
 
-    def get_samples_by_mutation(self, propertyView_dfs, variantView_dfs):
+    def get_samples_by_mutation(self, propertyView_dfs: list[pd.DataFrame], variantView_dfs: list[pd.DataFrame])->set[int]:
         new_samples = set()
         for i, df in enumerate(variantView_dfs):
             samples = set(propertyView_dfs[i]["sample.id"])
@@ -100,7 +115,7 @@ class TableFilter(object):
                                                    ]["sample.id"]))
         return new_samples
 
-    def _merge_variantView_with_propertyView(self, variantView, propertyView):
+    def _merge_variantView_with_propertyView(self, variantView: pd.DataFrame, propertyView: pd.DataFrame) -> pd.DataFrame:
         return pd.merge(
             variantView,
             propertyView,
@@ -108,7 +123,7 @@ class TableFilter(object):
             on=["sample.id", "sample.name"]
         )
 
-    def concat_and_merge_tables(self, variantView_dfs, propertyView_dfs):
+    def concat_and_merge_tables(self, variantView_dfs:list[pd.DataFrame], propertyView_dfs:list[pd.DataFrame]):
         return pd.concat(
             [
                 self._merge_variantView_with_propertyView(variantView_dfs[i], propertyView_dfs[i])
@@ -118,7 +133,7 @@ class TableFilter(object):
             axis=0,
         )[self.table_columns]
 
-    def combine_labels_by_sample(self, df, aa_nt):
+    def combine_labels_by_sample(self, df: pd.DataFrame, aa_nt:str) -> pd.DataFrame:
         if self.table_type == 'explorer':
             cols = [
                 "sample.name",
@@ -160,7 +175,7 @@ class TableFilter(object):
         df = df.rename(columns={'reference.accession': "REFERENCE_ACCESSION"})
         return df
 
-    def filter_propertyView(self, df):
+    def filter_propertyView(self, df: pd.DataFrame) -> pd.DataFrame:
         date_list = DateSlider.get_all_dates(
             datetime.strptime(self.start_date, "%Y-%m-%d").date(),
             datetime.strptime(self.end_date, "%Y-%m-%d").date(),
@@ -173,13 +188,13 @@ class TableFilter(object):
 
     def create_explore_table(
             self,
-            df_dict,
-            complete_partial_radio,
-            seq_tech_list,
-            reference_id,
-            dates,
-            countries,
-    ):
+            df_dict: dict,
+            complete_partial_radio: str,
+            seq_tech_list: list[str],
+            reference_id: int,
+            dates: list[datetime.date],
+            countries: list[str],
+    ) -> pd.DataFrame:
         """
         param df_dict: all pre-processed pandas df
         param complete_partial_radio: complete OR partial (= using complete AND partial dfs)
@@ -229,7 +244,7 @@ class TableFilter(object):
             )
         return df
 
-    def create_compare_table_left_and_right(self, variantView_dfs, propertyView_dfs):
+    def create_compare_table_left_and_right(self, variantView_dfs: list[pd.DataFrame], propertyView_dfs: list[pd.DataFrame]) -> pd.DataFrame:
         # all samples of selection (filter by mutation directly do not allow a complete mutation PROFILE)
         samples = self.get_samples_by_mutation(propertyView_dfs, variantView_dfs)
         variantView_dfs = [df[df['sample.id'].isin(samples)] for df in variantView_dfs]
@@ -237,7 +252,12 @@ class TableFilter(object):
         table_df = self.combine_labels_by_sample(table_df, self.aa_nt_radio)
         return table_df
 
-    def create_compare_table_both(self, variantView_dfs, propertyView_dfs_left, propertyView_dfs_right):
+    def create_compare_table_both(
+        self, 
+        variantView_dfs: list[pd.DataFrame], 
+        propertyView_dfs_left: list[pd.DataFrame], 
+        propertyView_dfs_right: list[pd.DataFrame]
+    ) -> (pd.DataFrame, set[int], set[int]):
         # all samples of selection (filter by mutation directly do not allow a complete mutation PROFILE)
         samples_left_both = self.get_samples_by_mutation(
             propertyView_dfs_left,
@@ -269,7 +289,7 @@ class OverviewTable:
         'unique variants for right selection', "# seq right",
     ]
 
-    def __init__(self, aa_nt_radio):
+    def __init__(self, aa_nt_radio: str):
         """
         """
         super(OverviewTable, self).__init__()
@@ -279,7 +299,7 @@ class OverviewTable:
             self.variant_col = "variant.label"
         self.single_table_cols = [self.variant_col, "freq"]
 
-    def _filter_for_samples_and_group_by_variant(self, samples, mut, variantView_dfs, col_name):
+    def _filter_for_samples_and_group_by_variant(self, samples: set, mut:list, variantView_dfs: list[pd.DataFrame], col_name:str) -> pd.DataFrame:
         filtered_variantView_df = pd.concat([df[df['sample.id'].isin(samples)
                                                 & df[self.variant_col].isin(mut)]
                                              [[self.variant_col, "sample.id"]] for df in variantView_dfs],
@@ -288,7 +308,7 @@ class OverviewTable:
             .size().reset_index().rename(columns={0: col_name})
         return grouped_df
 
-    def _sort_by_sum_of_both_frequencies(self, variantView_df_overview_both):
+    def _sort_by_sum_of_both_frequencies(self, variantView_df_overview_both: pd.DataFrame) -> pd.DataFrame:
         sorted_indices = (variantView_df_overview_both["freq l"] + variantView_df_overview_both["freq r"]) \
             .sort_values(ascending=False).index
         variantView_df_overview_both = variantView_df_overview_both.loc[sorted_indices, :].reset_index(drop=True)
@@ -296,11 +316,11 @@ class OverviewTable:
 
     def count_shared_mutation_in_left_and_right_selection(
             self,
-            mut_value_both,
-            samples_left,
-            samples_right,
-            variantView_dfs
-    ):
+            mut_value_both: list[str],
+            samples_left: set[int],
+            samples_right: set[int],
+            variantView_dfs: list[pd.DataFrame]
+    ) -> pd.DataFrame:
         """
         count nb seq in both for left and right selection --> used in actualize_overview_table
         """
@@ -318,21 +338,20 @@ class OverviewTable:
         variantView_df_overview_both = self._sort_by_sum_of_both_frequencies(variantView_df_overview_both)
         return variantView_df_overview_both[[self.variant_col, 'freq l', 'freq r']]
 
-    def create_df_from_mutation_options(self, mut_options, mut_values):
+    def create_df_from_mutation_options(self, mut_options: dict, mut_values: list[str]):
         df = pd.DataFrame.from_records(mut_options, columns=['value', 'freq'])
         return df[df['value'].isin(mut_values)]
 
-    def create_df_from_json(self, variantView_df_both_json, mut_value_both):
+    def create_df_from_json(self, variantView_df_both_json:str, mut_value_both:list[str]):
         df_both = pd.read_json(variantView_df_both_json, orient='split')
         df_both = df_both[df_both[self.single_table_cols[0]]
             .isin(mut_value_both)] \
             .reset_index(drop=True)
         return df_both
 
-    def create_overview_table(self, df_left, df_both, df_right):
+    def create_overview_table(self, df_left: pd.DataFrame, df_both: pd.DataFrame, df_right: pd.DataFrame) -> (dict, list[str]):
         table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
         table_df.columns = self.table_columns
         table_df_records = table_df.to_dict("records")
         column_names = [{"name": self.column_names[i], "id": j} for i, j in enumerate(self.table_columns)]
-
         return table_df_records, column_names
