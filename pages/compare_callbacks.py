@@ -3,7 +3,6 @@ from dash import ctx
 from dash import Input
 from dash import Output
 from dash import State
-import pandas as pd
 
 from pages.config import cache
 from pages.utils_compare import select_min_x_frequent_mut
@@ -124,24 +123,24 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
 
         else:
             mut_options_left, mut_options_right, mut_options_both, \
-            mut_value_left, mut_value_right, mut_value_both, \
-            max_freq_nb_left, max_freq_nb_right, max_freq_nb_both = find_unique_and_shared_variants(
-                df_dict,
-                color_dict,
-                complete_partial_radio,
-                reference_value,
-                aa_nt_radio,
-                gene_value_1,
-                seqtech_value_1,
-                country_value_1,
-                start_date_1,
-                end_date_1,
-                gene_value_2,
-                seqtech_value_2,
-                country_value_2,
-                start_date_2,
-                end_date_2,
-            )
+                mut_value_left, mut_value_right, mut_value_both, \
+                max_freq_nb_left, max_freq_nb_right, max_freq_nb_both = find_unique_and_shared_variants(
+                    df_dict,
+                    color_dict,
+                    complete_partial_radio,
+                    reference_value,
+                    aa_nt_radio,
+                    gene_value_1,
+                    seqtech_value_1,
+                    country_value_1,
+                    start_date_1,
+                    end_date_1,
+                    gene_value_2,
+                    seqtech_value_2,
+                    country_value_2,
+                    start_date_2,
+                    end_date_2,
+                )
             text_freq_1 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_left}"
             text_freq_2 = f"Select minimum variant frequency. Highest frequency in selection:  {max_freq_nb_right}"
             text_freq_3 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_both}"
@@ -236,7 +235,8 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         column_names_2 = [{"name": i, "id": i} for i in table_df_2.columns]
         column_names_3 = [{"name": i, "id": i} for i in table_df_3.columns]
 
-        variantView_df_both_json = variantView_df_both.to_json(date_format='iso', orient='split')
+        variantView_df_both_json = variantView_df_both.to_json(
+            date_format='iso', orient='split')
 
         return (
             table_df_1_records,
@@ -278,10 +278,14 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             aa_nt_radio
     ):
         overviewTable = OverviewTable(aa_nt_radio)
-        df_left = overviewTable.create_df_from_mutation_options(mut_options_left, mut_value_left)
-        df_right = overviewTable.create_df_from_mutation_options(mut_options_right, mut_value_right)
-        df_both = overviewTable.create_df_from_json(variantView_df_both_json, mut_value_both)
-        table_df_records, column_names = overviewTable.create_overview_table(df_left, df_both, df_right)
+        df_left = overviewTable.create_df_from_mutation_options(
+            mut_options_left, mut_value_left)
+        df_right = overviewTable.create_df_from_mutation_options(
+            mut_options_right, mut_value_right)
+        df_both = overviewTable.create_df_from_json(
+            variantView_df_both_json, mut_value_both)
+        table_df_records, column_names = overviewTable.create_overview_table(
+            df_left, df_both, df_right)
 
         return (
             table_df_records,

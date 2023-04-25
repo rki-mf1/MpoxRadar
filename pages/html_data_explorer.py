@@ -4,10 +4,6 @@ import dash_bootstrap_components as dbc
 
 
 def create_world_map_explorer(date_slider):
-    """
-    contain layout page
-    """
-
     world_map_with_slider = html.Div(
         [
             html.H3("Output result from filter options", style={"textAlign": "center"}),

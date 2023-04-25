@@ -11,42 +11,66 @@ from scipy.stats import linregress
 
 class VariantMapAndPlots(object):
     """
-        world_dfs df.columns:
-         COUNTRY,COLLECTION_DATE,SEQ_TECH,sample_id_list,variant.label,number_sequences,element.symbol,gene:variant
-        column types: str, str, datetime.date, str, str, str, int, str, str
+    creates maps and detail plots for explore tool
+    initialization of class differs between map and detail plots with different variables
+
+    world_dfs df.columns:
+        
+
+    Attributes
+    ----------
+    world_dfs: list of world dfs with columns ["COUNTRY", "COLLECTION_DATE", "SEQ_TECH", 
+        "sample_id_list", "variant.label", "number_sequences", "element.symbol", "gene:variant"]
         column sample_id_list: comma seperated sample ids e.g. "3,45,67" or "3"
+    countries: list of selected countries
+    seq_techs: list of selected sequencing technologies
+    mutations: list of selected mutations gene:mut
+    min_date: minimum date of date sider (hard coded!)
+    dates: list all dates in interval
+    color_dict: {gene:color}
+    df_location: df with ISO_Code, lat, lon and name of all countries
+    filtered_dfs: world dfs filtered by date, seq tech, variant, countries
+
+    location_name: attribute for detail plot, country name to show detail plots
+    number_selected_sequences: attribute for detail plot, number of samples in selection
+    seq_with_mut: attribute for detail plot, number of samples in selection with selected mutations
+    eq_with_mut: attribute for detail plot, list of selected genes
+    """
+
+    def __init__(
+        self,
+        df_dict: dict,
+        date_slider,  # <class 'pages.utils_worldMap_explorer.DateSlider'>
+        reference_id: int,
+        complete_partial_radio: str,
+        countries: list[str],
+        seq_techs: list[str],
+        mutations: list[str],
+        dates: list,
+        interval: int,
+        color_dict: dict,
+        plot_type: str,
+        location_coordinates: dict,
+        genes: list = None,  # only detail plots
+        clicked_country: str = None  # only detail plots
+    ):
+        """
         :param df_dict: all data frames filled in data.py parted by keys
         :param date_slider: inititlized DateSlider class
         :param refrence_id: user selected reference
-        :param complete_partial_radio: user selection only complete genomes (="complete") or all (including partial genomes) (="partial")
+        :param complete_partial_radio: user selection only complete genomes (="complete") 
+            or all (including partial genomes) (="partial")
         :param countries: list of selected countries
         :param seq_techs: list of selected sequencing technologies
         :param mutations: list of selected mutations gene:mut
         :param dates: [start_date, end_dat] by Dateslider
         :param interval:
-        :param color_dict: {variant:color}
+        :param color_dict: {gene:color}
         :param plot_type: 'map', OR 'detail'
         :param location_coordinates: dict
         :param genes: list of selected genes, only relevant for calculate nb filtered sequences
         :param clicked_country: on map selected country to show detail plots
-    """
-
-    def __init__(self,
-                 df_dict: dict,
-                 date_slider, # <class 'pages.utils_worldMap_explorer.DateSlider'>
-                 reference_id: int,
-                 complete_partial_radio: str,
-                 countries: list[str],
-                 seq_techs: list[str],
-                 mutations: list[str],
-                 dates: list,
-                 interval: int,
-                 color_dict: dict,
-                 plot_type:str,
-                 location_coordinates: dict,
-                 genes:list =None,  # only detail plots
-                 clicked_country:str =None  # only detail plots
-                 ):
+        """
         super(VariantMapAndPlots, self).__init__()
         self.world_dfs = [df_dict["world_map"]['complete'][reference_id]]
         if complete_partial_radio == 'partial':
@@ -67,8 +91,9 @@ class VariantMapAndPlots(object):
                     "Instance is not correct initialized, map plotting does not require gene and click country information")
         elif plot_type == "detail":
             self.location_name, \
-            self.number_selected_sequences, \
-            self.seq_with_mut = self.select_country_for_detail_plots_and_nb_filtered_seq(clicked_country, genes)
+                self.number_selected_sequences, \
+                self.seq_with_mut = self.select_country_for_detail_plots_and_nb_filtered_seq(
+                    clicked_country, genes)
             countries_for_filter = [self.location_name] if self.location_name else []
             self.genes = genes
 
@@ -80,22 +105,27 @@ class VariantMapAndPlots(object):
         ]
 
     def define_interval_dates(
-        self, 
-        date_slider, 
-        dates:list,
-        interval: int
-        ):
+        self,
+        date_slider,
+        dates: list,
+        interval: int = 30
+    ) -> list[datetime.date]:
+        """
+        :return: list of dates between second date and second_date-interval
+                or between "newest" COLLECTION_DATE and last 30 days
+        """
         dates = date_slider.get_all_dates_in_interval(dates, interval)
         if len(dates) == 0:
             dates_in_world_df = sorted(
                 list(
-                    {i for s in [set(df["COLLECTION_DATE"]) for df in self.world_dfs] for i in s}
+                    {i for s in [set(df["COLLECTION_DATE"])
+                                 for df in self.world_dfs] for i in s}
                 )
             )
             dates = [
                 dat
                 for dat in [
-                    dates_in_world_df[-1] - timedelta(days=x) for x in reversed(range(28))
+                    dates_in_world_df[-1] - timedelta(days=x) for x in reversed(range(interval))
                 ]
             ]
         return dates
@@ -106,12 +136,19 @@ class VariantMapAndPlots(object):
             genes: list[str],
     ) -> (str, int, int):
         """
-        param clicked_country: user clicked country OR ""
-        define country to show detail plots
-        order country selection: 1. user click data, 2. country with most seq in filter without date filtering
-        3. if country of old click selection not in updated filters --> take first country of country dropdown values
-        4. if no seq for country --> select one from country values (e.g. USA #1 in list, no clicks, but no seq in
-        interval days)
+        define country to show detail plots depending on:
+            1. user click data, 
+            2. country with most seq in filter without date filtering
+            3. click selection country not in updated filters -> first country in country options
+            4. if no sample in selected country --> select first from country values 
+            (e.g. USA #1 in country_options(=most samples about all dates), 
+            no click data, but no seq in selected interval)
+
+        :param clicked_country: user clicked country OR ""
+        :param genes: list of selected genes
+        :return: location_name = country for detail plots
+                 number of samples with selected properties
+                 number of samples with mutations
         """
         location_name = clicked_country
         number_selected_sequences = 0
@@ -138,39 +175,67 @@ class VariantMapAndPlots(object):
 
         return location_name, number_selected_sequences, seq_with_mut
 
-    def get_nb_filtered_seq(self, countries: list[str], genes: list[str]) -> (int, int):
-        samples_1 = set()
-        samples_2 = set()
+    def get_nb_filtered_seq(
+        self,
+        countries: list[str],
+        genes: list[str]
+    ) -> (int, int):
+        """
+        :return: number of samples in world_df after filtering by
+                    dates, seq techs, countries and genes
+                number of samples in world_df after same filtering
+                    + filter for mutations
+        """
+        filtered_samples = set()
+        mut_filtered_samples = set()
         for world_df in self.world_dfs:
-            df = world_df[
+            filtered_df = world_df[
                 world_df["COLLECTION_DATE"].isin(self.dates)
                 & world_df["SEQ_TECH"].isin(self.seq_techs)
                 & world_df["COUNTRY"].isin(countries)
                 & world_df["element.symbol"].isin(genes)
-                ].copy()
-            df.sample_id_list = df.sample_id_list.map(lambda x: x.split(','))
-            df2 = df[df['gene:variant'].isin(self.mutations)]
+            ].copy()
+            filtered_df.sample_id_list = filtered_df.sample_id_list.map(
+                lambda x: x.split(','))
+            for sample_list in filtered_df['sample_id_list'].tolist():
+                filtered_samples.update(sample_list)
 
-            for sample_list in df['sample_id_list'].tolist():
-                samples_1.update(sample_list)
-            for sample_list in df2['sample_id_list'].tolist():
-                samples_2.update(sample_list)
-        return len(samples_1), len(samples_2)
+            df_filterd_mut = filtered_df[filtered_df['gene:variant'].isin(
+                self.mutations)]
+            for sample_list in df_filterd_mut['sample_id_list'].tolist():
+                mut_filtered_samples.update(sample_list)
+        return len(filtered_samples), len(mut_filtered_samples)
 
-    def filter_df(self, world_df: pd.DataFrame, countries:list[str]) -> pd.DataFrame:
+    def filter_df(
+        self,
+        world_df: pd.DataFrame,
+        countries: list[str]
+    ) -> pd.DataFrame:
+        """
+        :param world_df: 
+        :param countries: list of selected countries, empty countries list if no country selected 
+            for detail plots (or no country options selected)
+        :return: filter df by date, seq tech, variant, countries
+        """
         if countries:
             df = world_df[
                 world_df["COLLECTION_DATE"].isin(self.dates)
                 & world_df["SEQ_TECH"].isin(self.seq_techs)
                 & world_df["gene:variant"].isin(self.mutations)
                 & world_df["COUNTRY"].isin(countries)
-                ]
+            ]
         else:
             df = pd.DataFrame(columns=world_df.columns)
         df = df.astype({'number_sequences': 'int32'})
         return df
 
     def get_df_for_frequency_bar(self) -> pd.DataFrame:
+        """
+        filtered_df grouped by country, variant and gene, per group sum of number_sequences
+        for all dfs in self.filtered_dfs, after concat group and sum again
+
+        :return: df used for generating frequency bar plot
+        """
         dfs = [
             (
                 filtered_df[
@@ -183,9 +248,9 @@ class VariantMapAndPlots(object):
                         "element.symbol",
                     ]
                 ]
-                    .groupby(["COUNTRY", "variant.label", "element.symbol"])
-                    .sum(numeric_only=True)
-                    .reset_index()
+                .groupby(["COUNTRY", "variant.label", "element.symbol"])
+                .sum(numeric_only=True)
+                .reset_index()
             )
             for filtered_df in self.filtered_dfs
         ]
@@ -195,7 +260,10 @@ class VariantMapAndPlots(object):
             .reset_index()
         return df
 
-    def seq_in_selection(self, country:str) -> set[int]:
+    def seq_in_selection(self, country: str) -> set[int]:
+        """
+        :return: samples from world_dfs filtered by date, seq tech, country and genes for stacked bar plot
+        """
         samples = set()
         for world_df in self.world_dfs:
             df = world_df[
@@ -203,53 +271,63 @@ class VariantMapAndPlots(object):
                 & world_df["SEQ_TECH"].isin(self.seq_techs)
                 & (world_df["COUNTRY"] == country)
                 & world_df["element.symbol"].isin(self.genes)
-                ]
+            ]
             df.sample_id_list = df.sample_id_list.map(lambda x: x.split(','))
-            samples = samples.union({item for sublist in df["sample_id_list"] for item in sublist})
+            samples = samples.union(
+                {item for sublist in df["sample_id_list"] for item in sublist})
         return samples
 
     def add_slope_column(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        add slope column to df for increase df, slope calculated on nb seq per date
+        """
         slopes = []
         for i in range(len(df["number_sequences"])):
             dates = [(date - self.min_date).days for date in df["COLLECTION_DATE"][i]]
-            nu = df["number_sequences"][i]
-            if len(set(nu)) == 1:
+            seq_nb = df["number_sequences"][i]
+            if len(set(seq_nb)) == 1:
                 slopes.append(0)
             else:
-                slopes.append(linregress(dates, nu).slope)
+                slopes.append(linregress(dates, seq_nb).slope)
         df["slope"] = slopes
         df = df.astype({"slope": float})
         return df
 
     def get_increase_df(self) -> pd.DataFrame:
         """
-        shows change in frequency of the different virus mutations, calculate lin regression with scipy.stats module and
+        shows change in frequency of the different mutations, calculate lin regression with scipy.stats module and
         returns the slope of the regression line (x:range (interval)), y:number of sequences per day in selected interval
         for choropleth map select slope with greatest increase
+        
+        :return: increase df
         """
-        df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0).reset_index(drop=True)
+        df = pd.concat(self.filtered_dfs, ignore_index=True,
+                       axis=0).reset_index(drop=True)
         df = (
             df.groupby(
                 ["COUNTRY", "variant.label", "element.symbol", "COLLECTION_DATE"]
             )
-                .sum(numeric_only=True)
-                .reset_index()
+            .sum(numeric_only=True)
+            .reset_index()
         )
         df = (
             df.groupby(["COUNTRY", "variant.label", "element.symbol"])
-                .agg(
+            .agg(
                 {
                     "number_sequences": lambda x: list(x),
                     "COLLECTION_DATE": lambda x: list(x),
                 }
             )
-                .reset_index()
+            .reset_index()
         )
 
         df = self.add_slope_column(df)
         return df
 
     def concat_filtered_dfs(self) -> pd.DataFrame:
+        """
+        concat all filtered df into one df
+        """
         df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0)
         return df[
             [
@@ -261,15 +339,28 @@ class VariantMapAndPlots(object):
             ]
         ]
 
-    def drop_rows_by_value(self, df: pd.DataFrame, value:int, column:str) -> pd.DataFrame:
-        index_rows = df[df[column] == value].index
+    def drop_rows_by_value(self, df: pd.DataFrame, val, col_name: str) -> pd.DataFrame:
+        """
+        remove rows, where column col_name has value val (str and int possible)
+        """
+        index_rows = df[df[col_name] == val].index
         df.drop(index_rows, inplace=True)
         return df
 
-    def get_df_for_stacked_bar_plot(self, country: str=None) -> pd.DataFrame:
+    def get_df_for_stacked_bar_plot(self, country: str = None) -> pd.DataFrame:
         """
-        sample_id without selected mut --> unchanged in 'gene:variant' column
-        for every sample: one row for every selected variant in same order (country specific, not selection specific)
+        df processing:
+        1. for detail plot country = clicked country, for map (not used right now) filter for country
+        2. split sample_id str into list of sample_ids
+        3. explode table --> one row per sample_id, renamed from sample_id_list to sample.id
+        4. add count column with value 1 for all rows
+        5. add rows for every combination of sample and mutation if not in df of 4., count=0
+        6. for samples without mutation (count=0) -> add "unchanged" in 'gene:variant' column
+        7. add column size = 1 for all rows
+
+        :param country: only for map needed, for detail plot self.location_name
+        :return: df for stacked bar plot with columns ['sample.id', 'gene:variant', 'size']:
+            for every sample: one row for every selected variant in same order 
         """
 
         def mark_unchanged_variants(row):
@@ -304,9 +395,11 @@ class VariantMapAndPlots(object):
             diff = seq_set.difference(set(sample_df['sample.id']))
             df_samples_without_mut = pd.DataFrame(list(diff),
                                                   columns=['sample.id'])
-            sample_df = pd.concat([sample_df, df_samples_without_mut], ignore_index=True, axis=0)
+            sample_df = pd.concat(
+                [sample_df, df_samples_without_mut], ignore_index=True, axis=0)
 
-        all_samples_all_mut_df = pd.merge(sample_df, mutation_df, how='cross')[['sample.id', 'gene:variant']]
+        all_samples_all_mut_df = pd.merge(sample_df, mutation_df, how='cross')[
+            ['sample.id', 'gene:variant']]
         all_samples_all_mut_df["count"] = 0
         plot_df = pd.concat([df, all_samples_all_mut_df]) \
             .drop_duplicates(subset=['sample.id', "gene:variant"], keep="first") \
@@ -318,6 +411,7 @@ class VariantMapAndPlots(object):
 
     def sort_bars_by_var(self, fig_data, variants: list[str]) -> tuple:
         """
+        sort stacked bars of fig_data by variants -> same gene order for all samples
         by default gene:variant and unchanged are not in correct order, so different genes in one row
         sort bars -> gene:variant is always followed by matching gene:variant:unchanged
         """
@@ -338,11 +432,16 @@ class VariantMapAndPlots(object):
                     break
         return tuple(data)
 
-    def create_variant_stacked_bar_plot(self, country: str=None) -> px.bar:
+    def create_variant_stacked_bar_plot(self, country: str = None) -> px.bar:
         """
-        df is in correct order but plot display variants by unknown rules
+        currently not used, could replace bar plot or added in map
+        x-axis: samples, y-axis: mutations in same order
+        if mutation not in sample -> value unchanged -> grey color
+        -> striped plot (the more of same color is shown, the more mutations in this gene in samples) 
+
+        :return: stacked bar plot
         """
-        plot_df = self.get_df_for_stacked_bar_plot()
+        plot_df = self.get_df_for_stacked_bar_plot(country)
         variants = sorted(list(set(plot_df['gene:variant'])))
         color_dict = {variant: (self.color_dict['unchanged'] if 'unchanged' in variant
                                 else self.color_dict[variant.split(':')[0]]) for variant in variants}
@@ -375,7 +474,11 @@ class VariantMapAndPlots(object):
         fig.update_yaxes(visible=False)
         return fig
 
-    def calculate_ticks_from_dates(self, dates: set[datetime.date], date_numbers: set[int]) -> (list[int], list[datetime.date]):
+    def calculate_ticks_from_dates(
+        self,
+        dates: set[datetime.date],
+        date_numbers: set[int]
+    ) -> (list[int], list[datetime.date]):
         """
         set tickvals and ticktext for displaying dates in plot
         show only 6 dates for readability: /6
@@ -388,7 +491,8 @@ class VariantMapAndPlots(object):
 
     def create_frequency_plot(self, df: pd.DataFrame) -> go.Figure:
         """
-        param df: COUNTRY variant.label element.symbol  number_sequences
+        :param df: filtered df with columns=["COUNTRY", "variant.label", "element.symbol", "number_sequences"]
+        :return: bar plot of mutation frequencies of clicked country, sorted by genes (double x-axis)
         """
         fig = go.Figure()
         for gene in df["element.symbol"].unique():
@@ -412,10 +516,11 @@ class VariantMapAndPlots(object):
         )
         return fig
 
-    # plot methods
     def get_frequency_bar_chart(self) -> go.Figure:
         """
-        :return fig bar chart showing mutation information of last hovered plz
+        bar plot for selected methode Frequency
+
+        :return: bar plot of mutation frequencies of clicked country, sorted by genes 
         """
         if self.location_name:
             df = self.get_df_for_frequency_bar()
@@ -436,6 +541,9 @@ class VariantMapAndPlots(object):
         return fig
 
     def create_slope_plot(self, df: pd.DataFrame) -> go.Figure:
+        """
+        :return: bar plot of mutation-slopes of clicked country, x-axis=mutation, y-axis=slope 
+        """
         fig = go.Figure()
         for gene in df["element.symbol"].unique():
             df_g = df[df["element.symbol"] == gene]
@@ -457,6 +565,11 @@ class VariantMapAndPlots(object):
         return fig
 
     def create_slope_bar_plot(self) -> go.Figure:
+        """
+        bar plot for selected methode Increase/Decrease
+
+        :return: bar plot of mutation-slopes of clicked country, x-axis=mutation, y-axis=slope 
+        """
         if self.location_name:
             df = self.get_increase_df()
         else:
@@ -481,6 +594,12 @@ class VariantMapAndPlots(object):
         return fig
 
     def get_scatter_df(self) -> pd.DataFrame:
+        """
+        number_sequences of filtered dfs per country, date, mutation, gene
+        column date_numbers added for correct x-axis (dates transformed into int) 
+
+        :return: df for scatter plot
+        """
         if self.location_name:
             df = self.concat_filtered_dfs()
             df = df.groupby(["COUNTRY", 'COLLECTION_DATE', "variant.label", "element.symbol"]) \
@@ -510,12 +629,16 @@ class VariantMapAndPlots(object):
         return df
 
     def create_scatter_plot(
-        self, 
-        df: pd.DataFrame, 
-        tickvals_date: list[int], 
-        ticktext_date: list[datetime.date], 
+        self,
+        df: pd.DataFrame,
+        tickvals_date: list[int],
+        ticktext_date: list[datetime.date],
         axis_type: str
-        ) -> px.scatter:
+    ) -> px.scatter:
+        """
+        :return: scatter plot, x-axis = dates (tickvals_date), y-axis = sample nb with mut, 
+            trend line added per mutation, labeling dates with ticktext_date, color by gene
+        """
         fig = px.scatter(
             df,
             x="date_numbers",
@@ -548,7 +671,7 @@ class VariantMapAndPlots(object):
             tickvals=tickvals_date,
             ticktext=ticktext_date,
             tickangle=-45,
-        ),
+        )
         fig.update_layout(
             legend_title_text="Gene, Mutation",
             showlegend=True,
@@ -558,7 +681,11 @@ class VariantMapAndPlots(object):
         fig.update_traces(marker={"size": 5})
         return fig
 
-    def get_frequency_development_scatter_plot(self, axis_type:str="lin") -> px.scatter:
+    def get_frequency_development_scatter_plot(self, axis_type: str = "lin") -> px.scatter:
+        """
+        :return: scatter plot x-axis = dates (tickvals_date), y-axis = sample nb with mut, 
+            trend line added per mutation, labeling dates with ticktext_date, color by gene
+        """
         # TODO: same lines on top of each other have color of latest MOC -> change to mixed color
         df = self.get_scatter_df()
 
@@ -574,7 +701,12 @@ class VariantMapAndPlots(object):
         return fig
 
     def get_nb_seq_per_country_df(self) -> pd.DataFrame:
-        concatenated_filtered_df = pd.concat(self.filtered_dfs, ignore_index=True, axis=0)
+        """
+        :return: df with columns=['COUNTRY', 'number_sequences']
+        counts all samples for every country, needed for world_map df
+        """
+        concatenated_filtered_df = pd.concat(
+            self.filtered_dfs, ignore_index=True, axis=0)
         countries = []
         number_sequences = []
         for name, group in concatenated_filtered_df.groupby("COUNTRY"):
@@ -595,9 +727,10 @@ class VariantMapAndPlots(object):
     def get_world_map_df(self, method: str) -> (pd.DataFrame, str):
         """
         :param method: 'Frequency' or 'Increase'
-        return frequency OR increase  df: frequency_df.columns = COUNTRY,number_sequences,ISO_Code
-                                         increase_df.columns = COUNTRY,slope,ISO_Code
-
+        :return: frequency OR increase df for world map: 
+            frequency_df.columns = ["COUNTRY", "number_sequences", "ISO_Code"]
+            increase_df.columns = ["COUNTRY", "slope", "ISO_Code"]
+        :return: column_of_interest: "number_sequences" for frequency_df OR "slope" for increase_df
         """
         if method == "Frequency" and self.filtered_dfs:
             map_df = self.get_nb_seq_per_country_df()
@@ -605,7 +738,8 @@ class VariantMapAndPlots(object):
         elif method == "Increase":
             map_df = self.get_increase_df()
             # select max slope for each country, remove zero first to get negative slopes too
-            map_df = map_df.sort_values("slope", ascending=False).drop_duplicates(["COUNTRY"])
+            map_df = map_df.sort_values(
+                "slope", ascending=False).drop_duplicates(["COUNTRY"])
             column_of_interest = "slope"
 
         # df = self.drop_rows_by_value(df, 0, column_of_interest)
@@ -615,11 +749,14 @@ class VariantMapAndPlots(object):
         return map_location_df, column_of_interest
 
     def create_choropleth_map(
-        self, 
-        df: pd.DataFrame, 
-        shown_hover_data: dict, 
-        color_column:str
-        ) -> px.choropleth:
+        self,
+        df: pd.DataFrame,
+        shown_hover_data: dict,
+        color_column: str
+    ) -> px.choropleth:
+        """
+        :return: world choropleth map with colors depending on param color_column
+        """
         fig = px.choropleth(
             df,
             locations="ISO_Code",
@@ -629,7 +766,8 @@ class VariantMapAndPlots(object):
             hover_data=shown_hover_data,
             labels={
                 el: (
-                    el.replace(".", " ").title() if el != "number_sequences" else "number of sequences"
+                    el.replace(".", " ").title(
+                    ) if el != "number_sequences" else "number of sequences"
                 )
                 for el in df.columns
             },
@@ -640,55 +778,9 @@ class VariantMapAndPlots(object):
         )
         return fig
 
-    def create_map_fig(
-            self, 
-            df: pd.DataFrame, 
-            shown_hover_data: dict, 
-            color_column: str,
-            size_column: str, 
-            z: int=2, 
-            cen: dict=None
-    ) -> px.scatter_mapbox:
-        """
-        param df:  COUNTRY  | variant.label   |   number_sequences | lat |  lon |   scaled_column
-        param shown_hover_data: {'variant.label': True, 'number_sequences': True, 'COUNTRY': False, 'lat': False, 'lon': False, 'scaled_column': False}
-        param color_column: variant.label
-        param size_column: scaled_column
-
-        OR
-        param df:COUNTRY  | variant.label   |   number_sequences (list of nb seq per date) |    COLLECTION_DATE (list of dates)| slope (float)  |  lat |   lon
-        param shown_hover_data: {'variant.label': True, 'slope': True, 'COUNTRY': False, 'lat': False, 'lon': False}
-        param color_column: variant.label
-        param size_column: slope
-
-        """
-        if cen is None:
-            cen = dict(lat=51.5, lon=10.5)
-        fig = px.scatter_mapbox(
-            df,
-            lat="lat",
-            lon="lon",
-            color=color_column,
-            size=size_column,
-            color_discrete_map=self.color_dict,
-            hover_name="COUNTRY",
-            hover_data=shown_hover_data,
-            center=cen,
-            zoom=z,
-            size_max=30,
-            opacity=0.5,
-            labels={el: el.replace(".", " ").title() for el in df.columns},
-        )
-        fig.update_layout(
-            margin={"r": 0, "t": 0, "l": 0, "b": 0},
-            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
-            mapbox_style="carto-positron",
-        )
-        return fig
-
     def get_world_map(self, method: str) -> px.choropleth:
         """
-        :param method: 'Frequency' or 'Increase' (from dropdown left menu)
+        :param method: 'Frequency' or 'Increase' user input
         :return fig:
             frequency method: choropleth map with number of sequences with selected properties per country
             increase method: choropleth map showing decrease/increase of mutation with strongest increase in selected interval
@@ -713,10 +805,10 @@ class VariantMapAndPlots(object):
 
 
 class DateSlider:
-    def __init__(self, df_dict:dict):
-        """
-        param dates: propertyView["COLLECTION_DATE"], type 'datetime.date' (YYYY, M, D)
-        """
+    """
+    handles dates and date slider below map
+    """
+    def __init__(self, df_dict: dict):
         dates_in_propertyViews = sorted(
             list(
                 {i for s in [set(df["COLLECTION_DATE"]) for df in [
@@ -726,7 +818,8 @@ class DateSlider:
             )
         )
         # TODO hard coded min date
-        defined_min_date = datetime.strptime("2022-01-01", "%Y-%m-%d").date()  # min(dates)
+        defined_min_date = datetime.strptime(
+            "2022-01-01", "%Y-%m-%d").date()  # min(dates)
         if min(dates_in_propertyViews) < defined_min_date:
             self.min_date = defined_min_date
         else:
@@ -752,11 +845,14 @@ class DateSlider:
         return date.fromtimestamp(unix)
 
     @staticmethod
-    def get_date_x_days_before(date: datetime.time, interval:int=100) -> datetime.time:
-        return date - timedelta(days=interval)
+    def get_date_x_days_before(_date: datetime.time, interval: int = 100) -> datetime.time:
+        return _date - timedelta(days=interval)
 
     @staticmethod
     def get_days_between_date(first_date: datetime.time, second_date: datetime.time) -> int:
+        """
+        :return number of days between two dates
+        """
         return (second_date - first_date).days
 
     @staticmethod
@@ -767,9 +863,13 @@ class DateSlider:
         ]
         return date_list
 
-    def get_all_dates_in_interval(self, dates: list[datetime.date], interval:int) -> list[datetime.date]:
+    def get_all_dates_in_interval(
+        self, dates: list[datetime.date],
+        interval: int
+    ) -> list[datetime.date]:
         """
         uses second date and interval for preparing date list
+        :return date_list: list of dates (datetime.date)
         """
         second_date = DateSlider.unix_to_date(dates[1])
         if interval is None:
@@ -786,18 +886,19 @@ class DateSlider:
 
     def get_date_list_by_range(self) -> list[datetime.date]:
         """
-        :return date_list: list of dates (datetime.date),
+        :return date_list: list of all dates betwenn min and max date 
         """
         date_range = range((self.max_date - self.min_date).days)
         date_list = [self.max_date - timedelta(days=x) for x in date_range]
         return date_list
 
-    def get_marks_date_range(self, n:int=4) -> dict:
+    def get_marks_date_range(self, mark_nb: int=4) -> dict:
         """
-        :returns n marks for labeling
+        returns mark_nb marks (labeled points on date slider) for labeling
+        :return marks: dict{unix date: date str}
         """
         marks = {}
-        nth = int(len(self.date_list) / n) + 1
+        nth = int(len(self.date_list) / mark_nb) + 1
         for i, _date in enumerate(self.date_list):
             if i % nth == 0:
                 marks[self.unix_time_millis(_date)] = _date.strftime("%Y-%m-%d")

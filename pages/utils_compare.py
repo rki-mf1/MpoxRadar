@@ -1,5 +1,4 @@
 import datetime
-
 import pandas as pd
 
 from pages.utils_filters import select_propertyView_dfs, get_frequency_sorted_mutation_by_df
@@ -8,7 +7,16 @@ from pages.utils_tables import TableFilter, OverviewTable
 from pages.utils_worldMap_explorer import DateSlider
 
 
-def merge_df(variantView: pd.DataFrame, propertyView: pd.DataFrame, aa_nt_radio: str) -> pd.DataFrame:
+def merge_df(
+    variantView: pd.DataFrame,
+    propertyView: pd.DataFrame,
+    aa_nt_radio: str
+) -> pd.DataFrame:
+    """
+    :return: variantView, propertyView merged df 
+        with columns ["sample.id", "variant.label"] for "source" or
+        ["sample.id", "variant.label", "element.symbol", "gene:variant"] for "cds"
+    """
     df = pd.merge(variantView, propertyView, how="inner", on="sample.id")
     if aa_nt_radio == "cds":
         return df[["sample.id", "variant.label", "element.symbol", "gene:variant"]]
@@ -23,6 +31,9 @@ def filter_propertyView(
     start_date: str,
     end_date: str
 ) -> pd.DataFrame:
+    """
+    :return: filtered df by user selected sequencing technologies, countries and dates
+    """
     date_list = DateSlider.get_all_dates(
         datetime.datetime.strptime(start_date, "%Y-%m-%d").date(),
         datetime.datetime.strptime(end_date, "%Y-%m-%d").date(),
@@ -35,6 +46,9 @@ def filter_propertyView(
 
 
 def select_min_x_frequent_mut(mut_options: list[dict], min_nb_freq: int) -> list:
+    """
+    :return: mutation values occuring >= user given minimum number of freuquency
+    """
     df = pd.DataFrame.from_records(mut_options)
     df = df[df['freq'] >= min_nb_freq]
     return df['value']
@@ -65,6 +79,11 @@ def find_unique_and_shared_variants(
         start_date_2: str,
         end_date_2: str,
 ) -> (list[dict], list[dict], list[dict], list[str], list[str], list[str], int, int, int):
+    """
+    :return: mutation options, mutation values and maximum number of mutation frequency 
+        for unique mutation of left selection, right selection and shared mutations in both selections
+        based on user selection
+    """
     if aa_nt_radio == "cds":
         variant_columns = ["gene:variant", "element.symbol"]
     else:
@@ -144,14 +163,14 @@ def create_mutation_dfs_for_comparison(
     propertyView_dfs: list[pd.DataFrame],
 ) -> pd.DataFrame:
     """
-    return merged variantView and propertyView filtered for seqtech, country, dates, genes
+    :return: merged variantView and propertyView filtered for seqtech, country, dates, genes
     """
     if aa_nt_radio == 'cds':
         variantView_dfs = [df[df["element.symbol"].isin(
             gene_value)] for df in variantView_dfs]
 
-    propertyView_dfs = [filter_propertyView(df, seqtech_value, country_value, start_date, end_date) for df in
-                        propertyView_dfs]
+    propertyView_dfs = [filter_propertyView(df, seqtech_value, country_value, start_date, end_date) 
+                        for df in propertyView_dfs]
 
     merged_dfs = []
     for i, variantView in enumerate(variantView_dfs):
@@ -174,10 +193,15 @@ def create_comparison_tables(
         mut_value_right: list[str],
         seqtech_value_right: list[str],
         country_value_right: list[str],
-        start_date_right,
-        end_date_right,
+        start_date_right: str,
+        end_date_right: str,
         mut_value_both: list[str]
 ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    """
+    create overview table and detail tables for samples with unique mutations for left selection, 
+    right selection or table for shared mutations between both selections for compare tool
+    based on user selection
+    """
     variantView_dfs = select_variantView_dfs(
         df_dict, complete_partial_radio, reference_value, aa_nt_radio)
     propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
@@ -212,9 +236,11 @@ def create_comparison_tables(
         variantView_dfs, propertyView_dfs_left)
     table_df_2 = table_right_ins.create_compare_table_left_and_right(
         variantView_dfs, propertyView_dfs_right)
-    table_df_3, samples_left_both, samples_right_both = table_both_ins.create_compare_table_both(variantView_dfs,
-                                                                                                 propertyView_dfs_left,
-                                                                                                 propertyView_dfs_right)
+    table_df_3, samples_left_both, samples_right_both = table_both_ins.create_compare_table_both(
+        variantView_dfs,
+        propertyView_dfs_left,
+        propertyView_dfs_right
+    )
 
     overviewTable = OverviewTable(aa_nt_radio)
     variantView_df_overview_both = overviewTable.count_shared_mutation_in_left_and_right_selection(
