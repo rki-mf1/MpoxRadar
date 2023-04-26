@@ -1,21 +1,18 @@
-from datetime import datetime
+import csv
+import multiprocessing as mp
+import os
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
 from time import perf_counter
 from urllib.parse import urlparse
-from pathlib import Path
-import csv
-import os
-import multiprocessing as mp
+
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy import exc
+from sqlalchemy import create_engine, exc
 
-from pages.config import CACHE_DIR
-from pages.config import DB_URL
-from pages.config import redis_manager
-from pages.utils import load_Cpickle
-from pages.utils import write_Cpickle
+from pages.config import CACHE_DIR, DB_URL, redis_manager
+from pages.utils import load_Cpickle, write_Cpickle
 
 tables = ["propertyView", "variantView"]
 
@@ -33,7 +30,8 @@ column_dtypes = {
         "propery.querytype": STRINGTYPE,
         "property.datatype": STRINGTYPE,
         "property.standard": STRINGTYPE,  # this one is always NULL
-        "value_integer": STRINGTYPE,  # needed - value_integer -> LENGTH, this one is often NULL -> stringType instead of intType
+        # needed - value_integer -> LENGTH, this one is often NULL -> stringType instead of intType
+        "value_integer": STRINGTYPE,
         "value_float": "float32",
         # needed - value_text -> COLLECTION_DATE, RELEASE_DATE, ISOLATE, SEQ_TECH, COUNTRY, GEO_LOCATION, HOST
         "value_text": STRINGTYPE,
@@ -126,8 +124,8 @@ needed_columns = {
 
 def get_database_connection(db_name: str):
     """
-    connect to SQL DB based in env var DB_URL and given db_name
-    return: db connection 
+    connect to SQL DB based on environment var DB_URL and given db_name
+    return: database connection 
     """
     # DB configuration
     parsed_db_url = urlparse(DB_URL)
@@ -140,9 +138,10 @@ def get_database_connection(db_name: str):
 
 class DataFrameLoader:
     """
-    connect to DB and loading into panda dataframes
-    loaded are the column of tables defined in table, needed_columns variables
-    data types used for download from DB and reading from csv defined in var column_dtypes
+    connect to DB and loading of DB entires into panda dataframes
+    loaded are the column of tables (defined in table) -> defined in variable needed_columns 
+    data types used for download from DB and reading from csv -> defined in variable column_dtypes
+    two different download funtions for test DB and normal DB
     parallel loading of different tables (not for test DBs)
     writes downloaded tables as csv to .cache (not for test DBs)
 
@@ -157,7 +156,7 @@ class DataFrameLoader:
         dict{table_name: list of needed columns for website}
     column_dtypes: dict(dict)
         dict{table_name: dict{column name: data type}}
-        
+
     """
 
     def __init__(self, db_name: str):
@@ -168,7 +167,7 @@ class DataFrameLoader:
 
     def define_sql_query_and_get_dtypes(self, table_name: str) -> (str, dict):
         """
-        :return: sql_query for table with select needed columns and added correct quoting
+        :return: SQL query for table with selection of needed columns and added correct quoting
         :return: dict for data types of selected columns
         """
         db_connection = get_database_connection(self.db_name)
@@ -196,7 +195,7 @@ class DataFrameLoader:
 
     def load_db_from_sql(self, table_name: str) -> (str, dict):
         """
-        download table of db and write .csv into .cache
+        download table of DB and write .csv into .cache
 
         :param table_name: name of the DB table to query
         :return: (path to csv, dtypes dict {column_name: dtype (from column_dtypes)})
@@ -268,7 +267,7 @@ class DataFrameLoader:
     def load_db_from_test_db(self) -> dict:
         """
         loading of test db without writing csv to cache
-        
+
         :return: df_dict {table_name: pandas dataframe}
         """
         db_connection = get_database_connection(self.db_name)
@@ -290,7 +289,8 @@ class DataFrameLoader:
 
 def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     """
-    unstacking properties: creating new columns for different property.name values
+    unstacking properties of propertyView: 
+    creating new columns for different property.name values by following steps:
     1. add values from value_date and value_integer to value_text column 
     if property.name = "COLLECTION_DATE", "RELEASE_DATE", "IMPORTED", "LENGTH"
     2. unstacking property.name
@@ -336,14 +336,15 @@ def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def create_variant_view(df: pd.DataFrame, propertyViewSamples: set) -> pd.DataFrame:
+def create_variant_view(df: pd.DataFrame, propertyView_samples: set) -> pd.DataFrame:
     """
     change dtypes of "reference.id" and "variant.id" to int
-    remove entries with sample id not contained in propertyView
+    remove entries with sample ids not contained in propertyView
+    :return: variantView
     """
     df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
     df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
-    df = df[df['sample.id'].isin(propertyViewSamples)]
+    df = df[df['sample.id'].isin(propertyView_samples)]
     return df
 
 
@@ -351,6 +352,7 @@ def remove_x_appearing_variants(world_df: pd.DataFrame, nb: int = 1) -> pd.DataF
     """
     currently not used
     function to remove all variants, that are present <= given number nb
+    :return: world df without variants, that appear maximum nb-times
     """
     df2 = (
         world_df.groupby(["gene:variant"])
@@ -367,15 +369,15 @@ def remove_x_appearing_variants(world_df: pd.DataFrame, nb: int = 1) -> pd.DataF
 
 def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -> pd.DataFrame:
     """
-    created df used for explorer tool
+    created df used for explorer tool by following steps:
     1. merge propertyView and variatView df
     2. concat all strain_ids into one comma separated string list if they have the same 
     location_ID, date, amino_acid-variant --> new column sample_id_list
     3. count samples with same properties --> new column number_sequences
     4. combine element.symbol:variant.label to new column gene:variant
 
-    :return: world_df with columns "COUNTRY", "COLLECTION_DATE", "SEQ_TECH", "sample_id_list",
-            "variant.label", "number_sequences", "element.symbol", "gene:variant"
+    :return: world_df with columns []"COUNTRY", "COLLECTION_DATE", "SEQ_TECH", "sample_id_list",
+            "variant.label", "number_sequences", "element.symbol", "gene:variant"]
     """
     df = pd.merge(
         variantView[["sample.id", "variant.label", "element.symbol"]],
@@ -429,18 +431,26 @@ def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -
     return df
 
 
-def remove_seq_errors_and_add_gene_var_column(variantView: pd.DataFrame, reference_id: int, seq_type: str) -> pd.DataFrame:
+def remove_seq_errors_and_add_gene_var_column(
+    variantView: pd.DataFrame, 
+    reference_id: int, 
+    seq_type: str
+) -> pd.DataFrame:
     """
-    remove sequencing errors from variantView table: X for amino acid variants, N for nucleotide variants
+    remove sequencing errors from variantView table: 
+    X for amino acid variants, N for nucleotide variants
     split variantView table based on reference_id and element.type into multiple tables
-    combine element.symbol:variant.label to new column gene:variant
+    combine element.symbol and variant.label to new column gene:variant
 
     :param variantView: complete or partial variantView dataframe
     :param reference_id: id of reference sequence
     :param seq_type: "cds" or "source"
-    :return: variantView df with columns ['sample.id', 'sample.name', 'reference.id', 'reference.accession',
-       'element.symbol', 'element.type', 'variant.id', 'variant.label'] for nucleotide variants 
-        for protein variants additional column 'gene:variant'
+    :return: variantView df 
+    for nucleotide variants with columns:
+        ['sample.id', 'sample.name', 'reference.id', 'reference.accession','element.symbol',
+        'element.type', 'variant.id', 'variant.label'] 
+    for protein variants: 
+        additional column 'gene:variant'
     """
     df = variantView[
         (variantView['reference.id'] == reference_id)
@@ -458,6 +468,9 @@ def remove_seq_errors_and_add_gene_var_column(variantView: pd.DataFrame, referen
 
 
 def create_empty_processed_df(reference_ids: list[int]) -> dict:
+    """
+    create needed structure of processed_df_dict   
+    """
     processed_df_dict = defaultdict(dict)
     for completeness in ["complete", "partial"]:
         processed_df_dict["variantView"][completeness] = {}
@@ -469,14 +482,16 @@ def create_empty_processed_df(reference_ids: list[int]) -> dict:
 
 def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
     """
-    load sql DB into dict of pandas dfs
-    to handle big db size: split into multiple tables in processed_df_dict:
+    load SQL DB into dict of pandas dfs
+    to handle big db size: DB tables are splitted into multiple tables in processed_df_dict:
         processed_df_dict["propertyView"]["complete" OR "partial"]
         processed_df_dict["variantView"]["complete" OR "partial"][reference_id][seq_type]
+
     for website running db_name is parsed from env var DB_URL, for test DB params are used
 
     :param db_name: for test databases name is given
     :param test_db: for tests databases test_db=True
+    :return: complete pre processed DB dictionary
     """
     if not db_name:
         db_name = urlparse(DB_URL).path.replace("/", "")
@@ -489,12 +504,14 @@ def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict") and not test_db:
+    #if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
         processed_df_dict = load_Cpickle(os.path.join(path_to_cache, "df_dict.pickle"))
     else:
         if test_db:
+            print("Load data from test database")
             loaded_df_dict = loader.load_db_from_test_db()
         else:
             print("Load data from database...")
@@ -519,8 +536,12 @@ def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
                 processed_df_dict["propertyView"][completeness]['sample.id']))
             for reference_id in reference_ids:
                 for seq_type in ['source', 'cds']:
-                    processed_df_dict["variantView"][completeness][reference_id][seq_type] = remove_seq_errors_and_add_gene_var_column(
-                        processed_variantView, reference_id, seq_type)
+                    processed_df_dict["variantView"][completeness][reference_id][seq_type] = \
+                        remove_seq_errors_and_add_gene_var_column(
+                        processed_variantView, 
+                        reference_id, 
+                        seq_type
+                        )
             del processed_variantView
         del loaded_df_dict["variantView"]
         # worldMap
