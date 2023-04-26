@@ -1,6 +1,6 @@
+import os
 import unittest
 from datetime import date
-import os
 
 from parameterized import parameterized
 
@@ -19,27 +19,37 @@ test_params = [
 ]
 
 
-class TestDbPreprocessing(unittest.TestCase):
-    def setUp(self):
-        self.db_name = "mpx_test_04"
-        self.processed_df_dict = load_all_sql_files(self.db_name, caching=False)
-        self.countries = DbProperties.country_entries_cds_per_country.keys()
-        self.date_slider = DateSlider(self.processed_df_dict)
-        self.countries = ['Germany', 'USA']
-        self.mutations = ['OPG197:T22K', 'OPG151:L263F', 'OPG193:L263F', 'OPG016:R84K', 'OPG113:T58K',
-                          'OPG193:A233G']
-        self.seq_techs = ["Illumina", "Nanopore"]
-        self.table_explorer = TableFilter('explorer', self.mutations)
-        self.final_cols = self.table_explorer.table_columns.copy()
-        self.final_cols[-1] = 'REFERENCE_ACCESSION'
-        all_dates = [DateSlider.unix_time_millis(date(2022, 6, 28)), DateSlider.unix_time_millis(date(2022, 10, 1))]
+class TestExplorerTable(unittest.TestCase):
+    """
+    test of table properties of explorer tool table
+    """
+    @classmethod
+    def setUpClass(cls):
+        cls.db_name = "mpx_test_04"
+        cls.processed_df_dict = load_all_sql_files(cls.db_name, test_db=True)
+        cls.countries = DbProperties.country_entries_cds_per_country.keys()
+        cls.date_slider = DateSlider(cls.processed_df_dict)
+        cls.countries = ['Germany', 'USA']
+        cls.mutations = [
+            'OPG197:T22K', 'OPG151:L263F', 'OPG193:L263F', 'OPG016:R84K', 'OPG113:T58K',
+            'OPG193:A233G'
+        ]
+        cls.seq_techs = ["Illumina", "Nanopore"]
+        cls.table_explorer = TableFilter('explorer', cls.mutations)
+        cls.final_cols = cls.table_explorer.table_columns.copy()
+        cls.final_cols[-1] = 'REFERENCE_ACCESSION'
+        all_dates = [
+            DateSlider.unix_time_millis(date(2022, 6, 28)),
+            DateSlider.unix_time_millis(date(2022, 10, 1))
+        ]
         interval = 100
-        self.date_list = self.date_slider.get_all_dates_in_interval(all_dates, interval)
+        cls.date_list = cls.date_slider.get_all_dates_in_interval(all_dates, interval)
 
     def test_table_columns(self):
         correct_columns = [
-            'sample.name', 'NUC_PROFILE', 'AA_PROFILE', 'IMPORTED', 'COLLECTION_DATE', 'RELEASE_DATE', 'ISOLATE',
-            'LENGTH', 'SEQ_TECH', 'COUNTRY', 'GEO_LOCATION', 'HOST', 'GENOME_COMPLETENESS', 'REFERENCE_ACCESSION'
+            'sample.name', 'NUC_PROFILE', 'AA_PROFILE', 'IMPORTED', 'COLLECTION_DATE',
+            'RELEASE_DATE', 'ISOLATE', 'LENGTH', 'SEQ_TECH', 'COUNTRY', 'GEO_LOCATION', 'HOST',
+            'GENOME_COMPLETENESS', 'REFERENCE_ACCESSION'
         ]
         self.assertListEqual(self.table_explorer.table_columns, correct_columns)
 
@@ -54,7 +64,8 @@ class TestDbPreprocessing(unittest.TestCase):
             [country],
         )
         if not table_df.empty:
-            assert len(set(table_df['GENOME_COMPLETENESS']).intersection({'complete', 'partial'})) > 0
+            assert len(set(table_df['GENOME_COMPLETENESS']).intersection(
+                {'complete', 'partial'})) > 0
             assert table_df['COUNTRY'].unique()[0] == country
             assert table_df['SEQ_TECH'].unique()[0] == seq_tech
 
@@ -69,9 +80,18 @@ class TestDbPreprocessing(unittest.TestCase):
         )
         assert len(full_table_df) == 230
         assert len(full_table_df['sample.name'].unique()) == 230
-        self.assertListEqual(list(full_table_df.columns), self.final_cols)
-        self.assertListEqual(list(full_table_df['COUNTRY'].unique()), self.countries)
-        self.assertListEqual(list(full_table_df['SEQ_TECH'].unique()), self.seq_techs)
+        self.assertListEqual(
+            list(full_table_df.columns),
+            self.final_cols
+        )
+        self.assertListEqual(
+            list(full_table_df['COUNTRY'].unique()),
+            self.countries
+        )
+        self.assertListEqual(
+            list(full_table_df['SEQ_TECH'].unique()),
+            self.seq_techs
+        )
 
     def test_empty_filtering(self):
         table_df = self.table_explorer.create_explore_table(
@@ -83,4 +103,7 @@ class TestDbPreprocessing(unittest.TestCase):
             [],
         )
         assert table_df.empty
-        self.assertListEqual(list(table_df.columns), self.final_cols)
+        self.assertListEqual(
+            list(table_df.columns),
+            self.final_cols
+        )

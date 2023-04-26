@@ -1,8 +1,7 @@
-import unittest
-import pandas as pd
-from pandas._testing import assert_frame_equal
-from datetime import date, timedelta
 import os
+import unittest
+from datetime import date
+
 from data import load_all_sql_files
 from tests.test_db_properties import DbProperties
 
@@ -14,19 +13,29 @@ def to_date(d):
 
 
 class TestDbPreprocessing(unittest.TestCase):
-    def setUp(self):
-        self.db_name = "mpx_test_04"
-        self.processed_df_dict = load_all_sql_files(self.db_name, caching=False)
-        self.countries = DbProperties.country_entries_cds_per_country.keys()
+    """
+    test database preprocessing, preprocessing functions in file data.py
+    test dict structure, variantViews, propertyViews and world_dfs
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.db_name = "mpx_test_04"
+        cls.processed_df_dict = load_all_sql_files(cls.db_name, test_db=True)
+        cls.countries = DbProperties.country_entries_cds_per_country.keys()
 
     def test_df_dict_structure(self):
-        assert list(self.processed_df_dict['propertyView'].keys()) == ["complete", "partial"]
-        assert list(self.processed_df_dict['variantView'].keys()) == ["complete", "partial"]
+        assert list(self.processed_df_dict['propertyView'].keys()) == [
+            "complete", "partial"]
+        assert list(self.processed_df_dict['variantView'].keys()) == [
+            "complete", "partial"]
 
         assert list(self.processed_df_dict["variantView"]["complete"].keys()) == [2, 4]
-        assert list(self.processed_df_dict["variantView"]["complete"][2].keys()) == ['source', 'cds']
+        assert list(self.processed_df_dict["variantView"]
+                    ["complete"][2].keys()) == ['source', 'cds']
         assert list(self.processed_df_dict["variantView"]["partial"].keys()) == [2, 4]
-        assert list(self.processed_df_dict["variantView"]["partial"][2].keys()) == ['source', 'cds']
+        assert list(self.processed_df_dict["variantView"]
+                    ["partial"][2].keys()) == ['source', 'cds']
 
         assert list(self.processed_df_dict["world_map"]["complete"].keys()) == [2, 4]
         assert list(self.processed_df_dict["world_map"]["partial"].keys()) == [2, 4]
@@ -46,33 +55,37 @@ class TestDbPreprocessing(unittest.TestCase):
         }
         for reference in [2, 4]:
             for completeness in ['complete', 'partial']:
-                assert list(world_dfs[completeness][reference].columns) == DbProperties.world_df_columns
-        # test nb entries per country
+                assert list(world_dfs[completeness]
+                            [reference].columns) == DbProperties.world_df_columns
+        # test entries per country
                 for country in self.countries:
-                    assert len(world_dfs[completeness][reference][
-                                   world_dfs[completeness][reference]['COUNTRY'] == country]) \
-                           == DbProperties.country_entries_cds_per_country[country][completeness][reference]
-                    assert set(world_dfs[completeness][reference][
-                                   world_dfs[completeness][reference]['COUNTRY'] == country]['variant.label']) \
-                           == DbProperties.variants_cds_per_country[country][completeness][reference]
-                    assert set(world_dfs[completeness][reference][
-                                   world_dfs[completeness][reference]['COUNTRY'] == country]['gene:variant']) \
-                           == DbProperties.gene_variants_cds_per_country[country][completeness][reference]
+                    world_df = world_dfs[completeness][reference]
+                    world_df_country = world_df[world_df['COUNTRY'] == country]
 
-        # test different seq_techs per country
-                    assert set(world_dfs[completeness][reference][
-                                   world_dfs[completeness][reference]['COUNTRY'] == country]['SEQ_TECH'])\
-                           == DbProperties.seq_techs_cds_per_country[country][completeness][reference]
+                    assert len(world_df_country) == \
+                        DbProperties.country_entries_cds_per_country[country][completeness][reference]
 
-                    assert set(world_dfs[completeness][reference][
-                                   world_dfs[completeness][reference]['COUNTRY'] == country]['element.symbol']) \
-                           == DbProperties.genes_per_country[country][completeness][reference]
-                    samples = set([item for sublist in [
-                        x.split(',')
-                        for x in world_dfs[completeness][reference]
-                        [world_dfs[completeness][reference]['COUNTRY'] == country]["sample_id_list"]]
-                                   for item in sublist])
-                    assert len(samples) == DbProperties.samples_dict_cds_per_country[country][completeness][reference]
+                    assert set(world_df_country['variant.label']) == \
+                        DbProperties.variants_cds_per_country[country][completeness][reference]
+
+                    assert set(world_df_country['gene:variant']) == \
+                        DbProperties.gene_variants_cds_per_country[country][completeness][reference]
+
+                    assert set(world_df_country['SEQ_TECH']) == \
+                        DbProperties.seq_techs_cds_per_country[country][completeness][reference]
+                    assert set(world_df_country['element.symbol']) == \
+                        DbProperties.genes_per_country[country][completeness][reference]
+
+                    samples = set(
+                        [
+                            item for sublist in [
+                                x.split(',')for x in world_df_country["sample_id_list"]
+                            ]
+                            for item in sublist
+                        ]
+                    )
+                    assert len(samples) == \
+                        DbProperties.samples_dict_cds_per_country[country][completeness][reference]
 
     def test_variantView_df(self):
         variantView_dfs_cds = {
@@ -104,19 +117,28 @@ class TestDbPreprocessing(unittest.TestCase):
         cds_samples = {'complete': {2: 162, 4: 57}, 'partial': {2: 69, 4: 27}}
         for reference in [2, 4]:
             for completeness in ['complete', 'partial']:
-                assert list(variantView_dfs_source[completeness][reference].columns) == DbProperties.variantView_df_source_columns
-                assert list(variantView_dfs_cds[completeness][reference].columns) == DbProperties.variantView_df_cds_columns
+                variantView_source = variantView_dfs_source[completeness][reference]
+                variantView_cds = variantView_dfs_cds[completeness][reference]
+                assert list(variantView_source.columns) == \
+                    DbProperties.variantView_df_source_columns
+                assert list(variantView_cds.columns) == \
+                    DbProperties.variantView_df_cds_columns
 
-                assert sorted(list(set(variantView_dfs_source[completeness][reference]['variant.label']))) == DbProperties.source_variants[completeness][reference]
-                assert sorted(list(set(variantView_dfs_cds[completeness][reference]['variant.label']))) == DbProperties.cds_variants[completeness][reference]
+                assert sorted(list(set(variantView_source['variant.label']))) == \
+                    DbProperties.source_variants[completeness][reference]
+                assert sorted(list(set(variantView_cds['variant.label']))) == \
+                    DbProperties.cds_variants[completeness][reference]
 
-                assert (len(set(variantView_dfs_source[completeness][reference]['sample.name']))) == source_samples[completeness][reference]
-                assert (len(set(variantView_dfs_cds[completeness][reference]['sample.name']))) == cds_samples[completeness][reference]
+                assert (len(set(variantView_source['sample.name']))) == \
+                    source_samples[completeness][reference]
+                assert (len(set(variantView_cds['sample.name']))) == \
+                    cds_samples[completeness][reference]
 
-                assert set(variantView_dfs_source[completeness][reference]['element.type']) == {'source'}
-                assert set(variantView_dfs_cds[completeness][reference]['element.type']) == {'cds'}
+                assert set(variantView_source['element.type']) == {'source'}
+                assert set(variantView_cds['element.type']) == {'cds'}
 
-                assert set(variantView_dfs_cds[completeness][reference]['gene:variant']) == DbProperties.cds_gene_variants[completeness][reference]
+                assert set(variantView_cds['gene:variant']) == \
+                    DbProperties.cds_gene_variants[completeness][reference]
 
     def test_propertyView_df(self):
         propertyView_dfs = {'complete': self.processed_df_dict["propertyView"]["complete"],
@@ -126,11 +148,13 @@ class TestDbPreprocessing(unittest.TestCase):
         assert set(propertyView_dfs['partial']["GENOME_COMPLETENESS"]) == {"partial"}
 
         for completeness in ['complete', 'partial']:
-            assert list(propertyView_dfs[completeness].columns) == DbProperties.propertyView_columns
-            assert not propertyView_dfs[completeness]['COLLECTION_DATE'].isnull().values.any()
-            assert not propertyView_dfs[completeness]['RELEASE_DATE'].isnull().values.any()
-            assert not propertyView_dfs[completeness]['IMPORTED'].isnull().values.any()
+            propertyView = propertyView_dfs[completeness]
+            assert list(propertyView.columns) == DbProperties.propertyView_columns
+            assert not propertyView['COLLECTION_DATE'].isnull().values.any()
+            assert not propertyView['RELEASE_DATE'].isnull().values.any()
+            assert not propertyView['IMPORTED'].isnull().values.any()
 
             for country in self.countries:
-                assert len(list(propertyView_dfs[completeness][propertyView_dfs[completeness]["COUNTRY"] == country]["sample.id"])) == \
-                           DbProperties.samples_dict_propertyView_per_country[country][completeness]
+                propertyView_country = propertyView[propertyView["COUNTRY"] == country]
+                assert len(list(propertyView_country["sample.id"])) == \
+                    DbProperties.samples_dict_propertyView_per_country[country][completeness]

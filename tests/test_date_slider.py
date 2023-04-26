@@ -1,5 +1,5 @@
-import unittest
 import os
+import unittest
 from datetime import date
 
 from data import load_all_sql_files
@@ -8,19 +8,19 @@ from pages.utils_worldMap_explorer import DateSlider
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
 
 
-def to_date(d):
-    return date.fromisoformat(d)
-
-
 class TestDateSlider(unittest.TestCase):
-    def setUp(self):
-        self.db_name = "mpx_test_04"
-        self.processed_df_dict = load_all_sql_files(self.db_name, caching=False)
-        self.date_slider = DateSlider(self.processed_df_dict)
+    """
+    test of class methods DateSlider
+    """
+    @classmethod
+    def setUpClass(cls):
+        cls.db_name = "mpx_test_04"
+        cls.processed_df_dict = load_all_sql_files(cls.db_name, test_db=True)
+        cls.date_slider = DateSlider(cls.processed_df_dict)
 
     def test_dates(self):
-        assert (self.date_slider.min_date == date(2022, 6, 28))
-        assert (self.date_slider.max_date == date(2022, 10, 1))
+        assert self.date_slider.min_date == date(2022, 6, 28)
+        assert self.date_slider.max_date == date(2022, 10, 1)
         assert len(self.date_slider.date_list) == 96
 
     def test_unix_time_millis(self):
@@ -34,9 +34,12 @@ class TestDateSlider(unittest.TestCase):
         dates = [1669935600, 1672527600]
         interval = 9
         date_list = self.date_slider.get_all_dates_in_interval(dates, interval)
-        correct_dates = [date(2022, 12, 24), date(2022, 12, 25), date(2022, 12, 26),
-                         date(2022, 12, 27), date(2022, 12, 28), date(2022, 12, 29),
-                         date(2022, 12, 30), date(2022, 12, 31), date(2023, 1, 1)]
-        self.assertListEqual(date_list, correct_dates)
-
-
+        correct_dates = [
+            date(2022, 12, 24), date(2022, 12, 25), date(2022, 12, 26),
+            date(2022, 12, 27), date(2022, 12, 28), date(2022, 12, 29),
+            date(2022, 12, 30), date(2022, 12, 31), date(2023, 1, 1)
+        ]
+        self.assertListEqual(
+            date_list,
+            correct_dates
+        )
