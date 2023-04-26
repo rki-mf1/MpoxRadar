@@ -1,9 +1,11 @@
 import datetime
+
 import pandas as pd
 
-from pages.utils_filters import select_propertyView_dfs, get_frequency_sorted_mutation_by_df
-from pages.utils_filters import select_variantView_dfs
-from pages.utils_tables import TableFilter, OverviewTable
+from pages.utils_filters import (get_frequency_sorted_mutation_by_df,
+                                 select_propertyView_dfs,
+                                 select_variantView_dfs)
+from pages.utils_tables import OverviewTable, TableFilter
 from pages.utils_worldMap_explorer import DateSlider
 
 
@@ -47,7 +49,7 @@ def filter_propertyView(
 
 def select_min_x_frequent_mut(mut_options: list[dict], min_nb_freq: int) -> list:
     """
-    :return: mutation values occuring >= user given minimum number of freuquency
+    :return: mutation values occuring >= user given minimum number of frequency
     """
     df = pd.DataFrame.from_records(mut_options)
     df = df[df['freq'] >= min_nb_freq]

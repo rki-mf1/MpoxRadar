@@ -1,19 +1,17 @@
-from dash import callback
-from dash import ctx
-from dash import Input
-from dash import Output
-from dash import State
+from dash import Input, Output, State, callback, ctx
 
-from pages.utils_filters import actualize_filters
-from pages.utils_filters import get_frequency_sorted_cds_mutation_by_filters
-from pages.utils_worldMap_explorer import DateSlider
-from pages.utils_worldMap_explorer import VariantMapAndPlots
+from pages.utils_filters import (actualize_filters,
+                                 get_frequency_sorted_cds_mutation_by_filters)
 from pages.utils_tables import TableFilter
+from pages.utils_worldMap_explorer import DateSlider, DetailPlots, WorldMap
 
 
 def get_explore_callbacks(  # noqa: C901
         df_dict, date_slider, color_dict, location_coordinates
 ):
+    """
+    function contains all callbacks used in explore tool page (in tool.py file)
+    """
     @callback(
         [
             Output("mutation_dropdown_0", "options"),
@@ -74,7 +72,8 @@ def get_explore_callbacks(  # noqa: C901
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
             text_freq = f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
         text_nb_mut = (
-            f"Select n-th most frequent variants. Number variants matching filters: {len(mut_options)}"
+            f"Select n-th most frequent variants. Number variants matching filters: \
+                {len(mut_options)}"
         )
 
         return mut_options, mut_value, text_nb_mut, max_select, select_x_mut, min_nb_freq, text_freq
@@ -171,7 +170,7 @@ def get_explore_callbacks(  # noqa: C901
             complete_partial_radio,
             layout,
     ):
-        variant_plot_instance = VariantMapAndPlots(
+        world_map_instance = WorldMap(
             df_dict,
             date_slider,
             reference_id,
@@ -182,15 +181,15 @@ def get_explore_callbacks(  # noqa: C901
             dates,
             interval,
             color_dict,
-            'map',
             location_coordinates,
-            )
-
-        fig = variant_plot_instance.get_world_map(
-            method,
         )
-        # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
-        # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
+
+        fig = world_map_instance.get_world_map(method)
+        # layout: {'geo.projection.rotation.lon': -99.26450411962647,
+        #          'geo.center.lon': -99.26450411962647,
+        #           'geo.center.lat': 39.65065298875763,
+        #           'geo.projection.scale': 2.6026837108838667
+        # }
         # TODO sometimes not working
         if layout:
             fig.update_layout(layout)
@@ -283,7 +282,8 @@ def get_explore_callbacks(  # noqa: C901
     #     interval: increment the counter n_intervals every interval milliseconds.
     #     disabled (boolean; optional): If True, the counter will no longer update.
     #     n_intervals (number; default 0): Number of times the interval has passed.
-    #     max_intervals (number; default -1): Number of times the interval will be fired. If -1, then the interval has no limit
+    #     max_intervals (number; default -1): Number of times the interval will be fired.
+    #      If -1, then the interval has no limit
     #     (the default) and if 0 then the interval stops running.
     #     """
     #     if interval is None:
@@ -347,7 +347,7 @@ def get_explore_callbacks(  # noqa: C901
         except TypeError:
             clicked_country = ""
 
-        variant_plot_instance = VariantMapAndPlots(
+        detail_plot_instance = DetailPlots(
             df_dict,
             date_slider,
             reference_id,
@@ -358,26 +358,28 @@ def get_explore_callbacks(  # noqa: C901
             dates,
             interval,
             color_dict,
-            'detail',
             location_coordinates,
             genes,
             clicked_country
         )
-        title_text = f"Detailed look at the sequences with the chosen mutations for the selected country: {variant_plot_instance.location_name}"
-        info_header = f"Number sequences for country {variant_plot_instance.location_name} and selected properties  between " \
-                      f"{variant_plot_instance.dates[0]} - {variant_plot_instance.dates[-1]}: {variant_plot_instance.number_selected_sequences} " \
-                      f"of which {variant_plot_instance.seq_with_mut} sequences carry at least one of the selected mutations."
+        title_text = f"Detailed look at the sequences with the chosen mutations for the selected \
+                    country: {detail_plot_instance.location_name}"
+        info_header = f"Number sequences for country {detail_plot_instance.location_name} and \
+            selected properties between {detail_plot_instance.dates[0]} - \
+            {detail_plot_instance.dates[-1]}: {detail_plot_instance.number_selected_sequences} of \
+             which {detail_plot_instance.seq_with_mut} sequences carry at least one of the \
+            selected mutations."
         # 1. plot
         if method == "Increase":
-            fig = variant_plot_instance.create_slope_bar_plot()
+            fig = detail_plot_instance.create_slope_bar_plot()
             plot_header = "Slope mutations"
         elif method == "Frequency":
-            fig = variant_plot_instance.get_frequency_bar_chart()
-            plot_header = f"Number Sequences"
+            fig = detail_plot_instance.get_frequency_bar_chart()
+            plot_header = "Number Sequences"
         return fig, title_text, plot_header, info_header
 
     @callback(
-        Output("mutation_development", "figure"),
+            Output("mutation_development", "figure"),
         [
             Input("world_map_explorer", "clickData"),
             Input("mutation_dropdown_0", "value"),
@@ -399,19 +401,19 @@ def get_explore_callbacks(  # noqa: C901
             seqtech_list,
             dates,
             interval,
-            clickDataBoxPlot,
+            click_data_box_plot,
             complete_partial_radio,
             countries,
             genes
     ):
         if ctx.triggered_id == "results_per_location":
-            mutations = [clickDataBoxPlot["points"][0]["label"]]
+            mutations = [click_data_box_plot["points"][0]["label"]]
         try:
             clicked_country = click_data["points"][0]["hovertext"]
         except TypeError:
             clicked_country = ""
 
-        variant_plot_instance = VariantMapAndPlots(
+        detail_plot_instance = DetailPlots(
             df_dict,
             date_slider,
             reference_id,
@@ -422,12 +424,11 @@ def get_explore_callbacks(  # noqa: C901
             dates,
             interval,
             color_dict,
-            'detail',
             location_coordinates,
             genes,
             clicked_country
-            )
-        fig_develop = variant_plot_instance.get_frequency_development_scatter_plot()
+        )
+        fig_develop = detail_plot_instance.get_frequency_development_scatter_plot()
         return fig_develop
 
     # fill table

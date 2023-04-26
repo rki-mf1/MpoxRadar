@@ -1,8 +1,8 @@
 from datetime import datetime
+
 import pandas as pd
 
-from pages.utils_filters import select_propertyView_dfs
-from pages.utils_filters import select_variantView_dfs
+from pages.utils_filters import select_propertyView_dfs, select_variantView_dfs
 from pages.utils_worldMap_explorer import DateSlider
 
 
@@ -39,8 +39,8 @@ class TableFilter(object):
         end_date: str = None
     ):
         """
-        :param table_type: two different tables for "Explore Tool" and "Compare Tool" 
-            with different columns
+        :param table_type: "explorer" or "compare" 
+            two different tables for "Explore Tool" and "Compare Tool" with different columns
         :param mut_value: user selected mutations
         :param aa_nt_radio: user selected radio amino acids (="cds") or nucleotides (="source")
         :param seqtech: user selected sequencing technologies
@@ -173,8 +173,8 @@ class TableFilter(object):
         aa_nt: str
     ) -> pd.DataFrame:
         """
-        :returns: df with one row per sample 
-            and all variants combined into comma sep string in AA_PROFILE or NUC_PROFILE column
+        :returns: df with only one row per sample 
+            -> all variants combined into one comma sep string in AA_PROFILE or NUC_PROFILE column
         """
         if self.table_type == 'explorer':
             column_names = [
@@ -241,15 +241,15 @@ class TableFilter(object):
             countries: list[str],
     ) -> pd.DataFrame:
         """
-        filter dfs by user input, combine variants in one string, naming and ordering columns
+        filter dfs by user input, combine variants into one string, naming and ordering columns
         
-        :param df_dict: all pre-processed pandas df
-        :param complete_partial_radio: complete OR partial (= using complete AND partial dfs)
-        :param mutation_list: mutations of style "gene:variant" (user selected)
-        :param seq_tech_list: seq tech list of filter, type list of str
-        :param reference_id: int
+        :param df_dict: all pre-processed dfs
+        :param complete_partial_radio: complete OR partial (partial= using complete AND partial dfs)
+        :param mutation_list: user selected mutations of style "gene:variant"
+        :param seq_tech_list: user selected seq tech list
+        :param reference_id: id of reference sequence
         :param dates: list of dates (date slider chosen date + interval)
-        :param countries: country list of filter, type list of str
+        :param countries:  user selected country list 
         :return: df explore table
         """
         variantView_dfs_cds = select_variantView_dfs(
@@ -300,10 +300,10 @@ class TableFilter(object):
         propertyView_dfs: list[pd.DataFrame]
     ) -> pd.DataFrame:
         """
-        to allow a complete mutation PROFILE filering by samples 
-        (filter by mutation directly not possible)
+        to allow a complete mutation PROFILE filtering must be done by samples 
+        and not directly by mutations
 
-        :return: compare table for mutations unique for eft or roght selection
+        :return: compare table for mutations unique for left or right selection
         """
         samples = self.get_samples_by_mutation(propertyView_dfs, variantView_dfs)
         variantView_dfs = [df[df['sample.id'].isin(samples)] for df in variantView_dfs]
@@ -319,7 +319,8 @@ class TableFilter(object):
         propertyView_dfs_right: list[pd.DataFrame]
     ) -> (pd.DataFrame, set[int], set[int]):
         """
-        to allow a complete mutation PROFILE filering by samples and not directly by mutations
+        to allow a complete mutation PROFILE filtering must be done by samples 
+        and not directly by mutations
         
         :return: compare table for mutations shared by both selections
         :return: samples of left selection with mutation contained in both selections
@@ -350,6 +351,7 @@ class OverviewTable:
     """
     overview table of compare tool showing nb of samples per mutation 
     for unique mutations left, shared mutations and unique mutations of right selection 
+    sorted by highest frequency of mutation (of combined mut left/right)
 
     ...
 
@@ -370,8 +372,6 @@ class OverviewTable:
     ]
 
     def __init__(self, aa_nt_radio: str):
-        """
-        """
         super(OverviewTable, self).__init__()
         if aa_nt_radio == 'cds':
             self.variant_col = "gene:variant"
@@ -403,7 +403,8 @@ class OverviewTable:
         variantView_df_overview_both: pd.DataFrame
     ) -> pd.DataFrame:
         """
-        sort overview table by variants with higest number of samples in left AND right columns
+        sort overview table by variants with higest number of samples 
+        (for shared variants highest nb of mut in left + right samples)
         """
         sorted_indices = (variantView_df_overview_both["freq l"] + variantView_df_overview_both["freq r"]) \
             .sort_values(ascending=False).index

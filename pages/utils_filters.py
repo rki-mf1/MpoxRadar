@@ -1,6 +1,7 @@
 from datetime import datetime
-from dash import html
+
 import pandas as pd
+from dash import html
 
 
 def select_variantView_dfs(
@@ -10,8 +11,9 @@ def select_variantView_dfs(
     aa_nt_radio: str
 ) -> list[pd.DataFrame]:
     """
-    selection of used variantView dfs 
+    selection of used variantView dfs for variant display
     based on user selection of completeness, reference sequence and variant type
+    :return: list of variantView dfs 
     """
     variantView_dfs = [df_dict["variantView"]['complete'][reference_value][aa_nt_radio]]
     if complete_partial_radio == 'partial':
@@ -22,8 +24,8 @@ def select_variantView_dfs(
 
 def select_propertyView_dfs(df_dict: dict, complete_partial_radio: str) -> list[pd.DataFrame]:
     """
-    selection of used propertyView dfs 
-    based on user selection of completeness
+    selection of used propertyView dfs based on user selection of completeness
+    :return: list of propertyView dfs
     """
     propertyView_dfs = [df_dict["propertyView"]["complete"]]
     if complete_partial_radio == "partial":
@@ -94,7 +96,7 @@ def get_all_gene_dict(
 
 def get_all_frequency_sorted_seqtech(df_dict: dict) -> dict:
     """
-    :return: complete seq tech options sorted by occurence
+    :return: complete seq tech options sorted by frequency
     """
     propertyView = pd.concat(
         [df_dict['propertyView']['complete'], df_dict['propertyView']['partial']],
@@ -124,9 +126,10 @@ def get_all_frequency_sorted_countries_by_filters(
         min_date: str = None
 ) -> list[dict]:
     """
-    filtered for user input seqtech, completeness, reference, gene, variant type (and date)
+    countries filtered for user input seqtech, completeness, reference, gene, variant type 
+    (and date)
 
-    :return: complete country options sorted by occurence,
+    :return: complete country options sorted by frequency
     """
     # complete samples, propertyView filtered by seqtech, gene, min date
     filtered_propertyView = filter_propertyView_by_seqtech_and_gene(
@@ -181,7 +184,8 @@ def filter_propertyView_by_seqtech_and_gene(
     min_date: str = None
 ) -> pd.DataFrame:
     """
-    filtering by sample ids of variantView include gene filtering if variant type = cds
+    filtering of properyView df by sample ids of variantView and seq techs
+    + gene filtering if variant type = cds
     and ensures both tables contain same sample ids
 
     :return: filtered propertyView df for user input seqtech (and date)
@@ -246,8 +250,9 @@ def get_frequency_sorted_cds_mutation_by_filters(
         min_nb_freq: int = 1
 ) -> (list[dict], int, int):
     """
-    :return: mutation options sorted by occurence, 
+    :return: mutation options sorted by frequency, 
         with color styling for AA variants and additional value frequency of mutation
+        -> allows fast filtering of mutation options by min_nb_freq
         filtered for user input seqtech, completeness, reference, gene, countries, variant type
     :return: highest mutation frequency in selection = nb of samples with same mutation
     :return: lowest mutation frequency in selecion
@@ -382,7 +387,7 @@ def get_frequency_sorted_seq_techs_by_filters(
         min_date: str = None
 ) -> list[dict]:
     """
-    filter for seq techs, completeness, refernce, variant type, genes (and dates) 
+    filter for seq techs, completeness, reference, variant type, genes (and dates) 
     
     :return: frequency sorted seq tech options 
         with disabled seq techs if not contained in selection
@@ -445,15 +450,14 @@ def actualize_filters(
         min_date: str = None
 ) -> (list[dict], list[str], list[dict], list[str], list[dict], list[str]):
     """
-    function used in compare and explore callbacks 
-    for actualize filter options depending in user input
-    select all buttons: selects all values in options or no values,
-    hierachially dependencys: 
+    function used in compare and explore callbacks for updating all filters
+    select all lists: selects all values in options (len=1) or no values (len=0),
+    hierachially dependencys of filters: 
         "complete_partial_radio", "aa_nt_radio", "reference_radio" --> change all filters
-        changes in selected genes; adjust seq tech and country options
-        changes in selected seq techs: adjust country options
-        
-    :return: gene-, seq tech-, country-options and -values
+        changes in selected genes; affects seq tech and country options
+        changes in selected seq techs: affects country options
+
+    :return: gene-, seq tech-, country- options and -values
     """
     if triggered_id.startswith("select_all_genes"):
         if len(select_all_genes) == 1:
