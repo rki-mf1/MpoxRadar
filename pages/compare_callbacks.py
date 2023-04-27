@@ -27,6 +27,9 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Output("min_nb_freq_left", "children"),
             Output("min_nb_freq_right", "children"),
             Output("min_nb_freq_both", "children"),
+            Output("select_min_nb_frequent_mut_left", "value"),
+            Output("select_min_nb_frequent_mut_right", "value"),
+            Output("select_min_nb_frequent_mut_both", "value"),
         ],
         [
             Input("compare_button", "n_clicks"),
@@ -160,7 +163,9 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             text_freq_1 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_left}"
             text_freq_2 = f"Select minimum variant frequency. Highest frequency in selection:  {max_freq_nb_right}"
             text_freq_3 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_both}"
-
+            min_nb_freq_left = 1
+            min_nb_freq_right = 1
+            min_nb_freq_both = 1
         text_1 = f"Unique number of variants in left selection: {len(mut_value_left)}"
         text_2 = f"Unique number of variants in right selection: {len(mut_value_right)}"
         text_3 = f"Number of variants in both selections: {len(mut_value_both)}"
@@ -178,6 +183,9 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             text_freq_1,
             text_freq_2,
             text_freq_3,
+            min_nb_freq_left,
+            min_nb_freq_right,
+            min_nb_freq_both,
         )
 
     @callback(

@@ -55,6 +55,7 @@ class TestDbPreprocessing(unittest.TestCase):
         }
         for reference in [2, 4]:
             for completeness in ['complete', 'partial']:
+                print((world_dfs[completeness][reference].head()))
                 assert list(world_dfs[completeness]
                             [reference].columns) == DbProperties.world_df_columns
         # test entries per country
