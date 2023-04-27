@@ -308,6 +308,7 @@ def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     df["value_text"] = df.apply(
         lambda row: row["value_date"]
         if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE", "IMPORTED"]
+        if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE", "IMPORTED"]
         else row["value_text"],
         axis=1,
     )
@@ -323,6 +324,8 @@ def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     df = df.set_index(["property.name"] + cols).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
     df.COLLECTION_DATE.fillna(df.RELEASE_DATE, inplace=True)
+    # delete entries without collection and release date else nan errors:
+    df = df.dropna(subset=["COLLECTION_DATE"])
     # delete entries without collection and release date else nan errors:
     df = df.dropna(subset=["COLLECTION_DATE"])
     df["COLLECTION_DATE"] = df["COLLECTION_DATE"].apply(
@@ -363,6 +366,7 @@ def remove_x_appearing_variants(world_df: pd.DataFrame, nb: int = 1) -> pd.DataF
         "gene:variant"
     ].tolist()
     if variants_to_remove:
+        world_df = world_df[~world_df["gene:variant"].isin(variants_to_remove)]
         world_df = world_df[~world_df["gene:variant"].isin(variants_to_remove)]
     return world_df
 
@@ -424,6 +428,7 @@ def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -
             "variant.label",
             "number_sequences",
             "element.symbol",
+            "gene:variant",
             "gene:variant"
         ]
     ]

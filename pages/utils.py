@@ -159,3 +159,17 @@ def load_Cpickle(filename):
     with open(filename, "rb") as input_file:
         data = cPickle.load(input_file)
     return data
+
+
+def generate_96_mutation_types():
+    mutation_types = {}
+    substitution_classes = ["C>A", "C>G", "C>T", "T>A", "T>C", "T>G"]
+    possible_nucleotides = ["A", "C", "G", "T"]
+    for n1 in substitution_classes:
+        if n1 not in mutation_types:
+            mutation_types[n1] = {}
+        for start in possible_nucleotides:
+            for end in possible_nucleotides:
+                mutation_type = start + n1 + end
+                mutation_types[n1][mutation_type] = 0
+    return mutation_types

@@ -33,7 +33,7 @@ def get_explore_callbacks(  # noqa: C901
         ],
         [
             State("mutation_dropdown_0", "options"),
-            State("min_nb_freq_0", "children")
+            State("min_nb_freq_0", "children"),
         ],
         prevent_initial_call=False,
     )
@@ -73,10 +73,18 @@ def get_explore_callbacks(  # noqa: C901
             text_freq = f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
         text_nb_mut = (
             f"Select n-th most frequent variants. Number variants matching filters: \
-                {len(mut_options)}"
+            {len(mut_options)}"
         )
 
-        return mut_options, mut_value, text_nb_mut, max_select, select_x_mut, min_nb_freq, text_freq
+        return (
+            mut_options, 
+            mut_value, 
+            text_nb_mut,
+            max_select, 
+            select_x_mut,
+            min_nb_freq,
+            text_freq
+            )
 
     @callback(
         [
@@ -310,7 +318,7 @@ def get_explore_callbacks(  # noqa: C901
             Output("results_per_location", "figure"),
             Output("chosen_location", "children"),
             Output("header_upper_plot", "children"),
-            Output("sequence_information", "children")
+            Output("sequence_information", "children"),
         ],
         [
             Input("world_map_explorer", "clickData"),
@@ -363,7 +371,7 @@ def get_explore_callbacks(  # noqa: C901
             clicked_country
         )
         title_text = f"Detailed look at the sequences with the chosen mutations for the selected \
-                    country: {detail_plot_instance.location_name}"
+                     country: {detail_plot_instance.location_name}"
         info_header = f"Number sequences for country {detail_plot_instance.location_name} and \
             selected properties between {detail_plot_instance.dates[0]} - \
             {detail_plot_instance.dates[-1]}: {detail_plot_instance.number_selected_sequences} of \

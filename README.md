@@ -6,7 +6,9 @@ MpoxRadar is a worldwide interactive dashboard for genomic surveillance of Mpox 
      alt="MpoxRadar-GraphicalAbstract"
      style=""  width="600" height="450" />
 </div>
-With this web server, we provide tools to explore and compare metadata from Mpox sequences available from our data sources. Furthermore, we provide an advanced tool for more detailed searches. The chosen data using our tools is visualised and presented in downloadable tables. As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed, aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users. 
+
+With this web server, we provide tools to explore and compare metadata from Mpox sequences available from our data sources. Furthermore, we provide an advanced tool for more detailed searches. The chosen data using our tools is visualised and presented in downloadable tables. As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed, aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users.
+
 
 -------
 

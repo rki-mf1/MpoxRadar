@@ -26,6 +26,7 @@ from pages.html_data_explorer import create_world_map_explorer
 from pages.html_data_explorer import html_elem_dropdown_aa_mutations
 from pages.html_data_explorer import html_elem_method_radioitems
 from pages.html_data_explorer import html_interval
+from pages.html_more_viz import tab_more_tool
 from pages.html_shared import html_complete_partial_radio
 from pages.html_shared import html_disclaimer_seq_errors
 from pages.html_shared import html_elem_checklist_seq_tech
@@ -95,8 +96,11 @@ start_colored_mutation_options_dict, max_nb_freq, min_nb_freq = get_frequency_so
     color_dict,
     start_cond_min_freq
 )
-nb_shown_options = len(start_colored_mutation_options_dict) if len(start_colored_mutation_options_dict) \
-                                                               < start_cond_len_shown_mut else start_cond_len_shown_mut
+nb_shown_options = (
+    len(start_colored_mutation_options_dict)
+    if len(start_colored_mutation_options_dict) < start_cond_len_shown_mut
+    else start_cond_len_shown_mut
+)
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 compare_columns = TableFilter('compare', []).table_columns
@@ -109,6 +113,28 @@ tab_explored_tool = html.Div(
                 html.Div(
                     [
                         dbc.Row(html.H2("Filter Panel", style={"textAlign": "center"})),
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Alert(
+                                    [
+                                        html.I(className="bi bi-journal-text me-2"),
+                                        "For a step-by-step guide on how to use this tool with an example, check out ",
+                                        html.A(
+                                            "our wiki.",
+                                            href="https://github.com/rki-mf1/MpoxRadar/wiki/Explore-Tool",
+                                            target="_blank",
+                                        ),
+                                        " For more detailed information on the features, check out the ",
+                                        html.A(
+                                            "help page.",
+                                            href="Help",
+                                        ),
+                                    ],
+                                    color="info",
+                                    dismissable=True,
+                                )
+                            ),
+                        ),
                         dbc.Row(
                             dbc.Col(html_complete_partial_radio("explore")),
                             className="mb-2",
@@ -150,7 +176,8 @@ tab_explored_tool = html.Div(
                                 dbc.Col(
                                     [
                                         html_elem_dropdown_aa_mutations(
-                                            start_colored_mutation_options_dict, nb_shown_options
+                                            start_colored_mutation_options_dict,
+                                            nb_shown_options,
                                         )
                                     ],
                                     width=9,
@@ -170,7 +197,8 @@ tab_explored_tool = html.Div(
                     ],
                 ),
                 dbc.Row(
-                    dbc.Col(html_disclaimer_seq_errors("explorer", only_cds=True)), className="mt-2"
+                    dbc.Col(html_disclaimer_seq_errors("explorer", only_cds=True)),
+                    className="mt-2",
                 ),
                 html.Hr(),
                 html.Div(create_world_map_explorer(date_slider)),
@@ -190,11 +218,45 @@ tab_compare_tool = (
                 [
                     dbc.Row(
                         [
-                            dbc.Row(html_complete_partial_radio('compare')),
-                            dbc.Row(html_aa_nt_radio()),
-                            dbc.Row(html_elem_reference_radioitems(
-                                all_reference_options, start_cond_ref_id, radio_id=1
-                            ), ),
+                            dbc.Row(
+                                dbc.Col(
+                                    dbc.Alert(
+                                        [
+                                            html.I(className="bi bi-journal-text me-2"),
+                                            "For a step-by-step guide on how to use this tool with an example, check out ",
+                                            html.A(
+                                                "our wiki.",
+                                                href="https://github.com/rki-mf1/MpoxRadar/wiki/Compare-Tool",
+                                                target="_blank",
+                                            ),
+                                            " For more detailed information on the features, check out the ",
+                                            html.A(
+                                                "help page.",
+                                                href="Help",
+                                            ),
+                                        ],
+                                        color="info",
+                                        dismissable=True,
+                                    )
+                                ),
+                            ),
+                            dbc.Row(
+                                dbc.Col(html_complete_partial_radio("compare")),
+                            ),
+                            dbc.Row(
+                                dbc.Col(html_aa_nt_radio()),
+                                className="mt-1",
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    html_elem_reference_radioitems(
+                                        all_reference_options,
+                                        start_cond_ref_id,
+                                        radio_id=1,
+                                    ),
+                                ),
+                                className="mt-1",
+                            ),
                             dbc.Col(
                                 [
                                     dbc.Row(
@@ -232,7 +294,15 @@ tab_compare_tool = (
                                     ),
                                 ]
                             ),
-                            html.Hr(className="vr"),
+                            html.Hr(
+                                className="vr",
+                                style={
+                                    "border": "none",
+                                    "borderColor": "#AB87FF",
+                                    "opacity": "unset",
+                                    "width": "1px",
+                                },
+                            ),
                             dbc.Col(
                                 [
                                     dbc.Row(
@@ -386,6 +456,7 @@ layout = html.Div(
                                 dbc.Tab(tab_explored_tool, label="Explore Tool"),
                                 dbc.Tab(tab_advanced_tool, label="Advanced Tool"),
                                 dbc.Tab(tab_compare_tool, label="Compare Tool"),
+                                dbc.Tab(tab_more_tool, label="More Tools"),
                             ]
                         ),  # end tabs
                     ]

@@ -15,7 +15,11 @@ dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.mi
 app = Dash(
     __name__,
     use_pages=True,
-    external_stylesheets=[dbc.themes.ZEPHYR, dbc.icons.BOOTSTRAP],
+    external_stylesheets=[
+        dbc.themes.ZEPHYR,
+        dbc.icons.BOOTSTRAP,
+        dbc.icons.FONT_AWESOME,
+    ],
     long_callback_manager=background_callback_manager,
     background_callback_manager=background_manager,
     suppress_callback_exceptions=True,

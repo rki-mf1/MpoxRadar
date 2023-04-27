@@ -1,0 +1,35 @@
+name: CD process
+on:
+  push:
+    branches:
+      - dev
+jobs:
+
+  deploy:
+    name: Deploy
+    environment: PROD
+    runs-on: ubuntu-latest
+    steps:
+    - name: Executing remote ssh commands using ssh key
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 22
+        script: |
+          cd /opt/MpoxRadar/
+          sudo git checkout dev
+          sudo git pull
+
+    - name: Restart the application after deployment
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 22
+        script: |
+          sudo mpoxradar.reload\&restart.everything.sh

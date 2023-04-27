@@ -26,7 +26,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Output("max_nb_txt_both", "children"),
             Output("min_nb_freq_left", "children"),
             Output("min_nb_freq_right", "children"),
-            Output("min_nb_freq_both", "children")
+            Output("min_nb_freq_both", "children"),
         ],
         [
             Input("compare_button", "n_clicks"),
@@ -96,6 +96,11 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             text_freq_3,
 
     ):
+        if aa_nt_radio == "cds":
+            variant_columns = ["gene:variant", "element.symbol"]
+        else:
+            variant_columns = ["variant.label"]
+
         if ctx.triggered_id == "select_all_mutations_left":
             if len(select_all_mutations_left) == 1:
                 mut_value_left = [i["value"] for i in mut_options_left]
@@ -112,34 +117,45 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             elif len(select_all_mutations_both) == 0:
                 mut_value_both = []
         elif ctx.triggered_id == "select_min_nb_frequent_mut_left":
-            mut_value_left = select_min_x_frequent_mut(mut_options_left,
-                                                       min_nb_freq_left)
+            mut_value_left = select_min_x_frequent_mut(
+                mut_options_left, min_nb_freq_left
+            )
         elif ctx.triggered_id == "select_min_nb_frequent_mut_right":
-            mut_value_right = select_min_x_frequent_mut(mut_options_right,
-                                                        min_nb_freq_right)
+            mut_value_right = select_min_x_frequent_mut(
+                mut_options_right, min_nb_freq_right
+            )
         elif ctx.triggered_id == "select_min_nb_frequent_mut_both":
-            mut_value_both = select_min_x_frequent_mut(mut_options_both,
-                                                       min_nb_freq_both)
+            mut_value_both = select_min_x_frequent_mut(
+                mut_options_both, min_nb_freq_both
+            )
 
         else:
-            mut_options_left, mut_options_right, mut_options_both, \
-                mut_value_left, mut_value_right, mut_value_both, \
-                max_freq_nb_left, max_freq_nb_right, max_freq_nb_both = find_unique_and_shared_variants(
-                    df_dict,
-                    color_dict,
-                    complete_partial_radio,
-                    reference_value,
-                    aa_nt_radio,
-                    gene_value_1,
-                    seqtech_value_1,
-                    country_value_1,
-                    start_date_1,
-                    end_date_1,
-                    gene_value_2,
-                    seqtech_value_2,
-                    country_value_2,
-                    start_date_2,
-                    end_date_2,
+            (
+                mut_options_left,
+                mut_options_right,
+                mut_options_both,
+                mut_value_left,
+                mut_value_right,
+                mut_value_both,
+                max_freq_nb_left,
+                max_freq_nb_right,
+                max_freq_nb_both
+            ) = find_unique_and_shared_variants(
+                df_dict,
+                color_dict,
+                complete_partial_radio,
+                reference_value,
+                aa_nt_radio,
+                gene_value_1,
+                seqtech_value_1,
+                country_value_1,
+                start_date_1,
+                end_date_1,
+                gene_value_2,
+                seqtech_value_2,
+                country_value_2,
+                start_date_2,
+                end_date_2,
                 )
             text_freq_1 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_left}"
             text_freq_2 = f"Select minimum variant frequency. Highest frequency in selection:  {max_freq_nb_right}"
@@ -172,7 +188,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Output(component_id="table_compare_2", component_property="columns"),
             Output(component_id="table_compare_3", component_property="data"),
             Output(component_id="table_compare_3", component_property="columns"),
-            Output('compare_shared_dict', 'data')
+            Output("compare_shared_dict", "data"),
         ],
         [
             Input("mutation_dropdown_left", "value"),
@@ -212,22 +228,28 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             aa_nt_radio,
             complete_partial_radio,
     ):
-        table_df_1, table_df_2, table_df_3, variantView_df_both = create_comparison_tables(df_dict,
-                                                                                           complete_partial_radio,
-                                                                                           aa_nt_radio,
-                                                                                           mut_value_left,
-                                                                                           reference_value,
-                                                                                           seqtech_value_1,
-                                                                                           country_value_1,
-                                                                                           start_date_1,
-                                                                                           end_date_1,
-                                                                                           mut_value_right,
-                                                                                           seqtech_value_2,
-                                                                                           country_value_2,
-                                                                                           start_date_2,
-                                                                                           end_date_2,
-                                                                                           mut_value_both
-                                                                                           )
+        (
+            table_df_1,
+            table_df_2,
+            table_df_3,
+            variantView_df_both,
+        ) = create_comparison_tables(
+            df_dict,
+            complete_partial_radio,
+            aa_nt_radio,
+            mut_value_left,
+            reference_value,
+            seqtech_value_1,
+            country_value_1,
+            start_date_1,
+            end_date_1,
+            mut_value_right,
+            seqtech_value_2,
+            country_value_2,
+            start_date_2,
+            end_date_2,
+            mut_value_both
+        )
         table_df_1_records = table_df_1.to_dict("records")
         table_df_2_records = table_df_2.to_dict("records")
         table_df_3_records = table_df_3.to_dict("records")
@@ -236,7 +258,8 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         column_names_3 = [{"name": i, "id": i} for i in table_df_3.columns]
 
         variantView_df_both_json = variantView_df_both.to_json(
-            date_format='iso', orient='split')
+            date_format="iso", orient="split"
+        )
 
         return (
             table_df_1_records,
@@ -259,7 +282,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Input("mutation_dropdown_both", "value"),
             Input("mutation_dropdown_left", "options"),
             Input("mutation_dropdown_right", "options"),
-            Input('compare_shared_dict', 'data')
+            Input('compare_shared_dict', 'data'),
 
         ],
         [
@@ -275,17 +298,21 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             mut_options_left,
             mut_options_right,
             variantView_df_both_json,
-            aa_nt_radio
+            aa_nt_radio,
     ):
         overviewTable = OverviewTable(aa_nt_radio)
         df_left = overviewTable.create_df_from_mutation_options(
-            mut_options_left, mut_value_left)
+            mut_options_left, mut_value_left
+            )
         df_right = overviewTable.create_df_from_mutation_options(
-            mut_options_right, mut_value_right)
+            mut_options_right, mut_value_right
+            )
         df_both = overviewTable.create_df_from_json(
-            variantView_df_both_json, mut_value_both)
+            variantView_df_both_json, mut_value_both
+            )
         table_df_records, column_names = overviewTable.create_overview_table(
-            df_left, df_both, df_right)
+            df_left, df_both, df_right
+            )
 
         return (
             table_df_records,

@@ -11,8 +11,7 @@ from scipy.stats import linregress
 class VariantMapAndPlots(object):
     """
     parent class for DetailPlot and WorldMap 
-
-    Attributes
+        Attributes
     ----------
     world_dfs: list of world dfs of defined reference, len 1 for "complete", len 2 for "partial"
         with columns ["COUNTRY", "COLLECTION_DATE", "SEQ_TECH", "sample_id_list", "variant.label", 
@@ -26,7 +25,7 @@ class VariantMapAndPlots(object):
     color_dict: {gene:color}
     df_location: df with ISO_Code, lat, lon and name of all countries
     """
-
+    
     def __init__(
         self,
         df_dict: dict,
@@ -524,7 +523,7 @@ class DetailPlots(VariantMapAndPlots):
 
     def get_frequency_bar_chart(self) -> go.Figure:
         """
-        bar plot for selected methode Frequency
+        return fig to callback, bar plot for selected method Frequency
 
         :return: bar plot of mutation frequencies of clicked country, sorted by genes 
         """
@@ -603,7 +602,7 @@ class DetailPlots(VariantMapAndPlots):
 
     def create_slope_bar_plot(self) -> go.Figure:
         """
-        bar plot for selected method Increase/Decrease
+        return fig to callback, bar plot for selected method Increase/Decrease
 
         :return: bar plot of mutation-slopes of clicked country, x-axis=mutation, y-axis=slope 
         """
@@ -721,7 +720,8 @@ class DetailPlots(VariantMapAndPlots):
 
     def get_frequency_development_scatter_plot(self, axis_type: str = "lin") -> px.scatter:
         """
-        calculates df for scatter plot, creates scatter plot with x-axis = dates (tickvals_date),
+        return scatter plot to callback, calculates df for scatter plot, 
+            creates scatter plot with x-axis = dates (tickvals_date),
             y-axis = sample nb with mut, 
             trend line added per mutation, labeling dates with ticktext_date, color by gene
         :return: scatter plot
