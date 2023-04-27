@@ -428,7 +428,6 @@ def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -
             "number_sequences",
             "element.symbol",
             "gene:variant",
-            "gene:variant"
         ]
     ]
     # df = remove_x_appearing_variants(df, 1)
