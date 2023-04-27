@@ -149,15 +149,17 @@ def find_unique_and_shared_variants(
         gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
     )
     mut_value_both = [v["value"] for v in mut_options_both]
-    return mut_options_left, mut_options_right, mut_options_both, \
-        mut_value_left, mut_value_right, mut_value_both, \
-        max_freq_nb_left, max_freq_nb_right, max_freq_nb_both
-
-
-def select_min_x_frequent_mut(mut_options, min_nb_freq):
-    df = pd.DataFrame.from_records(mut_options)
-    df = df[df["freq"] >= min_nb_freq]
-    return df["value"]
+    return (
+        mut_options_left,
+        mut_options_right,
+        mut_options_both,
+        mut_value_left,
+        mut_value_right,
+        mut_value_both,
+        max_freq_nb_left,
+        max_freq_nb_right,
+        max_freq_nb_both
+        )
 
 
 def create_mutation_dfs_for_comparison(

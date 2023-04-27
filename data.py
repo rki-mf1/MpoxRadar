@@ -308,7 +308,6 @@ def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     df["value_text"] = df.apply(
         lambda row: row["value_date"]
         if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE", "IMPORTED"]
-        if row["property.name"] in ["COLLECTION_DATE", "RELEASE_DATE", "IMPORTED"]
         else row["value_text"],
         axis=1,
     )

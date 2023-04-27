@@ -487,7 +487,7 @@ class DetailPlots(VariantMapAndPlots):
                 genes,
             )
             if number_selected_sequences > 0:
-                location_name, country_name = country, country
+                location_name = country
                 break
 
         return location_name, number_selected_sequences, seq_with_mut
