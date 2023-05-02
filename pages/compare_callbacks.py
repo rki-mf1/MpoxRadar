@@ -3,18 +3,13 @@ from dash import ctx
 from dash import Input
 from dash import Output
 from dash import State
-import pandas as pd
 
 from pages.config import cache
 from pages.utils_compare import create_comparison_tables
-from pages.utils_compare import create_mutation_dfs_for_comparison
-from pages.utils_compare import overview_column_names
-from pages.utils_compare import overview_columns
+from pages.utils_compare import find_unique_and_shared_variants
 from pages.utils_compare import select_min_x_frequent_mut
-from pages.utils_compare import select_propertyView_dfs
-from pages.utils_compare import select_variantView_dfs
 from pages.utils_filters import actualize_filters
-from pages.utils_filters import get_frequency_sorted_mutation_by_df
+from pages.utils_tables import OverviewTable
 
 
 def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
@@ -32,6 +27,9 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Output("min_nb_freq_left", "children"),
             Output("min_nb_freq_right", "children"),
             Output("min_nb_freq_both", "children"),
+            Output("select_min_nb_frequent_mut_left", "value"),
+            Output("select_min_nb_frequent_mut_right", "value"),
+            Output("select_min_nb_frequent_mut_both", "value"),
         ],
         [
             Input("compare_button", "n_clicks"),
@@ -100,10 +98,12 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         text_freq_2,
         text_freq_3,
     ):
-        if aa_nt_radio == "cds":
-            variant_columns = ["gene:variant", "element.symbol"]
-        else:
-            variant_columns = ["variant.label"]
+        # NOTE: local variable 'variant_columns' is assigned to but never used
+        # please uncomment it if you need.
+        # if aa_nt_radio == "cds":
+        #     variant_columns = ["gene:variant", "element.symbol"]
+        # else:
+        #     variant_columns = ["variant.label"]
 
         if ctx.triggered_id == "select_all_mutations_left":
             if len(select_all_mutations_left) == 1:
@@ -134,83 +134,42 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             )
 
         else:
-            variantView_dfs = select_variantView_dfs(
-                df_dict, complete_partial_radio, reference_value, aa_nt_radio
-            )
-            propertyView_dfs = select_propertyView_dfs(df_dict, complete_partial_radio)
-
-            # LEFT OPTIONS
-            df_mutations_1 = create_mutation_dfs_for_comparison(
+            (
+                mut_options_left,
+                mut_options_right,
+                mut_options_both,
+                mut_value_left,
+                mut_value_right,
+                mut_value_both,
+                max_freq_nb_left,
+                max_freq_nb_right,
+                max_freq_nb_both,
+            ) = find_unique_and_shared_variants(
+                df_dict,
+                color_dict,
+                complete_partial_radio,
+                reference_value,
                 aa_nt_radio,
                 gene_value_1,
                 seqtech_value_1,
                 country_value_1,
                 start_date_1,
                 end_date_1,
-                variantView_dfs,
-                propertyView_dfs,
-            )
-            df_mutations_1 = df_mutations_1[["sample.id"] + variant_columns]
-            # RIGHT OPTIONS
-            df_mutations_2 = create_mutation_dfs_for_comparison(
-                aa_nt_radio,
                 gene_value_2,
                 seqtech_value_2,
                 country_value_2,
                 start_date_2,
                 end_date_2,
-                variantView_dfs,
-                propertyView_dfs,
             )
-            df_mutations_2 = df_mutations_2[["sample.id"] + variant_columns]
-
-            # DIFFERENCES
-            mut_left = set(df_mutations_1[variant_columns[0]]) - set(
-                df_mutations_2[variant_columns[0]]
-            )
-            gene_mutations_df_left = df_mutations_1[
-                df_mutations_1[variant_columns[0]].isin(mut_left)
-            ]
-            mut_options_left, max_freq_nb_left = get_frequency_sorted_mutation_by_df(
-                gene_mutations_df_left, color_dict, variant_columns, aa_nt_radio
-            )
-            mut_value_left = [v["value"] for v in mut_options_left]
-
-            mut_right = set(df_mutations_2[variant_columns[0]]) - set(
-                df_mutations_1[variant_columns[0]]
-            )
-            gene_mutations_df_right = df_mutations_2[
-                df_mutations_2[variant_columns[0]].isin(mut_right)
-            ]
-            mut_options_right, max_freq_nb_right = get_frequency_sorted_mutation_by_df(
-                gene_mutations_df_right, color_dict, variant_columns, aa_nt_radio
-            )
-            mut_value_right = [v["value"] for v in mut_options_right]
-
-            mut_both = set(df_mutations_2[variant_columns[0]]) & set(
-                df_mutations_1[variant_columns[0]]
-            )
-            gene_mutations_df_both = pd.concat(
-                [
-                    df_mutations_1[df_mutations_1[variant_columns[0]].isin(mut_both)],
-                    df_mutations_2[df_mutations_2[variant_columns[0]].isin(mut_both)],
-                ],
-                ignore_index=True,
-                axis=0,
-            )
-            mut_options_both, max_freq_nb_both = get_frequency_sorted_mutation_by_df(
-                gene_mutations_df_both, color_dict, variant_columns, aa_nt_radio
-            )
-            mut_value_both = [v["value"] for v in mut_options_both]
             text_freq_1 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_left}"
             text_freq_2 = f"Select minimum variant frequency. Highest frequency in selection:  {max_freq_nb_right}"
             text_freq_3 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_both}"
-
-        text_1 = f"Unique number of variants in left selection: {len(mut_options_left)}"
-        text_2 = (
-            f"Unique number of variants in right selection: {len(mut_options_right)}"
-        )
-        text_3 = f"Number of variants in both selections: {len(mut_options_both)}"
+            min_nb_freq_left = 1
+            min_nb_freq_right = 1
+            min_nb_freq_both = 1
+        text_1 = f"Unique number of variants in left selection: {len(mut_value_left)}"
+        text_2 = f"Unique number of variants in right selection: {len(mut_value_right)}"
+        text_3 = f"Number of variants in both selections: {len(mut_value_both)}"
 
         return (
             mut_options_left,
@@ -225,6 +184,9 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             text_freq_1,
             text_freq_2,
             text_freq_3,
+            min_nb_freq_left,
+            min_nb_freq_right,
+            min_nb_freq_both,
         )
 
     @callback(
@@ -345,31 +307,19 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         variantView_df_both_json,
         aa_nt_radio,
     ):
-        if aa_nt_radio == "cds":
-            table_cols = ["gene:variant", "freq"]
-        else:
-            table_cols = ["variant.label", "freq"]
-        df_left = pd.DataFrame.from_records(mut_options_left, columns=["value", "freq"])
-        df_left = df_left[df_left["value"].isin(mut_value_left)]
-
-        df_right = pd.DataFrame.from_records(
-            mut_options_right, columns=["value", "freq"]
+        overviewTable = OverviewTable(aa_nt_radio)
+        df_left = overviewTable.create_df_from_mutation_options(
+            mut_options_left, mut_value_left
         )
-        df_right = df_right[df_right["value"].isin(mut_value_right)]
-
-        df_both = pd.read_json(variantView_df_both_json, orient="split")
-        df_both = df_both[df_both[table_cols[0]].isin(mut_value_both)]
-        # df_both = pd.DataFrame.from_records(mut_options_both, columns=['value', 'freq'])
-        # df_both = df_both[df_both['value'].isin(mut_value_both)]
-
-        table_df = pd.concat([df_left, df_both, df_right], axis=1, ignore_index=True)
-        table_df.columns = overview_columns
-        table_df_records = table_df.to_dict("records")
-
-        column_names = [
-            {"name": overview_column_names[i], "id": j}
-            for i, j in enumerate(overview_columns)
-        ]
+        df_right = overviewTable.create_df_from_mutation_options(
+            mut_options_right, mut_value_right
+        )
+        df_both = overviewTable.create_df_from_json(
+            variantView_df_both_json, mut_value_both
+        )
+        table_df_records, column_names = overviewTable.create_overview_table(
+            df_left, df_both, df_right
+        )
 
         return (
             table_df_records,

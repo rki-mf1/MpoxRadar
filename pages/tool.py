@@ -42,10 +42,11 @@ from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
 from pages.utils_filters import get_all_frequency_sorted_seqtech
 from pages.utils_filters import get_all_gene_dict
 from pages.utils_filters import get_all_references
-from pages.utils_filters import get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_cds_mutation_by_filters
 from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
+from pages.utils_tables import OverviewTable
+from pages.utils_tables import TableFilter
 from pages.utils_worldMap_explorer import DateSlider
-from pages.utils_worldMap_explorer import TableFilter
 from .app_controller import get_freq_mutation
 from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
@@ -53,14 +54,10 @@ from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
-from .utils_compare import overview_column_names
-from .utils_compare import overview_columns
+
 
 df_dict = load_all_sql_files()
-date_slider = DateSlider(
-    df_dict["propertyView"]["complete"]["COLLECTION_DATE"].tolist()
-)
-table_explorer = TableFilter()
+date_slider = DateSlider(df_dict)
 color_dict = get_color_dict(df_dict)
 
 # initialize explore tool
@@ -97,7 +94,8 @@ start_country_value = [i["value"] for i in start_country_options]
 (
     start_colored_mutation_options_dict,
     max_nb_freq,
-) = get_frequency_sorted_mutation_by_filters(
+    min_nb_freq,
+) = get_frequency_sorted_cds_mutation_by_filters(
     df_dict,
     start_seq_tech_values,
     start_country_value,
@@ -114,9 +112,8 @@ nb_shown_options = (
 )
 logging_radar.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
-compare_columns = TableFilter().table_columns
-compare_columns.remove("NUC_PROFILE")
-
+compare_columns = TableFilter("compare", []).table_columns
+explore_columns = TableFilter("explorer", []).table_columns
 
 tab_explored_tool = html.Div(
     [
@@ -216,7 +213,7 @@ tab_explored_tool = html.Div(
                 html.Div(create_world_map_explorer(date_slider)),
                 html.Div(
                     html_table(
-                        pd.DataFrame(columns=TableFilter().table_columns),
+                        pd.DataFrame(columns=explore_columns),
                         "Properties of filtered samples.",
                         "explorer",
                     )
@@ -400,8 +397,8 @@ tab_compare_tool = (
                     ),
                     dbc.Row(
                         overview_table(
-                            pd.DataFrame(columns=overview_columns),
-                            overview_column_names,
+                            pd.DataFrame(columns=OverviewTable.table_columns),
+                            OverviewTable.column_names,
                             title="Overview Table",
                             tool="compare_0",
                         ),
