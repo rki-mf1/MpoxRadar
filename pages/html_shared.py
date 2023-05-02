@@ -13,7 +13,7 @@ def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
                     options=reference_options,
                     value=start_ref_id,
                     id=f"reference_radio_{radio_id}",
-                    style={"font-size": 20, "align-itmes": "center", "margin": "auto"},
+                    style={"font-size": 16, "align-itmes": "center", "margin": "auto"},
                 ),
             ]
         )

@@ -86,7 +86,6 @@ def create_world_map_explorer(date_slider):
                 color="info",
                 className="border me-1",
             ),
-            html.H5(id="sequence_information"),
         ]
     )
 
