@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 
 from tests.setup_test_sql_db import SqlServerWrapper
 
@@ -10,9 +11,9 @@ def sql_test_db(tmpdir_factory):
     sql_db = SqlServerWrapper(data_dir)
     sql_db.start()
     # export db params
-    os.environ['MYSQL_USER'] = "root"
-    os.environ['MYSQL_HOST'] = "127.0.0.1"
-    os.environ['MYSQL_PW'] = ""
+    os.environ["MYSQL_USER"] = "root"
+    os.environ["MYSQL_HOST"] = "127.0.0.1"
+    os.environ["MYSQL_PW"] = ""
     print("fixture")
     print(sql_db)
     yield sql_db

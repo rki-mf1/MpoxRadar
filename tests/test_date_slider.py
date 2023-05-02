@@ -1,8 +1,9 @@
+from datetime import date
 import os
 import unittest
-from datetime import date
 
 from data import load_all_sql_files
+
 from pages.utils_worldMap_explorer import DateSlider
 
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
@@ -12,6 +13,7 @@ class TestDateSlider(unittest.TestCase):
     """
     test of class methods DateSlider
     """
+
     @classmethod
     def setUpClass(cls):
         cls.db_name = "mpx_test_04"
@@ -35,11 +37,14 @@ class TestDateSlider(unittest.TestCase):
         interval = 9
         date_list = self.date_slider.get_all_dates_in_interval(dates, interval)
         correct_dates = [
-            date(2022, 12, 24), date(2022, 12, 25), date(2022, 12, 26),
-            date(2022, 12, 27), date(2022, 12, 28), date(2022, 12, 29),
-            date(2022, 12, 30), date(2022, 12, 31), date(2023, 1, 1)
+            date(2022, 12, 24),
+            date(2022, 12, 25),
+            date(2022, 12, 26),
+            date(2022, 12, 27),
+            date(2022, 12, 28),
+            date(2022, 12, 29),
+            date(2022, 12, 30),
+            date(2022, 12, 31),
+            date(2023, 1, 1),
         ]
-        self.assertListEqual(
-            date_list,
-            correct_dates
-        )
+        self.assertListEqual(date_list, correct_dates)

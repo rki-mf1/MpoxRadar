@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-from urllib.parse import urlparse
-
-from sqlalchemy import create_engine
 import subprocess
 import sys
 import time
+from urllib.parse import urlparse
 
 import requests
+from sqlalchemy import create_engine
 from tqdm import tqdm
-
 
 
 def printerr(*args, **kwargs):
@@ -21,12 +19,14 @@ def download_file(url, out_file):
     file_name_part = out_file + ".prt"
     with requests.get(url, stream=True) as response:
         response.raise_for_status()
-        file_size_mbyte = int(float(response.headers['Content-Length']) / 1024 / 1024)
+        file_size_mbyte = int(float(response.headers["Content-Length"]) / 1024 / 1024)
 
         printerr(f"Downloading: {out_file}, size: {file_size_mbyte} MB")
-        with open(file_name_part, 'wb') as handle:
+        with open(file_name_part, "wb") as handle:
             with tqdm(total=file_size_mbyte, position=0, leave=True, unit="MB") as pbar:
-                for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1 MB chunk size
+                for chunk in response.iter_content(
+                    chunk_size=1024 * 1024
+                ):  # 1 MB chunk size
                     if chunk:  # filter out keep-alive new chunks
                         handle.write(chunk)
                         chunk_size_mb = round(len(chunk) / 1024 / 1024, 2)
@@ -43,7 +43,9 @@ def download_spike_dump(test_db_dir):
     spike_dump = download_file(url, os.path.join(test_db_dir, "Mpox.sql"))
     # -e script, --expression=script: add the script to the commands to be executed
     # s/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g = test for correct mysql versions?
-    subprocess.check_call(["sed", "-i", spike_dump, "-e", 's/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g'])
+    subprocess.check_call(
+        ["sed", "-i", spike_dump, "-e", "s/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g"]
+    )
     return spike_dump
 
 
@@ -51,7 +53,14 @@ class SqlServerWrapper:
     sql_is_initializing = False
     test_db_dir = os.path.join(os.path.dirname(__file__), "sql_dumps")
 
-    def __init__(self, datadir, password, server_log_file="mariadb.log", host="127.0.0.1", user="root"):
+    def __init__(
+        self,
+        datadir,
+        password,
+        server_log_file="mariadb.log",
+        host="127.0.0.1",
+        user="root",
+    ):
         self.datadir = os.path.abspath(datadir)
         self.daemon = None
         self.log = os.path.abspath(server_log_file)
@@ -76,7 +85,7 @@ class SqlServerWrapper:
             password = self.pw
         if host is None:
             host = self.host
-        return create_engine(f'mysql+pymysql://{user}:{password}@{host}')
+        return create_engine(f"mysql+pymysql://{user}:{password}@{host}")
 
     def init_sql_db(self):
         # initialize sql db
@@ -85,7 +94,14 @@ class SqlServerWrapper:
             printerr("Creatind directory:", self.datadir)
             os.mkdir(self.datadir)
         # initialize DB without root pw
-        subprocess.check_call(["mysql_install_db", "--auth-root-authentication-method=normal", "--datadir", self.datadir])
+        subprocess.check_call(
+            [
+                "mysql_install_db",
+                "--auth-root-authentication-method=normal",
+                "--datadir",
+                self.datadir,
+            ]
+        )
         self.lock_down_db()
         if not os.path.exists(os.path.join(self.test_db_dir, "Spike.sql")):
             download_spike_dump(self.test_db_dir)
@@ -106,14 +122,16 @@ class SqlServerWrapper:
 
     def load_dump(self, db_name, dump_file, drop_if_exists=True):
         if not self.is_alive():
-            raise Exception(f"sql daemon not running! Did you surround you code with 'with {self.__class__.__name__}'")
+            raise Exception(
+                f"sql daemon not running! Did you surround you code with 'with {self.__class__.__name__}'"
+            )
         # dump DB if present
         conn = self.get_database_connection(self.user, self.pw, self.host)
         if drop_if_exists:
             conn.execute(f"DROP DATABASE IF EXISTS {db_name};")
 
         query = f"CREATE DATABASE {db_name};"
-        printerr(f"Creating database:", query)
+        printerr("Creating database:", query)
         conn.execute(query)
         os.environ["MYSQL_PWD"] = self.pw
         cmd = ["mysql", "-u", self.user, "--database", db_name]
@@ -122,9 +140,9 @@ class SqlServerWrapper:
         with open(dump_file, "rb") as handle:
             result = subprocess.run(cmd, input=handle.read(), capture_output=True)
             if result.stdout:
-                print(result.stdout.decode('utf-8'))
+                print(result.stdout.decode("utf-8"))
             if result.stderr:
-                print(result.stderr.decode('utf-8'), file=sys.stderr)
+                print(result.stderr.decode("utf-8"), file=sys.stderr)
 
     def load_all_test_dumps(self):
         for f in os.listdir(self.test_db_dir):
@@ -133,8 +151,11 @@ class SqlServerWrapper:
                 self.load_dump(db_name, os.path.join(self.test_db_dir, f))
 
     def is_alive(self):
-        return_code = subprocess.call(["mysqladmin", "ping", "-h", self.host, "-u", self.user, "--silent"],
-                                      stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        return_code = subprocess.call(
+            ["mysqladmin", "ping", "-h", self.host, "-u", self.user, "--silent"],
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+        )
         if return_code == 0:
             return True
         else:
@@ -148,7 +169,7 @@ class SqlServerWrapper:
 
     def start(self):
         args = ["mysqld", "--datadir", self.datadir, "--user", self.user]
-        printerr("Starting MySQL-Server: '", " ".join(args), "'", sep='')
+        printerr("Starting MySQL-Server: '", " ".join(args), "'", sep="")
         printerr(f"Writing log to: {self.log}")
         self._log_fd = open(self.log, "w")
 
@@ -158,12 +179,14 @@ class SqlServerWrapper:
         while not self.is_alive():
             tries += 1
             if tries >= max_tries:
-                raise subprocess.SubprocessError(f"Failed to start mysql daemon. Check log: {self.log}")
+                raise subprocess.SubprocessError(
+                    f"Failed to start mysql daemon. Check log: {self.log}"
+                )
             time.sleep(1)
 
     def stop(self):
         # send term signal to mysqld
-        printerr("Shutting down MySQL-Server... ", end='')
+        printerr("Shutting down MySQL-Server... ", end="")
         self.daemon.terminate()
         self.daemon.communicate()
         self.daemon = None
@@ -182,8 +205,10 @@ def main():
         env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "env.sh")
         printerr(f"Writing mysql credentials to file\nLoad with: 'source {env_file}'")
         write_env_file(mysql_credentials, env_file)
-    printerr("MySQL daemon running in background. Shutdown:\n"
-             "     mysqladmin shutdown -u $MYSQL_USER -h $MYSQL_HOST --password=$MYSQL_PW")
+    printerr(
+        "MySQL daemon running in background. Shutdown:\n"
+        "     mysqladmin shutdown -u $MYSQL_USER -h $MYSQL_HOST --password=$MYSQL_PW"
+    )
 
 
 def write_env_file(credential_dict, file_path):
@@ -196,10 +221,11 @@ def get_mysql_credentials():
     DB_URL = os.getenv("DB_URL")
     parsed_db_url = urlparse(DB_URL)
     # port = parsed_db_url.port
-    cred = {"MYSQL_USER": parsed_db_url.username,
-            "MYSQL_PW": parsed_db_url.password,
-            "MYSQL_HOST": parsed_db_url.hostname,
-            }
+    cred = {
+        "MYSQL_USER": parsed_db_url.username,
+        "MYSQL_PW": parsed_db_url.password,
+        "MYSQL_HOST": parsed_db_url.hostname,
+    }
     return cred
 
 

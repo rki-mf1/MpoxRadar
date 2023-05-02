@@ -66,8 +66,20 @@ def get_color_dict(df_dict):
     )
     for k, reference_id in enumerate(list(reference_ids)):
         color_dict[reference_id] = px.colors.qualitative.D3[k]
-        genes = set(df_dict["variantView"]["complete"][reference_id]["cds"]["element.symbol"])
-        genes = sorted(list(genes.union(set(df_dict["variantView"]["partial"][reference_id]["cds"]["element.symbol"]))))
+        genes = set(
+            df_dict["variantView"]["complete"][reference_id]["cds"]["element.symbol"]
+        )
+        genes = sorted(
+            list(
+                genes.union(
+                    set(
+                        df_dict["variantView"]["partial"][reference_id]["cds"][
+                            "element.symbol"
+                        ]
+                    )
+                )
+            )
+        )
         for i, gene in enumerate(genes):
             j = i % 24
             color_dict[gene] = color_schemes[j]

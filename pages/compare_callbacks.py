@@ -5,9 +5,9 @@ from dash import Output
 from dash import State
 
 from pages.config import cache
-from pages.utils_compare import select_min_x_frequent_mut
-from pages.utils_compare import find_unique_and_shared_variants
 from pages.utils_compare import create_comparison_tables
+from pages.utils_compare import find_unique_and_shared_variants
+from pages.utils_compare import select_min_x_frequent_mut
 from pages.utils_filters import actualize_filters
 from pages.utils_tables import OverviewTable
 
@@ -68,41 +68,42 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
     )
     @cache.memoize()
     def actualize_mutation_filter(
-            compare_button,
-            select_all_mutations_left,
-            select_all_mutations_right,
-            select_all_mutations_both,
-            min_nb_freq_left,
-            min_nb_freq_right,
-            min_nb_freq_both,
-            gene_value_1,
-            gene_value_2,
-            reference_value,
-            seqtech_value_1,
-            country_value_1,
-            seqtech_value_2,
-            country_value_2,
-            start_date_1,
-            end_date_1,
-            start_date_2,
-            end_date_2,
-            aa_nt_radio,
-            complete_partial_radio,
-            mut_options_left,
-            mut_options_right,
-            mut_options_both,
-            mut_value_left,
-            mut_value_right,
-            mut_value_both,
-            text_freq_1,
-            text_freq_2,
-            text_freq_3,
-
+        compare_button,
+        select_all_mutations_left,
+        select_all_mutations_right,
+        select_all_mutations_both,
+        min_nb_freq_left,
+        min_nb_freq_right,
+        min_nb_freq_both,
+        gene_value_1,
+        gene_value_2,
+        reference_value,
+        seqtech_value_1,
+        country_value_1,
+        seqtech_value_2,
+        country_value_2,
+        start_date_1,
+        end_date_1,
+        start_date_2,
+        end_date_2,
+        aa_nt_radio,
+        complete_partial_radio,
+        mut_options_left,
+        mut_options_right,
+        mut_options_both,
+        mut_value_left,
+        mut_value_right,
+        mut_value_both,
+        text_freq_1,
+        text_freq_2,
+        text_freq_3,
     ):
-        if aa_nt_radio == "cds":
-            variant_columns = ["gene:variant", "element.symbol"]
-        else:
-            variant_columns = ["variant.label"]
+        # NOTE: local variable 'variant_columns' is assigned to but never used
+        # please uncomment it if you need.
+        # if aa_nt_radio == "cds":
+        #     variant_columns = ["gene:variant", "element.symbol"]
+        # else:
+        #     variant_columns = ["variant.label"]
 
         if ctx.triggered_id == "select_all_mutations_left":
             if len(select_all_mutations_left) == 1:
@@ -142,7 +143,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
                 mut_value_both,
                 max_freq_nb_left,
                 max_freq_nb_right,
-                max_freq_nb_both
+                max_freq_nb_both,
             ) = find_unique_and_shared_variants(
                 df_dict,
                 color_dict,
@@ -159,7 +160,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
                 country_value_2,
                 start_date_2,
                 end_date_2,
-                )
+            )
             text_freq_1 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_left}"
             text_freq_2 = f"Select minimum variant frequency. Highest frequency in selection:  {max_freq_nb_right}"
             text_freq_3 = f"Select minimum variant frequency. Highest frequency in selection: {max_freq_nb_both}"
@@ -202,7 +203,6 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Input("mutation_dropdown_left", "value"),
             Input("mutation_dropdown_right", "value"),
             Input("mutation_dropdown_both", "value"),
-
         ],
         [
             State("reference_radio_1", "value"),
@@ -221,20 +221,20 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
     )
     @cache.memoize()
     def actualize_tables(
-            mut_value_left,
-            mut_value_right,
-            mut_value_both,
-            reference_value,
-            seqtech_value_1,
-            country_value_1,
-            seqtech_value_2,
-            country_value_2,
-            start_date_1,
-            end_date_1,
-            start_date_2,
-            end_date_2,
-            aa_nt_radio,
-            complete_partial_radio,
+        mut_value_left,
+        mut_value_right,
+        mut_value_both,
+        reference_value,
+        seqtech_value_1,
+        country_value_1,
+        seqtech_value_2,
+        country_value_2,
+        start_date_1,
+        end_date_1,
+        start_date_2,
+        end_date_2,
+        aa_nt_radio,
+        complete_partial_radio,
     ):
         (
             table_df_1,
@@ -256,7 +256,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             country_value_2,
             start_date_2,
             end_date_2,
-            mut_value_both
+            mut_value_both,
         )
         table_df_1_records = table_df_1.to_dict("records")
         table_df_2_records = table_df_2.to_dict("records")
@@ -276,7 +276,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             column_names_2,
             table_df_3_records,
             column_names_3,
-            variantView_df_both_json
+            variantView_df_both_json,
         )
 
     @callback(
@@ -290,8 +290,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             Input("mutation_dropdown_both", "value"),
             Input("mutation_dropdown_left", "options"),
             Input("mutation_dropdown_right", "options"),
-            Input('compare_shared_dict', 'data'),
-
+            Input("compare_shared_dict", "data"),
         ],
         [
             State("aa_nt_radio", "value"),
@@ -300,27 +299,27 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
     )
     @cache.memoize()
     def actualize_overview_table(
-            mut_value_left,
-            mut_value_right,
-            mut_value_both,
-            mut_options_left,
-            mut_options_right,
-            variantView_df_both_json,
-            aa_nt_radio,
+        mut_value_left,
+        mut_value_right,
+        mut_value_both,
+        mut_options_left,
+        mut_options_right,
+        variantView_df_both_json,
+        aa_nt_radio,
     ):
         overviewTable = OverviewTable(aa_nt_radio)
         df_left = overviewTable.create_df_from_mutation_options(
             mut_options_left, mut_value_left
-            )
+        )
         df_right = overviewTable.create_df_from_mutation_options(
             mut_options_right, mut_value_right
-            )
+        )
         df_both = overviewTable.create_df_from_json(
             variantView_df_both_json, mut_value_both
-            )
+        )
         table_df_records, column_names = overviewTable.create_overview_table(
             df_left, df_both, df_right
-            )
+        )
 
         return (
             table_df_records,
@@ -351,24 +350,22 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             State("country_dropdown_1", "options"),
             State("seq_tech_dropdown_1", "options"),
             State("country_dropdown_1", "value"),
-
         ],
         prevent_initial_call=True,
     )
     def actualize_filters_left(
-            aa_nt_radio,
-            reference_value,
-            select_all_seq_techs,
-            select_all_genes,
-            select_all_countries,
-            complete_partial_radio,
-            seq_tech_value,
-            gene_value,
-            gene_options,
-            country_options,
-            seq_tech_options,
-            country_value,
-
+        aa_nt_radio,
+        reference_value,
+        select_all_seq_techs,
+        select_all_genes,
+        select_all_countries,
+        complete_partial_radio,
+        seq_tech_value,
+        gene_value,
+        gene_options,
+        country_options,
+        seq_tech_options,
+        country_value,
     ):
         """
         complete_partial_radio --> trigger new evaluation of gene, seq_tech, countries
@@ -393,7 +390,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             seq_tech_options,
             gene_value,
             country_value,
-            seq_tech_value
+            seq_tech_value,
         )
 
     @callback(
@@ -420,24 +417,22 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
             State("country_dropdown_2", "options"),
             State("seq_tech_dropdown_2", "options"),
             State("country_dropdown_2", "value"),
-
         ],
         prevent_initial_call=True,
     )
     def actualize_filters_right(
-            aa_nt_radio,
-            reference_value,
-            select_all_seq_techs,
-            select_all_genes,
-            select_all_countries,
-            complete_partial_radio,
-            seq_tech_value,
-            gene_value,
-            gene_options,
-            country_options,
-            seq_tech_options,
-            country_value,
-
+        aa_nt_radio,
+        reference_value,
+        select_all_seq_techs,
+        select_all_genes,
+        select_all_countries,
+        complete_partial_radio,
+        seq_tech_value,
+        gene_value,
+        gene_options,
+        country_options,
+        seq_tech_options,
+        country_value,
     ):
         """
         complete_partial_radio --> trigger new evaluation of gene, seq_tech, countries
@@ -447,19 +442,20 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         seq_tech --> trigger new evaluation of countries
         select-all --> triggers only new values of defined, no options
         """
-        return actualize_filters(df_dict,
-                                 color_dict,
-                                 ctx.triggered_id,
-                                 aa_nt_radio,
-                                 reference_value,
-                                 select_all_seq_techs,
-                                 select_all_genes,
-                                 select_all_countries,
-                                 complete_partial_radio,
-                                 gene_options,
-                                 country_options,
-                                 seq_tech_options,
-                                 gene_value,
-                                 country_value,
-                                 seq_tech_value
-                                 )
+        return actualize_filters(
+            df_dict,
+            color_dict,
+            ctx.triggered_id,
+            aa_nt_radio,
+            reference_value,
+            select_all_seq_techs,
+            select_all_genes,
+            select_all_countries,
+            complete_partial_radio,
+            gene_options,
+            country_options,
+            seq_tech_options,
+            gene_value,
+            country_value,
+            seq_tech_value,
+        )

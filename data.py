@@ -1,18 +1,22 @@
+from collections import defaultdict
 import csv
+from datetime import datetime
 import multiprocessing as mp
 import os
-from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine, exc
+from sqlalchemy import create_engine
+from sqlalchemy import exc
 
-from pages.config import CACHE_DIR, DB_URL, redis_manager
-from pages.utils import load_Cpickle, write_Cpickle
+from pages.config import CACHE_DIR
+from pages.config import DB_URL
+from pages.config import redis_manager
+from pages.utils import load_Cpickle
+from pages.utils import write_Cpickle
 
 tables = ["propertyView", "variantView"]
 
@@ -125,7 +129,7 @@ needed_columns = {
 def get_database_connection(db_name: str):
     """
     connect to SQL DB based on environment var DB_URL and given db_name
-    return: database connection 
+    return: database connection
     """
     # DB configuration
     parsed_db_url = urlparse(DB_URL)
@@ -139,7 +143,7 @@ def get_database_connection(db_name: str):
 class DataFrameLoader:
     """
     connect to DB and loading of DB entires into panda dataframes
-    loaded are the column of tables (defined in table) -> defined in variable needed_columns 
+    loaded are the column of tables (defined in table) -> defined in variable needed_columns
     data types used for download from DB and reading from csv -> defined in variable column_dtypes
     two different download funtions for test DB and normal DB
     parallel loading of different tables (not for test DBs)
@@ -177,8 +181,9 @@ class DataFrameLoader:
         ).columns
         if table_name in self.needed_columns.keys():
             columns = columns.intersection(self.needed_columns[table_name])
-            types = {column: self.column_dtypes[table_name][column]
-                     for column in columns}
+            types = {
+                column: self.column_dtypes[table_name][column] for column in columns
+            }
             # a '.' in the column names implies ``-quoting the column name for a mariadb-query
             quoted_column_names = []
             for column in columns:
@@ -187,8 +192,9 @@ class DataFrameLoader:
                 quoted_column_names.append(column)
             queried_columns = ", ".join(quoted_column_names)
         else:
-            types = {column: self.column_dtypes[table_name][column]
-                     for column in columns}
+            types = {
+                column: self.column_dtypes[table_name][column] for column in columns
+            }
             queried_columns = "*"
         query = f"SELECT {queried_columns} FROM {table_name};"
         return query, types
@@ -249,8 +255,7 @@ class DataFrameLoader:
         """
         pool = mp.Pool(mp.cpu_count())
         path_to_csv_types_list = pool.starmap(
-            self.load_db_from_sql,
-            [[table] for table in self.tables]
+            self.load_db_from_sql, [[table] for table in self.tables]
         )
         pool.close()  # tells the pool not to accept any new job.
         pool.terminate()
@@ -289,19 +294,19 @@ class DataFrameLoader:
 
 def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     """
-    unstacking properties of propertyView: 
+    unstacking properties of propertyView:
     creating new columns for different property.name values by following steps:
-    1. add values from value_date and value_integer to value_text column 
+    1. add values from value_date and value_integer to value_text column
     if property.name = "COLLECTION_DATE", "RELEASE_DATE", "IMPORTED", "LENGTH"
     2. unstacking property.name
-    3. if no COLLECTION_DATE -> fill COLLECTION_DATE with RELEASE_DATE, 
+    3. if no COLLECTION_DATE -> fill COLLECTION_DATE with RELEASE_DATE,
     delete row if both dates are not present
     4. fill empty entries with "undefined
 
-    :param df: dataframe with columns 
+    :param df: dataframe with columns
         ['sample.id', 'sample.name', 'property.name', 'value_integer', 'value_text', 'value_date']
-    :return: df with columns 
-        ['sample.id', 'sample.name', 'COLLECTION_DATE', 'COUNTRY', 'GENOME_COMPLETENESS', 
+    :return: df with columns
+        ['sample.id', 'sample.name', 'COLLECTION_DATE', 'COUNTRY', 'GENOME_COMPLETENESS',
         'GEO_LOCATION', 'HOST', 'IMPORTED', 'ISOLATE', 'LENGTH', 'RELEASE_DATE', 'SEQ_TECH']
     """
     #  all dates and integer values into value_date column for unstacking
@@ -322,7 +327,7 @@ def create_property_view(df: pd.DataFrame) -> pd.DataFrame:
     cols = ["sample.id", "sample.name"]
     df = df.set_index(["property.name"] + cols).unstack("property.name")
     df = df.value_text.rename_axis([None], axis=1).reset_index()
-    df.COLLECTION_DATE.fillna(df.RELEASE_DATE, inplace=True)
+    df["COLLECTION_DATE"].fillna(df["RELEASE_DATE"], inplace=True)
     # delete entries without collection and release date else nan errors:
     df = df.dropna(subset=["COLLECTION_DATE"])
     # delete entries without collection and release date else nan errors:
@@ -346,7 +351,7 @@ def create_variant_view(df: pd.DataFrame, propertyView_samples: set) -> pd.DataF
     """
     df["reference.id"] = df["reference.id"].astype(float).astype("Int64")
     df["variant.id"] = df["variant.id"].astype(float).astype("Int64")
-    df = df[df['sample.id'].isin(propertyView_samples)]
+    df = df[df["sample.id"].isin(propertyView_samples)]
     return df
 
 
@@ -356,25 +361,21 @@ def remove_x_appearing_variants(world_df: pd.DataFrame, nb: int = 1) -> pd.DataF
     function to remove all variants, that are present <= given number nb
     :return: world df without variants, that appear maximum nb-times
     """
-    df2 = (
-        world_df.groupby(["gene:variant"])
-        .sum(numeric_only=True)
-        .reset_index()
-    )
-    variants_to_remove = df2[df2["number_sequences"] <= nb][
-        "gene:variant"
-    ].tolist()
+    df2 = world_df.groupby(["gene:variant"]).sum(numeric_only=True).reset_index()
+    variants_to_remove = df2[df2["number_sequences"] <= nb]["gene:variant"].tolist()
     if variants_to_remove:
         world_df = world_df[~world_df["gene:variant"].isin(variants_to_remove)]
         world_df = world_df[~world_df["gene:variant"].isin(variants_to_remove)]
     return world_df
 
 
-def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -> pd.DataFrame:
+def create_world_map_df(
+    variantView: pd.DataFrame, propertyView: pd.DataFrame
+) -> pd.DataFrame:
     """
     created df used for explorer tool by following steps:
     1. merge propertyView and variatView df
-    2. concat all strain_ids into one comma separated string list if they have the same 
+    2. concat all strain_ids into one comma separated string list if they have the same
     location_ID, date, amino_acid-variant --> new column sample_id_list
     3. count samples with same properties --> new column number_sequences
     4. combine element.symbol:variant.label to new column gene:variant
@@ -413,11 +414,10 @@ def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -
         .reset_index(name="sample_id_list")
     )
     # add sequence count
-    df["number_sequences"] = df[
-        "sample_id_list"
-    ].apply(lambda x: len(x.split(",")))
-    df["gene:variant"] = df['element.symbol'].astype(
-        str) + ":" + df['variant.label'].astype(str)
+    df["number_sequences"] = df["sample_id_list"].apply(lambda x: len(x.split(",")))
+    df["gene:variant"] = (
+        df["element.symbol"].astype(str) + ":" + df["variant.label"].astype(str)
+    )
     df = df[
         [
             "COUNTRY",
@@ -435,12 +435,10 @@ def create_world_map_df(variantView: pd.DataFrame, propertyView: pd.DataFrame) -
 
 
 def remove_seq_errors_and_add_gene_var_column(
-    variantView: pd.DataFrame, 
-    reference_id: int, 
-    seq_type: str
+    variantView: pd.DataFrame, reference_id: int, seq_type: str
 ) -> pd.DataFrame:
     """
-    remove sequencing errors from variantView table: 
+    remove sequencing errors from variantView table:
     X for amino acid variants, N for nucleotide variants
     split variantView table based on reference_id and element.type into multiple tables
     combine element.symbol and variant.label to new column gene:variant
@@ -448,31 +446,32 @@ def remove_seq_errors_and_add_gene_var_column(
     :param variantView: complete or partial variantView dataframe
     :param reference_id: id of reference sequence
     :param seq_type: "cds" or "source"
-    :return: variantView df 
+    :return: variantView df
     for nucleotide variants with columns:
         ['sample.id', 'sample.name', 'reference.id', 'reference.accession','element.symbol',
-        'element.type', 'variant.id', 'variant.label'] 
-    for protein variants: 
+        'element.type', 'variant.id', 'variant.label']
+    for protein variants:
         additional column 'gene:variant'
     """
     df = variantView[
-        (variantView['reference.id'] == reference_id)
-        & (variantView['element.type'] == seq_type)
+        (variantView["reference.id"] == reference_id)
+        & (variantView["element.type"] == seq_type)
     ].reset_index(drop=True)
-    if seq_type == 'source':
+    if seq_type == "source":
         # unknown_nt = ['N', 'V', 'D', 'H', 'B', 'K', 'M', 'S', 'W']
-        df = df[~df['variant.label'].str.contains('N')]
+        df = df[~df["variant.label"].str.contains("N")]
     # B, Z, J not in DB, X always at the end, all undefined nucleotides translated to X
     elif seq_type == "cds":
-        df = df[~df['variant.label'].str.endswith('X')]
-        df['gene:variant'] = df['element.symbol'].astype(
-            str) + ":" + df['variant.label'].astype(str)
+        df = df[~df["variant.label"].str.endswith("X")]
+        df["gene:variant"] = (
+            df["element.symbol"].astype(str) + ":" + df["variant.label"].astype(str)
+        )
     return df
 
 
 def create_empty_processed_df(reference_ids: list[int]) -> dict:
     """
-    create needed structure of processed_df_dict   
+    create needed structure of processed_df_dict
     """
     processed_df_dict = defaultdict(dict)
     for completeness in ["complete", "partial"]:
@@ -483,7 +482,9 @@ def create_empty_processed_df(reference_ids: list[int]) -> dict:
     return processed_df_dict
 
 
-def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
+def load_all_sql_files(  # noqa: C901
+    db_name: str = None, test_db: bool = False
+) -> dict:
     """
     load SQL DB into dict of pandas dfs
     to handle big db size: DB tables are splitted into multiple tables in processed_df_dict:
@@ -507,7 +508,7 @@ def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
     # 2. msgpack can be other options.
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict") and not test_db:
-    #if True:
+        # if True:
         print("Load data from cache")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
@@ -523,36 +524,42 @@ def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
         # df preprocessing
         print("Data preprocessing...")
         # TODO why NaN in reference --> database error?
-        reference_ids = [int(ref) for ref in loaded_df_dict["variantView"]
-                         ['reference.id'].dropna().unique()]
+        reference_ids = [
+            int(ref)
+            for ref in loaded_df_dict["variantView"]["reference.id"].dropna().unique()
+        ]
         processed_df_dict = create_empty_processed_df(reference_ids)
         # propertyView
         processed_propertyView = create_property_view(loaded_df_dict["propertyView"])
         for completeness in ["complete", "partial"]:
             processed_df_dict["propertyView"][completeness] = processed_propertyView[
-                processed_propertyView["GENOME_COMPLETENESS"] == completeness].reset_index(drop=True)
+                processed_propertyView["GENOME_COMPLETENESS"] == completeness
+            ].reset_index(drop=True)
         del processed_propertyView
         del loaded_df_dict["propertyView"]
         # variantView
         for completeness in ["complete", "partial"]:
-            processed_variantView = create_variant_view(loaded_df_dict["variantView"], set(
-                processed_df_dict["propertyView"][completeness]['sample.id']))
+            processed_variantView = create_variant_view(
+                loaded_df_dict["variantView"],
+                set(processed_df_dict["propertyView"][completeness]["sample.id"]),
+            )
             for reference_id in reference_ids:
-                for seq_type in ['source', 'cds']:
-                    processed_df_dict["variantView"][completeness][reference_id][seq_type] = \
-                        remove_seq_errors_and_add_gene_var_column(
-                        processed_variantView, 
-                        reference_id, 
+                for seq_type in ["source", "cds"]:
+                    processed_df_dict["variantView"][completeness][reference_id][
                         seq_type
-                        )
+                    ] = remove_seq_errors_and_add_gene_var_column(
+                        processed_variantView, reference_id, seq_type
+                    )
             del processed_variantView
         del loaded_df_dict["variantView"]
         # worldMap
         for completeness in ["complete", "partial"]:
             for reference_id in reference_ids:
-                processed_df_dict["world_map"][completeness][reference_id] = create_world_map_df(
+                processed_df_dict["world_map"][completeness][
+                    reference_id
+                ] = create_world_map_df(
                     processed_df_dict["variantView"][completeness][reference_id]["cds"],
-                    processed_df_dict["propertyView"][completeness]
+                    processed_df_dict["propertyView"][completeness],
                 )
 
         if redis_manager:
@@ -571,8 +578,9 @@ def load_all_sql_files(db_name: str = None, test_db: bool = False) -> dict:
             # 30 secs, 419 MB
             if not test_db:
                 print("Create a new cache")
-                write_Cpickle(os.path.join(
-                    path_to_cache, "df_dict.pickle"), processed_df_dict)
+                write_Cpickle(
+                    os.path.join(path_to_cache, "df_dict.pickle"), processed_df_dict
+                )
                 redis_manager.set("df_dict", 1, ex=3600 * 23)
 
             # df_dict["propertyView"].to_pickle(".cache/propertyView.pkl")

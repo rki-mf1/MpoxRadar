@@ -1,17 +1,24 @@
-from dash import Input, Output, State, callback, ctx
+from dash import callback
+from dash import ctx
+from dash import Input
+from dash import Output
+from dash import State
 
-from pages.utils_filters import (actualize_filters,
-                                 get_frequency_sorted_cds_mutation_by_filters)
+from pages.utils_filters import actualize_filters
+from pages.utils_filters import get_frequency_sorted_cds_mutation_by_filters
 from pages.utils_tables import TableFilter
-from pages.utils_worldMap_explorer import DateSlider, DetailPlots, WorldMap
+from pages.utils_worldMap_explorer import DateSlider
+from pages.utils_worldMap_explorer import DetailPlots
+from pages.utils_worldMap_explorer import WorldMap
 
 
 def get_explore_callbacks(  # noqa: C901
-        df_dict, date_slider, color_dict, location_coordinates
+    df_dict, date_slider, color_dict, location_coordinates
 ):
     """
     function contains all callbacks used in explore tool page (in tool.py file)
     """
+
     @callback(
         [
             Output("mutation_dropdown_0", "options"),
@@ -20,7 +27,7 @@ def get_explore_callbacks(  # noqa: C901
             Output("select_x_frequent_mut_0", "max"),
             Output("select_x_frequent_mut_0", "value"),
             Output("select_min_nb_frequent_mut_0", "value"),
-            Output("min_nb_freq_0", "children")
+            Output("min_nb_freq_0", "children"),
         ],
         [
             Input("reference_radio_0", "value"),
@@ -38,15 +45,15 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=False,
     )
     def actualize_mutation_filter(
-            reference_value,
-            gene_value,
-            seqtech_value,
-            country_value,
-            select_x_mut,
-            complete_partial_radio,
-            min_nb_freq,
-            mut_options,
-            text_freq
+        reference_value,
+        gene_value,
+        seqtech_value,
+        country_value,
+        select_x_mut,
+        complete_partial_radio,
+        min_nb_freq,
+        mut_options,
+        text_freq,
     ):
         # TODO now return top x mut without checking for mutations with same number
         if ctx.triggered_id == "select_x_frequent_mut_0":
@@ -54,7 +61,11 @@ def get_explore_callbacks(  # noqa: C901
             max_select = len(mut_options)
 
         else:
-            mut_options, max_nb_freq, min_nb_freq = get_frequency_sorted_cds_mutation_by_filters(
+            (
+                mut_options,
+                max_nb_freq,
+                min_nb_freq,
+            ) = get_frequency_sorted_cds_mutation_by_filters(
                 df_dict,
                 seqtech_value,
                 country_value,
@@ -62,7 +73,7 @@ def get_explore_callbacks(  # noqa: C901
                 complete_partial_radio,
                 reference_value,
                 color_dict,
-                min_nb_freq
+                min_nb_freq,
             )
             max_select = len(mut_options)
             if len(mut_options) < 20:
@@ -70,21 +81,21 @@ def get_explore_callbacks(  # noqa: C901
             else:
                 select_x_mut = 20
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
-            text_freq = f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
-        text_nb_mut = (
-            f"Select n-th most frequent variants. Number variants matching filters: \
+            text_freq = (
+                f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
+            )
+        text_nb_mut = f"Select n-th most frequent variants. Number variants matching filters: \
             {len(mut_options)}"
-        )
 
         return (
-            mut_options, 
-            mut_value, 
+            mut_options,
+            mut_value,
             text_nb_mut,
-            max_select, 
+            max_select,
             select_x_mut,
             min_nb_freq,
-            text_freq
-            )
+            text_freq,
+        )
 
     @callback(
         [
@@ -113,17 +124,17 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=True,
     )
     def actualize_filters_explorer(
-            reference_value,
-            select_all_seq_techs,
-            select_all_genes,
-            select_all_countries,
-            complete_partial_radio,
-            seq_tech_value,
-            gene_value,
-            gene_options,
-            country_options,
-            seq_tech_options,
-            country_value,
+        reference_value,
+        select_all_seq_techs,
+        select_all_genes,
+        select_all_countries,
+        complete_partial_radio,
+        seq_tech_value,
+        gene_value,
+        gene_options,
+        country_options,
+        seq_tech_options,
+        country_value,
     ):
         """
         seqtech changes mut & country filter; is changed by ref
@@ -133,7 +144,7 @@ def get_explore_callbacks(  # noqa: C901
             df_dict,
             color_dict,
             ctx.triggered_id,
-            'cds',
+            "cds",
             reference_value,
             select_all_seq_techs,
             select_all_genes,
@@ -145,7 +156,7 @@ def get_explore_callbacks(  # noqa: C901
             gene_value,
             country_value,
             seq_tech_value,
-            str(date_slider.min_date)
+            str(date_slider.min_date),
         )
 
     # update map by change of filters or moving slider
@@ -168,15 +179,15 @@ def get_explore_callbacks(  # noqa: C901
     )
     # @cache.memoize()
     def update_world_map_explorer(
-            mutation_list,
-            reference_id,
-            method,
-            seqtech_list,
-            interval,
-            dates,
-            countries,
-            complete_partial_radio,
-            layout,
+        mutation_list,
+        reference_id,
+        method,
+        seqtech_list,
+        interval,
+        dates,
+        countries,
+        complete_partial_radio,
+        layout,
     ):
         world_map_instance = WorldMap(
             df_dict,
@@ -216,10 +227,11 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=True,
     )
     def update_slider_interval(
-            drag_value,
-            interval,
-            # n_intervals,
-            slider_value):
+        drag_value,
+        interval,
+        # n_intervals,
+        slider_value,
+    ):
         """
         slider moved by user drag, changed location of slider with drag_value
         OR
@@ -234,10 +246,10 @@ def get_explore_callbacks(  # noqa: C901
             if len(drag_value) == 2:
                 second_date = drag_value[-1]
                 if (
-                        DateSlider.get_date_x_days_before(
-                            DateSlider.unix_to_date(second_date), interval
-                        )
-                        > date_slider.min_date
+                    DateSlider.get_date_x_days_before(
+                        DateSlider.unix_to_date(second_date), interval
+                    )
+                    > date_slider.min_date
                 ):
                     new_first_date = DateSlider.unix_time_millis(
                         DateSlider.get_date_x_days_before(
@@ -339,16 +351,16 @@ def get_explore_callbacks(  # noqa: C901
     )
     # @cache.memoize()
     def update_upper_plot(
-            click_data,
-            mutations,
-            method,
-            reference_id,
-            seqtech_list,
-            dates,
-            interval,
-            genes,
-            complete_partial_radio,
-            countries
+        click_data,
+        mutations,
+        method,
+        reference_id,
+        seqtech_list,
+        dates,
+        interval,
+        genes,
+        complete_partial_radio,
+        countries,
     ):
         try:
             clicked_country = click_data["points"][0]["hovertext"]
@@ -368,7 +380,7 @@ def get_explore_callbacks(  # noqa: C901
             color_dict,
             location_coordinates,
             genes,
-            clicked_country
+            clicked_country,
         )
         title_text = f"Detailed look at the sequences with the chosen mutations for the selected \
                      country: {detail_plot_instance.location_name}"
@@ -387,7 +399,7 @@ def get_explore_callbacks(  # noqa: C901
         return fig, title_text, plot_header, info_header
 
     @callback(
-            Output("mutation_development", "figure"),
+        Output("mutation_development", "figure"),
         [
             Input("world_map_explorer", "clickData"),
             Input("mutation_dropdown_0", "value"),
@@ -403,16 +415,16 @@ def get_explore_callbacks(  # noqa: C901
         prevent_initial_call=True,
     )
     def update_lower_plot(
-            click_data,
-            mutations,
-            reference_id,
-            seqtech_list,
-            dates,
-            interval,
-            click_data_box_plot,
-            complete_partial_radio,
-            countries,
-            genes
+        click_data,
+        mutations,
+        reference_id,
+        seqtech_list,
+        dates,
+        interval,
+        click_data_box_plot,
+        complete_partial_radio,
+        countries,
+        genes,
     ):
         if ctx.triggered_id == "results_per_location":
             mutations = [click_data_box_plot["points"][0]["label"]]
@@ -434,7 +446,7 @@ def get_explore_callbacks(  # noqa: C901
             color_dict,
             location_coordinates,
             genes,
-            clicked_country
+            clicked_country,
         )
         fig_develop = detail_plot_instance.get_frequency_development_scatter_plot()
         return fig_develop
@@ -458,13 +470,13 @@ def get_explore_callbacks(  # noqa: C901
     )
     # @cache.memoize()
     def update_table_filter(
-            mutation_list,
-            reference_id,
-            seq_tech_list,
-            interval,
-            dates,
-            countries,
-            complete_partial_radio,
+        mutation_list,
+        reference_id,
+        seq_tech_list,
+        interval,
+        dates,
+        countries,
+        complete_partial_radio,
     ):
         date_list = date_slider.get_all_dates_in_interval(dates, interval)
         if mutation_list is None:
@@ -476,9 +488,9 @@ def get_explore_callbacks(  # noqa: C901
         if countries is None:
             countries = []
         if reference_id is None:
-            reference_id = sorted(list(df_dict["variantView"]['complete'].keys()))[0]
+            reference_id = sorted(list(df_dict["variantView"]["complete"].keys()))[0]
 
-        table_explorer = TableFilter('explorer', mutation_list)
+        table_explorer = TableFilter("explorer", mutation_list)
         table_df = table_explorer.create_explore_table(
             df_dict,
             complete_partial_radio,
