@@ -23,8 +23,7 @@ jobs:
           MYSQL_PASSWORD: test_password
         ports:
           - 3306:3306
-
-
+          
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
@@ -40,9 +39,10 @@ jobs:
       run: poetry install
     - name: Load database
       env:
-        MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        MYSQL_USER: ${{ secrets.MYSQL_USER }}
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       run: |
-        mysql --protocol=tcp -h localhost -u test_user -p$MYSQL_ROOT_PASSWORD < tests/sql_dumps/mpx_test_04.sql
+        mysql --protocol=tcp -h localhost --user=$MYSQL_USER --password=$MYSQL_PASSWORD < tests/sql_dumps/mpx_test_04.sql
     - name: Run pytest
       env:
           DB_URL: "https://${{ secrets.MYSQL_USER }}:${{ secrets.MYSQL_PASSWORD }}@localhost:3306/${{ secrets.MYSQL_DATABASE }}"
