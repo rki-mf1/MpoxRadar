@@ -42,7 +42,7 @@ jobs:
         MYSQL_USER: ${{ secrets.MYSQL_USER }}
         MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       run: |
-        mysql --protocol=tcp -h localhost --user=$MYSQL_USER --password=$MYSQL_PASSWORD < tests/sql_dumps/mpx_test_04.sql
+        mysql --protocol=tcp -h localhost --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" < tests/sql_dumps/mpx_test_04.sql
     - name: Run pytest
       env:
           DB_URL: "https://${{ secrets.MYSQL_USER }}:${{ secrets.MYSQL_PASSWORD }}@localhost:3306/${{ secrets.MYSQL_DATABASE }}"
