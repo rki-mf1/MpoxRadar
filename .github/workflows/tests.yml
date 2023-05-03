@@ -38,11 +38,8 @@ jobs:
     - name: Poetry install env.
       run: poetry install
     - name: Load database
-      env:
-        MYSQL_USER: ${{ env.MYSQL_USER }}
-        MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
       run: |
-        mysql --protocol=tcp -h localhost --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" < tests/sql_dumps/mpx_test_04.sql
+        mysql --protocol=tcp -h localhost --user=${{ env.MYSQL_USER }} --password=${{ env.MYSQL_PASSWORD }} < tests/sql_dumps/mpx_test_04.sql
     - name: Run pytest
       env:
           DB_URL: "https://${{ env.MYSQL_USER }}:${{ env.MYSQL_PASSWORD }}@localhost:3306/${{ env.MYSQL_DATABASE }}"
