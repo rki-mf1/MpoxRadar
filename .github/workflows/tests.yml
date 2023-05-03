@@ -32,7 +32,9 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install dependencies
-      run: pip install poetry
+      run: |
+        sudo apt install libmariadb3 libmariadb-dev
+        pip install poetry
 
     - name: Poetry install env.
       run: poetry install
