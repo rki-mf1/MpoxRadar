@@ -42,7 +42,7 @@ jobs:
       env:
         MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
       run: |
-        mysql --protocol=tcp -h localhost -u root -p$MYSQL_ROOT_PASSWORD < tests/sql_dumps/mpx_test_04.sql
+        mysql --protocol=tcp -h localhost -u test_user -p$MYSQL_ROOT_PASSWORD < tests/sql_dumps/mpx_test_04.sql
     - name: Run pytest
       env:
           DB_URL: "https://${{ secrets.MYSQL_USER }}:${{ secrets.MYSQL_PASSWORD }}@localhost:3306/${{ secrets.MYSQL_DATABASE }}"
