@@ -47,4 +47,6 @@ class TestDateSlider(unittest.TestCase):
             date(2022, 12, 31),
             date(2023, 1, 1),
         ]
+        print(date_list)
+        print(correct_dates)
         self.assertListEqual(date_list, correct_dates)

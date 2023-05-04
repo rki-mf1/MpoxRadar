@@ -23,7 +23,7 @@ jobs:
           MYSQL_PASSWORD: test_password
         ports:
           - 3306:3306
-          
+
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
@@ -51,7 +51,7 @@ jobs:
           REDIS_DB_BACKEND: 1
           DEBUG: True
           LOG_LEVEL: "DEBUG"
-      run: poetry run pytest -x tests/
+      run: poetry run pytest -rfeP -x tests/
   format-checker:
     runs-on: ubuntu-latest
     steps:
