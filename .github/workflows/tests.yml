@@ -21,19 +21,15 @@ jobs:
           MYSQL_DATABASE: mpx_test_04
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
+          TZ: 'Europe/Germany'
         ports:
           - 3306:3306
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
         python-version: '3.10'
-    - name: Set up timezone to Europe/Germany
-      uses: szenius/set-timezone@v1.2
-      with:
-        timezoneLinux: "Europe/Germany"
     - name: Install dependencies
       run: |
         sudo apt install libmariadb3 libmariadb-dev
