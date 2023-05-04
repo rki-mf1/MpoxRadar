@@ -47,7 +47,7 @@ jobs:
           REDIS_URL: "redis://127.0.0.1:6379"
           REDIS_DB_BROKER: 1
           REDIS_DB_BACKEND: 1
-      run: pytest
+      run: poetry run pytest -x tests/
   format-checker:
     runs-on: ubuntu-latest
     steps:
