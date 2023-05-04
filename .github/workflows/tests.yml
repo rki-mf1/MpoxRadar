@@ -43,7 +43,7 @@ jobs:
         mysql --protocol=tcp -h localhost --user=root --password=password mpx_test_04 < tests/sql_dumps/mpx_test_04.sql
     - name: Run pytest
       env:
-          DB_URL: "https://root:password@localhost:3306/mpx"
+          DB_URL: "https://test_user:test_password@localhost:3306/mpx"
           REDIS_URL: "redis://127.0.0.1:6379"
           REDIS_DB_BROKER: 1
           REDIS_DB_BACKEND: 1
