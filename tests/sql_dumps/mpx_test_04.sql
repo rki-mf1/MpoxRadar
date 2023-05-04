@@ -467,10 +467,10 @@ CREATE TABLE `variantView` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 -- Function Table
-CREATE FUNCTION IF NOT EXISTS `mpx`.DB_VERSION() RETURNS INTEGER RETURN 1;
+CREATE FUNCTION IF NOT EXISTS `mpx_test_04`.DB_VERSION() RETURNS INTEGER RETURN 1;
 -- VIEW Table
-DROP VIEW IF EXISTS `mpx`.`referenceView`;
-CREATE VIEW `mpx`.`referenceView` AS
+DROP VIEW IF EXISTS `mpx_test_04`.`referenceView`;
+CREATE VIEW `mpx_test_04`.`referenceView` AS
 SELECT
 	`reference`.id AS "reference.id",
 	`reference`.accession AS "reference.accession",
@@ -500,10 +500,10 @@ SELECT
 	elempart.strand AS "elempart.strand",
 	elempart.segment AS "elempart.segment"
 FROM
-	`mpx`.reference
-LEFT JOIN `mpx`.molecule ON reference.id = molecule.reference_id
-LEFT JOIN `mpx`.element ON molecule.id = element.molecule_id
-LEFT JOIN `mpx`.elempart ON element.id = elempart.element_id;
+	`mpx_test_04`.reference
+LEFT JOIN `mpx_test_04`.molecule ON reference.id = molecule.reference_id
+LEFT JOIN `mpx_test_04`.element ON molecule.id = element.molecule_id
+LEFT JOIN `mpx_test_04`.elempart ON element.id = elempart.element_id;
 
 
 
