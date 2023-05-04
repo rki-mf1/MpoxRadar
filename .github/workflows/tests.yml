@@ -39,7 +39,7 @@ jobs:
       run: poetry install
     - name: Load database
       run: |
-        mysql --protocol=tcp -h localhost --user=root --password=password "CREATE DATABASE IF NOT EXISTS mpx_test_04;
+        mysql --protocol=tcp -h localhost --user=root --password=password "CREATE DATABASE IF NOT EXISTS mpx_test_04;"
         mysql --protocol=tcp -h localhost --user=root --password=password mpx_test_04 < tests/sql_dumps/mpx_test_04.sql
     - name: Run pytest
       env:
