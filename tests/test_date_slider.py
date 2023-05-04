@@ -7,6 +7,8 @@ from data import load_all_sql_files
 from pages.utils_worldMap_explorer import DateSlider
 
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
+# os.environ['TZ'] = 'Europe/Germany'
+os.system('tzutil /s "Central Standard Time"')
 
 
 class TestDateSlider(unittest.TestCase):
@@ -33,7 +35,7 @@ class TestDateSlider(unittest.TestCase):
         assert DateSlider.unix_to_date(1672527600) == date(2023, 1, 1)
 
     def test_get_all_dates_in_interval(self):
-        dates = [1671836400, 1672527600]
+        dates = [1669935600, 1672527600]
         interval = 9
         date_list = self.date_slider.get_all_dates_in_interval(dates, interval)
         correct_dates = [
