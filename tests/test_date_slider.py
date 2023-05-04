@@ -8,7 +8,7 @@ from pages.utils_worldMap_explorer import DateSlider
 
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
 # os.environ['TZ'] = 'Europe/Germany'
-os.system('tzutil /s "Central Standard Time"')
+# os.system('tzutil /s "Central Standard Time"')
 
 
 class TestDateSlider(unittest.TestCase):
