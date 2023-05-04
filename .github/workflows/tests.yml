@@ -42,6 +42,7 @@ jobs:
         mysql --protocol=tcp -h localhost --user=root --password=password -e "CREATE DATABASE IF NOT EXISTS mpx_test_04;"
         mysql --protocol=tcp -h localhost --user=root --password=password -e "GRANT ALL PRIVILEGES ON mpx_test_04.* TO 'test_user'@'%' IDENTIFIED BY 'test_password';"
         mysql --protocol=tcp -h localhost --user=root --password=password mpx_test_04 < tests/sql_dumps/mpx_test_04.sql
+        mysql --protocol=tcp -h localhost --user=root --password=password -e "use mpx_test_04; SHOW TABLES;"
     - name: Run pytest
       env:
           DB_URL: "https://test_user:test_password@127.0.0.1:3306/mpx_test_04"
