@@ -9,6 +9,8 @@ on:
 jobs:
   testing:
     runs-on: ubuntu-latest
+    env:
+      TZ: 'Europe/Germany'
     services:
       redis:
         image: redis
@@ -21,7 +23,6 @@ jobs:
           MYSQL_DATABASE: mpx_test_04
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
-          TZ: 'Europe/Germany'
         ports:
           - 3306:3306
     steps:
