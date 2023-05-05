@@ -9,8 +9,6 @@ on:
 jobs:
   testing:
     runs-on: ubuntu-latest
-    env:
-      TZ: 'Europe/Germany'
     services:
       redis:
         image: redis
