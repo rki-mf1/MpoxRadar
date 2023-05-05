@@ -31,11 +31,14 @@ class TestDateSlider(unittest.TestCase):
         assert 1670022000 == DateSlider.unix_time_millis(date(2022, 12, 3))
 
     def test_unix_to_date(self):
-        assert DateSlider.unix_to_date(1669935600) == date(2022, 12, 2)
-        assert DateSlider.unix_to_date(1672527600) == date(2023, 1, 1)
+        assert DateSlider.unix_to_date(1669939200) == date(2022, 12, 2)
+        assert DateSlider.unix_to_date(1672531200) == date(2023, 1, 1)
+
+        # assert DateSlider.unix_to_date(1669935600) == date(2022, 12, 2)
+        # assert DateSlider.unix_to_date(1672527600) == date(2023, 1, 1)
 
     def test_get_all_dates_in_interval(self):
-        dates = [1671836400, 1672527600]
+        dates = [1671840000, 1672531200]
 
         # dates = [1671836400, 1672527600] start from date(2022, 12, 24)
         # dates = [1669935600, 1672527600] default
