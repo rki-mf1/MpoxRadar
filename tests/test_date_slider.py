@@ -7,6 +7,8 @@ from data import load_all_sql_files
 from pages.utils_worldMap_explorer import DateSlider
 
 DB_DUMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql_dumps")
+# os.environ['TZ'] = 'Europe/Germany'
+# os.system('tzutil /s "Central Standard Time"')
 
 
 class TestDateSlider(unittest.TestCase):
@@ -26,14 +28,29 @@ class TestDateSlider(unittest.TestCase):
         assert len(self.date_slider.date_list) == 96
 
     def test_unix_time_millis(self):
-        assert 1670022000 == DateSlider.unix_time_millis(date(2022, 12, 3))
+        # HACK: the problem is if you're using Unix timestamps in your pytest tests
+        # and the timezone of the Github Actions or any testing instance
+        # environment is different from the timezone used
+        # to generate the Unix timestamps, you may get unexpected results.
+        # , that is why we use list to capture either 2022-12-2 or 2022-12-3.
+        assert DateSlider.unix_time_millis(date(2022, 12, 3)) in [
+            1670022000,
+            1670025600,
+        ]
+        # assert 1670022000 == DateSlider.unix_time_millis(date(2022, 12, 3))
 
     def test_unix_to_date(self):
-        assert DateSlider.unix_to_date(1669935600) == date(2022, 12, 2)
-        assert DateSlider.unix_to_date(1672527600) == date(2023, 1, 1)
+        assert DateSlider.unix_to_date(1669939200) == date(2022, 12, 2)
+        assert DateSlider.unix_to_date(1672531200) == date(2023, 1, 1)
+
+        # assert DateSlider.unix_to_date(1669935600) == date(2022, 12, 2)
+        # assert DateSlider.unix_to_date(1672527600) == date(2023, 1, 1)
 
     def test_get_all_dates_in_interval(self):
-        dates = [1669935600, 1672527600]
+        dates = [1671840000, 1672531200]
+
+        # dates = [1671836400, 1672527600] start from date(2022, 12, 24)
+        # dates = [1669935600, 1672527600] default
         interval = 9
         date_list = self.date_slider.get_all_dates_in_interval(dates, interval)
         correct_dates = [

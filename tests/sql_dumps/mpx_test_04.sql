@@ -19,6 +19,8 @@
 -- Table structure for table `alignment`
 --
 
+CREATE DATABASE IF NOT EXISTS mpx_test_04;
+
 DROP TABLE IF EXISTS `alignment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -463,6 +465,47 @@ CREATE TABLE `variantView` (
   `variant.parent_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+-- Function Table
+CREATE FUNCTION IF NOT EXISTS `mpx_test_04`.DB_VERSION() RETURNS INTEGER RETURN 1;
+-- VIEW Table
+DROP VIEW IF EXISTS `mpx_test_04`.`referenceView`;
+CREATE VIEW `mpx_test_04`.`referenceView` AS
+SELECT
+	`reference`.id AS "reference.id",
+	`reference`.accession AS "reference.accession",
+	`reference`.`description` AS "reference.description",
+	`reference`.organism AS "reference.organism",
+	`reference`.standard AS "reference.standard",
+	`reference`.translation_id AS "translation.id",
+	molecule.id AS "molecule.id",
+	molecule.`type` AS "molecule.type",
+	molecule.accession AS "molecule.accession",
+	molecule.symbol AS "molecule.symbol",
+	molecule.`description` AS "molecule.description",
+	molecule.`length` AS "molecule.length",
+	molecule.segment AS "molecule.segment",
+	molecule.standard AS "molecule.standard",
+	element.id AS "element.id",
+	element.type AS "element.type",
+	element.accession AS "element.accession",
+	element.symbol AS "element.symbol",
+	element.description AS "element.description",
+	element.start AS "element.start",
+	element.`end` AS "element.end",
+	element.strand AS "element.strand",
+	element.sequence AS "element.sequence",
+	elempart.`start` AS "elempart.start",
+	elempart.`end` AS "elempart.end",
+	elempart.strand AS "elempart.strand",
+	elempart.segment AS "elempart.segment"
+FROM
+	`mpx_test_04`.reference
+LEFT JOIN `mpx_test_04`.molecule ON reference.id = molecule.reference_id
+LEFT JOIN `mpx_test_04`.element ON molecule.id = element.molecule_id
+LEFT JOIN `mpx_test_04`.elempart ON element.id = elempart.element_id;
+
+
 
 --
 -- Dumping data for table `variantView`
