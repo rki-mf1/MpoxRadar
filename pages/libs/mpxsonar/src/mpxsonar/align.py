@@ -11,6 +11,8 @@ from Bio.Emboss.Applications import StretcherCommandline
 import pandas as pd
 import psutil
 
+from .config import TMP_CACHE
+
 
 class sonarAligner(object):
     """
@@ -18,12 +20,12 @@ class sonarAligner(object):
     alignment functionalities/statistics.
     """
 
-    def __init__(self, outdir=None):
+    def __init__(self, cache_outdir=None):
         self.nuc_profile = []
         self.nuc_n_profile = []
         self.aa_profile = []
         self.aa_n_profile = []
-        self.outdir = outdir
+        self.outdir = TMP_CACHE if not cache_outdir else os.path.abspath(cache_outdir)
         self.logfile = open(os.path.join(self.outdir, "align.debug.log"), "a")
 
     def __exit__(self, exc_type, exc_value, exc_traceback):

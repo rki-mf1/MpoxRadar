@@ -12,33 +12,70 @@ import argparse
 import datetime
 import logging
 import os
+import random
 import sys
 import time
 import traceback
 from urllib.error import HTTPError
+from urllib.parse import urlparse
 
 from Bio import Entrez
 from Bio import SeqIO
 import dateparser
 from dotenv import load_dotenv
+import mariadb
 
 load_dotenv()
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
-REF_LIST = [
-    "NC_063383.1",
-    "ON563414.3",
-    "MT903344.1",
+IGNORE_LIST = [
+    "NC_063383.1",  # REF
+    "ON563414.3",  # REF
+    "MT903344.1",  # REF
+    "KJ136820.1",
+    "FV537351.1",
+    "FV537352.1",
+    "OX044338.1",
+    "OX009124.1",
+    "NC_003310.1",  # from 1996
+    "8HG1_T",
+    "8HG1_P",
 ]
 
 Entrez.api_key = os.getenv("NCBI_API_KEY", "")
 Entrez.tool = os.getenv("NCBI_TOOL", "")
 Entrez.email = os.getenv("NCBI_EMAIL", "")  # Always tell NCBI who you are
+URI = urlparse(os.getenv("DB_URL", ""))
+# connection parameters
+
+
+def get_existing_sample_list():
+
+    database = URI.path.replace("/", "")
+    conn_params = {
+        "user": URI.username,
+        "password": URI.password,
+        "host": URI.hostname,
+        "port": URI.port,
+        "database": database,
+    }
+    # Establish a connection
+    connection = mariadb.connect(**conn_params)
+    cursor = connection.cursor()
+    # retrieve data
+    cursor.execute("SELECT name FROM sample;")
+    # print content
+    db_sample_list = [item[0] for item in cursor.fetchall()]
+
+    # free resources
+    cursor.close()
+    connection.close()
+    return db_sample_list
 
 
 def download(save_path):  # noqa: C901
     # nucleotide nuccore
     DB = "nucleotide"
-    QUERY = "Monkeypox virus[Organism] AND complete[prop]"
+    QUERY = "Monkeypox virus[Organism]"  # AND complete[prop]
     BATCH_SIZE = 10
     # 1
     # retmax=1 just returns first result of possibly many.
@@ -56,7 +93,7 @@ def download(save_path):  # noqa: C901
 
             record = Entrez.read(handle)
             total_count = record["Count"]
-            logging.info("Total sample to download: %s " % (total_count))
+            logging.info("All samples are found: %s " % (total_count))
 
             handle = Entrez.esearch(
                 db=DB,
@@ -67,16 +104,23 @@ def download(save_path):  # noqa: C901
             )
             record = Entrez.read(handle)
             # setup cache
-            time.sleep(1)
+            time.sleep(random.randint(3, 6))
             # print(record)
             id_list = record["IdList"]
+            db_sample_list = get_existing_sample_list()
+            id_list = list(set(id_list) - set(db_sample_list))
+            total_count = len(id_list)
+
+            logging.info("Remaining samples after check: %s " % (total_count))
             search_results = Entrez.read(Entrez.epost(DB, id=",".join(id_list)))
             webenv = search_results["WebEnv"]
             query_key = search_results["QueryKey"]
-            time.sleep(1)
+
             success = True
         except Exception as e:
             logging.error("Error at %s", "getting ID", exc_info=e)
+            logging.info("Reties to reconnect...")
+            time.sleep(random.randint(10, 20))
     handle.close()
     if attempt == 3 and not success:
         return False
@@ -120,15 +164,16 @@ def download(save_path):  # noqa: C901
                 if 500 <= err.code <= 599:
                     logging.warning(f"Received error from server {err}")
                     logging.warning("Attempt {attempt} of 3")
-                    time.sleep(5)
+                    time.sleep(random.randint(30, 60))
                 if 400 == err.code:
                     logging.warning(f"Received error from server {err}")
                     logging.warning("Attempt {attempt} of 3")
-                    time.sleep(5)
+                    time.sleep(random.randint(30, 60))
                 else:
                     raise
             except Exception as e:
                 logging.error("Error at %s", "download sample", exc_info=e)
+                time.sleep(random.randint(3, 6))
 
         if attempt == 3 and not success:
             fetch_handle.close()
@@ -145,7 +190,7 @@ def download(save_path):  # noqa: C901
         file_log_handler.seek(0)
         file_log_handler.write(str(end))
         file_log_handler.truncate()
-        time.sleep(2)
+        time.sleep(random.randint(3, 6))
 
     with open(os.path.join(save_path, ".download.success"), "w") as f:
         f.writelines("done")
@@ -161,7 +206,6 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
         if x.endswith(".GB"):
             # Prints only text file present in My Folder
             list_of_GB.append(os.path.join(save_download_path, x))
-    # TODO: remove reference genome from the list.
 
     # fasta & meta
     fasta_out_handler = open(os.path.join(save_final_path, "seq.fasta"), "w")
@@ -175,6 +219,8 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
         "RELEASE_DATE",
         "COLLECTION_DATE",
         "SEQ_TECH",
+        "HOST",
+        "GENOME_COMPLETENESS",
     ]
     meta_out_handler.write("\t".join(header) + "\n")  # Write the header line
     try:
@@ -182,7 +228,8 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
             logging.info("Load:" + _file)
             seq_GBrecords = list(SeqIO.parse(_file, "genbank"))
             for seq_record in seq_GBrecords:
-                if seq_record.id in REF_LIST:
+                # remove reference genome from the list.
+                if seq_record.id in IGNORE_LIST:
                     continue
 
                 _isolate = ""
@@ -191,6 +238,8 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                 _NCBI_release_date = ""
                 _collection_date = ""
                 _seq_tech = ""
+                _nuc_completeness = ""
+                _host = ""
                 # print("Dealing with GenBank record %s" % seq_record.id)
 
                 fasta_out_handler.write(
@@ -199,6 +248,12 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                 )
 
                 # assume all keys are exit.
+                if "partial" in seq_record.description:
+                    _nuc_completeness = "partial"
+                elif "complete" in seq_record.description:
+                    _nuc_completeness = "complete"
+                if "host" in seq_record.features[0].qualifiers:
+                    _host = seq_record.features[0].qualifiers["host"][0]
                 if "isolate" in seq_record.features[0].qualifiers:
                     _isolate = seq_record.features[0].qualifiers["isolate"][0]
                 if "country" in seq_record.features[0].qualifiers:
@@ -210,8 +265,10 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                     _collection_date = seq_record.features[0].qualifiers[
                         "collection_date"
                     ][0]
-                    # 1.) need to fix date Nov-2017 -> 2017-11-01, 09-Nov-2017 -> 2017-11-09
-                    # 1995 -> 1995-01-01 set default value with first day of
+                    # Step
+                    # 1.) Fix date;
+                    # * Nov-2017 -> 2017-11-01, 09-Nov-2017 -> 2017-11-09
+                    # * 1995 -> 1995-01-01 set default value with first day of
                     # the month and first month of the year
                     # 2.) Year needs to be present in the format.
 
@@ -238,7 +295,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
 
                 if "date" in seq_record.annotations:
                     _NCBI_release_date = seq_record.annotations["date"]
-                    # need to fix date 18-NOV-2022 -> 2022-11-18
+                    # Fix date; 18-NOV-2022 -> 2022-11-18
                     d = dateparser.parse(
                         _NCBI_release_date,
                         settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": "YMD"},
@@ -246,7 +303,7 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                     _NCBI_release_date = d.strftime("%Y-%m-%d")
 
                 meta_out_handler.write(
-                    "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+                    "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
                     % (
                         seq_record.id,
                         _isolate,
@@ -256,6 +313,8 @@ def generate_outputfiles(save_download_path, save_final_path):  # noqa: C901
                         _NCBI_release_date,
                         _collection_date,
                         _seq_tech,
+                        _host,
+                        _nuc_completeness,
                     )
                 )
     except Exception:
@@ -295,7 +354,7 @@ def run(args):
             logging.StreamHandler(),
         ],
     )
-    logging.info("Script version: 1")
+    logging.info("Script version: 1.1")
     logging.info("Save output to:" + SAVE_PATH)
 
     save_download_path = os.path.join(SAVE_PATH, "GB")
@@ -318,16 +377,16 @@ def run(args):
 
     # 3
     logging.info("--- Convert GeneBank to fasta and meta file ---")
-    if not os.path.exists(os.path.join(SAVE_PATH, ".success")):
-        if generate_outputfiles(save_download_path, save_final_path):
+    # if not os.path.exists(os.path.join(SAVE_PATH, ".success")):
+    if generate_outputfiles(save_download_path, save_final_path):
 
-            logging.info("Processing completed")
-        else:
-            logging.error("Process stop before it is finished")
-            sys.exit("Please rerun it again later.")
+        logging.info("Processing completed")
+    else:
+        logging.error("Process stop before it is finished")
+        sys.exit("Please rerun it again later.")
 
-        with open(os.path.join(SAVE_PATH, ".success"), "w+") as f:
-            f.write("done")
+    with open(os.path.join(SAVE_PATH, ".success"), "w+") as f:
+        f.write("done")
     logging.info("--- Done ---")
 
 

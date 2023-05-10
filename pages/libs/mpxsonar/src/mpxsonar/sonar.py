@@ -13,6 +13,7 @@ from tabulate import tabulate
 from . import logging
 from .basics import sonarBasics
 from .dbm import sonarDBManager
+from .utils import open_file
 
 # from .cache import sonarCache  # noqa: F401
 
@@ -206,7 +207,7 @@ def parse_args(args):
     # Delete Reference.
     subparsers.add_parser(
         "delete-ref",
-        parents=[general_parser, ref_parser],
+        parents=[general_parser],
         help="Delete a reference in database.",
     )
 
@@ -645,7 +646,11 @@ def main(args):  # noqa: C901
             if args.out_column != "all":
                 out_column = args.out_column.strip()
                 out_column_list = out_column.split(",")
-                check = all(item in dbm.properties for item in out_column_list)
+                _all_avi_columns = list(dbm.properties.keys())
+                check = all(
+                    item in _all_avi_columns + ["NUC_PROFILE", "AA_PROFILE"]
+                    for item in out_column_list
+                )
                 if check:
                     # sample.name is fixed
                     valid_output_column = out_column_list + ["sample.name"]
@@ -673,7 +678,7 @@ def main(args):  # noqa: C901
         if args.sample_file:
             for sample_file in args.sample_file:
                 check_file(sample_file)
-                with sonarBasics.open_file(sample_file, compressed="auto") as file:
+                with open_file(sample_file, compressed="auto") as file:
                     for line in file:
                         reserved_props = sonarBasics.set_key(
                             reserved_props, "sample", line.strip()

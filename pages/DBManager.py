@@ -4,8 +4,8 @@ from urllib.parse import urlparse
 
 import mariadb
 
-from .config import DB_URL
-from .config import logging_radar
+from pages.config import DB_URL
+from pages.config import logging_radar
 
 
 class DBManager(object):
@@ -84,6 +84,7 @@ class DBManager(object):
         # if self.debug:
         #    con.set_trace_callback(logging.debug)
         con.row_factory = self.dict_factory
+        # always return as a dictionary
         cur = con.cursor(dictionary=True)
         return con, cur
 
@@ -123,22 +124,6 @@ class DBManager(object):
         self.cursor.close()
         self.connection.close()
 
-    @property
-    def references(self):
-        """
-        return all references
-
-        """
-        if self.__references == {}:
-            sql = "SELECT `id`, `accession`, `description`, `organism` FROM reference;"
-            self.cursor.execute(sql)
-            rows = self.cursor.fetchall()
-            if rows:
-                self.__references = rows
-            else:
-                self.__references = {}
-        return self.__references
-
     def get_all_SeqTech(self):
         sql = "SELECT DISTINCT(value_text) FROM propertyView WHERE `property.name` = 'SEQ_TECH' ORDER BY value_text;"
         self.cursor.execute(sql)
@@ -160,3 +145,180 @@ class DBManager(object):
         self.cursor.execute(sql)
         rows = self.cursor.fetchall()
         return rows
+
+    def count_all_samples(self):
+        """ """
+        sql = "SELECT COUNT(id) AS count FROM sample;"
+        self.cursor.execute(sql)
+        number_of_rows = self.cursor.fetchone()["count"]
+        return number_of_rows
+
+    def count_lastAdded30D_sample(self):
+        """
+        we use fix id (8 = release date)
+        """
+        sql = (
+            "SELECT COUNT(sample_id) AS count "
+            "FROM sample2property "
+            "WHERE property_id = 8 AND DATE(VALUE_DATE) >=  DATE(NOW() - INTERVAL 30 DAY)"
+        )
+        self.cursor.execute(sql)
+        number_of_rows = self.cursor.fetchone()["count"]
+        return number_of_rows
+
+    def count_all_country(self):
+        """ """
+        sql = (
+            "SELECT COUNT(DISTINCT value_text) AS count "
+            "FROM sample2property "
+            "WHERE property_id = 12 AND value_text != '';"
+        )
+        self.cursor.execute(sql)
+        number_of_rows = self.cursor.fetchone()["count"]
+        return number_of_rows
+
+    def count_top3_country(self):
+        """
+        we use fix id (8 = release date)
+        """
+        sql = (
+            "SELECT  value_text , COUNT(value_text) AS count "
+            "FROM sample2property "
+            "WHERE property_id = 12 GROUP BY value_text ORDER BY count DESC LIMIT 3;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def count_unique_MutRef(self):
+        """
+        "Number of mutations", i.e., min and max of number of unique mutations
+        (compared to each reference genome). So if with ref-genome-1,
+        there are 100 mutations and with ref-2, there are 220 and with ref-3 there are 60 mutation,
+        then this field will show: "60 - 220"
+        """
+
+        sql = (
+            "SELECT `reference.accession` , MAX(T1.Freq) AS max_each_ref "
+            "FROM ( "
+            "SELECT `reference.accession`,  COUNT(`variant.label`) AS Freq "
+            "From   variantView "
+            "WHERE `element.type` = 'cds' AND `variant.alt` != 'X' "
+            "Group By `reference.accession` "
+            "ORDER BY Freq DESC) AS T1 "
+            "Group BY `reference.accession` "
+            "ORDER BY max_each_ref DESC;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def get_reference_gene(self, ref_accession):
+        sql = (
+            "SELECT`reference.accession`, `element.type`, `element.symbol`, `element.description`,"
+            " `element.start`, `element.end`, `element.strand`, `element.sequence` "
+            "FROM referenceView "
+            f"WHERE `element.type` = 'cds' AND `reference.accession` = '{ref_accession}';"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def get_mutation_signature(self):
+
+        sql = (
+            "SELECT  COUNT(`sample.name`) as count, "
+            "`reference.accession`, `variant.ref`, `variant.alt`, "
+            "`variant.start`, `variant.end` "
+            "FROM  variantView "
+            "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'G') "
+            "GROUP BY  `reference.accession`, `variant.ref`, `variant.alt` ;"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def get_raw_mutation_signature(self):
+
+        sql = (
+            "SELECT  "
+            "`reference.accession`, `variant.ref`, `variant.alt`, "
+            "`variant.start`, `variant.end` "
+            "FROM  variantView "
+            "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'G');"
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def get_raw_snp_1(self):
+        """
+        This function tries to get all possible one-base substitutions.
+        """
+        sql = (
+            "SELECT `reference.accession`, `variant.ref`, `variant.alt`, `variant.start`, `variant.end` "
+            "FROM  variantView "
+            "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'T' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'C') "
+            "OR (`variant.ref` = 'A' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'A' AND `variant.alt` = 'G') "
+            "OR (`variant.ref` = 'A' AND `variant.alt` = 'C'); "
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    def count_unique_NT_Mut_Ref(self):
+        """
+        Count total mutations of NT for each reference.
+        """
+        sql = (
+            "SELECT `reference.accession`,  COUNT(`variant.label`) AS Freq "
+            "FROM   variantView "
+            "WHERE `element.type` != 'cds' AND `variant.alt` != 'N' "
+            "GROUP BY `reference.accession` "
+            "ORDER BY Freq DESC; "
+        )
+        self.cursor.execute(sql)
+        _rows = self.cursor.fetchall()
+        return _rows
+
+    @property
+    def references(self):
+        """
+        return all references
+
+        """
+        if self.__references == {}:
+            sql = (
+                "SELECT reference.`id`, reference.`accession`, "
+                "element.sequence "
+                "FROM reference "
+                "JOIN element "
+                "ON reference.accession = element.accession "
+                "AND element.type = 'source'; "
+            )
+            self.cursor.execute(sql)
+            rows = self.cursor.fetchall()
+            if rows:
+                self.__references = rows
+            else:
+                self.__references = {}
+        return self.__references

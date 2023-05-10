@@ -2,86 +2,121 @@ import dash
 from dash import Dash
 from dash import html
 import dash_bootstrap_components as dbc
-import tomli
 
-from pages.util_footer_table import row1
-
-# Determine version using pyproject.toml file
-try:
-    from importlib.metadata import version, PackageNotFoundError  # type: ignore
-except ImportError:  # pragma: no cover
-    from importlib_metadata import version, PackageNotFoundError  # type: ignore
-
-
-try:
-    __version__ = version(__name__)
-except PackageNotFoundError:  # pragma: no cover
-    with open("pyproject.toml", mode="rb") as pyproject:
-        pkg_meta = tomli.load(pyproject)["tool"]["poetry"]
-        __version__ = str(pkg_meta["version"])
+from pages.config import __version__
+from pages.config import background_callback_manager
+from pages.config import background_manager
+from pages.config import cache
+from pages.config import DEBUG
+from pages.config import SERVER
+from pages.util_footer_table import footer_table
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(
-    __name__, use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css]
+    __name__,
+    use_pages=True,
+    external_stylesheets=[
+        dbc.themes.ZEPHYR,
+        dbc.icons.BOOTSTRAP,
+        dbc.icons.FONT_AWESOME,
+    ],
+    long_callback_manager=background_callback_manager,
+    background_callback_manager=background_manager,
+    suppress_callback_exceptions=True,
 )
 server = app.server
-table_body = [html.Tbody([row1])]
+cache.init_app(server)
 
-table = dbc.Table(table_body, bordered=True)
-
-app.layout = html.Div(
+app.layout = dbc.Container(
     [
-        html.H1("MpoxRadar", style={"display": "inline-block"}),
-        html.Img(
-            src=r"assets/hpi_logo.png",
-            alt="Img_HPI",
-            style={"float": "right", "height": "10%", "width": "10%"},
-            className="responsive",
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        html.H1("MpoxRadar", style={"display": "inline-block"}),
+                        html.Div(
+                            "An interactive dashboard for genomic surveillance of mpox."
+                        ),
+                    ]
+                ),
+                dbc.Col(
+                    [
+                        html.Img(
+                            src=r"assets/hpi_logo.png",
+                            alt="Img_HPI",
+                            style={"float": "right", "width": "25%", "height": "auto"},
+                            className="responsive",
+                        ),
+                        html.Img(
+                            src=r"assets/rki_logo.png",
+                            alt="Img_RKI",
+                            style={
+                                "float": "right",
+                                "width": "25%",
+                                "height": "auto",
+                                "marginTop": "20px",
+                                "marginRight": "20px",
+                            },
+                            className="responsive",
+                        ),
+                        html.Img(
+                            src=r"assets/DAKI-FWS_logo.png",
+                            alt="Img_DAKI-FWS",
+                            style={"float": "right", "width": "25%", "height": "auto"},
+                            className="responsive",
+                        ),
+                    ]
+                ),
+            ]
         ),
-        html.Img(
-            src=r"assets/rki_logo.png",
-            alt="Img_RKI",
-            style={
-                "float": "right",
-                "height": "10%",
-                "width": "10%",
-                "margin-top": "50px",
-                "margin-right": "20px",
-            },
-            className="responsive",
-        ),
-        html.Img(
-            src=r"assets/DAKI-FWS_logo.png",
-            alt="Img_DAKI-FWS",
-            style={"float": "right", "height": "10%", "width": "10%"},
-            className="responsive",
-        ),
-        html.Div("An interactive dashboard for genomic surveillance of mpox."),
-        html.Br(),
+        html.Hr(className="my-2"),
         html.Div(
             [
                 dbc.Button(
-                    "About",
-                    href="About",
+                    [html.I(className="bi bi-info-circle-fill me-2"), "About"],
+                    href="/",
                     outline=True,
                     color="primary",
                     className="me-1",
                 ),
                 dbc.Button(
-                    "Tool", href="Tool", outline=True, color="primary", className="me-1"
+                    [
+                        html.I(className="bi bi-file-bar-graph me-2"),
+                        "Tool",
+                        dbc.Badge(
+                            "Click Here",
+                            color="info",
+                            text_color="white",
+                            className="ms-1",
+                        ),
+                    ],
+                    href="Tool",
+                    outline=True,
+                    color="primary",
+                    className="me-1",
                 ),
                 dbc.Button(
-                    "Help", href="Help", outline=True, color="primary", className="me-1"
+                    [html.I(className="bi bi-card-list me-2"), "Help"],
+                    href="Help",
+                    outline=True,
+                    color="primary",
+                    className="me-1",
                 ),
                 dbc.Button(
-                    "Imprint & Privacy Policy",
+                    [
+                        html.I(className="bi bi-send-check-fill me-2"),
+                        "Imprint & Privacy Policy",
+                    ],
                     href="Imprint",
                     outline=True,
                     color="primary",
                     className="me-1",
                 ),
                 dbc.Button(
-                    "Contact",
+                    [
+                        html.I(className="bi bi-envelope-plus-fill me-2"),
+                        "Contact",
+                    ],
                     href="Contact",
                     outline=True,
                     color="primary",
@@ -90,16 +125,18 @@ app.layout = html.Div(
             ]
         ),
         html.Br(),
-        html.Br(),
         dash.page_container,
         html.Br(),
-        html.Br(),
-        html.Br(),
-        html.Br(),
-        html.Div(["Version = " + __version__]),
-        html.Div([html.Hr(), html.Footer([table])], className="app_footer"),
+        html.Div(
+            [
+                html.Hr(),
+                html.Div(["Version = " + __version__]),
+                html.Footer([footer_table]),
+            ],
+            className="",
+        ),
     ]
 )
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host="0.0.0.0")
+    app.run_server(debug=DEBUG, host=SERVER)
