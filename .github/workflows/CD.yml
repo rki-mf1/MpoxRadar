@@ -32,7 +32,7 @@ jobs:
         port: 22
         script: |
           cd /opt/MpoxRadar/
-          sudo bash build_cache.sh
+          bash build_cache.sh
     - name: Restart the application after deployment
       uses: appleboy/ssh-action@master
       with:
