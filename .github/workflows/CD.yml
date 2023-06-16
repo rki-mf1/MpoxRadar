@@ -32,9 +32,7 @@ jobs:
         port: 22
         script: |
           cd /opt/MpoxRadar/
-          sudo su
-          conda activate mpxradar
-          python data.py
+          sudo bash build_cache.sh
     - name: Restart the application after deployment
       uses: appleboy/ssh-action@master
       with:
