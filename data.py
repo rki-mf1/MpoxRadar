@@ -12,6 +12,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import exc
 
+from pages.app_controller import calculate_mutation_sig
+from pages.app_controller import calculate_tri_mutation_sig
+from pages.app_controller import create_snp_table
 from pages.config import CACHE_DIR
 from pages.config import DB_URL
 from pages.config import redis_manager
@@ -206,6 +209,8 @@ class DataFrameLoader:
         :param table_name: name of the DB table to query
         :return: (path to csv, dtypes dict {column_name: dtype (from column_dtypes)})
         """
+        # cpu_number=  mp.current_process().name.split("-")[-1]  # Get the CPU number
+        # print(cpu_number)
         start = perf_counter()
         db_connection = get_database_connection(self.db_name)
         try:
@@ -509,7 +514,7 @@ def load_all_sql_files(  # noqa: C901
     # check if df_dict is load or not?
     if redis_manager and redis_manager.exists("df_dict") and not test_db:
         # if True:
-        print("Load data from cache")
+        print("Load data from cache...")
         # df_dict = decompress_pickle(os.path.join(CACHE_DIR,"df_dict.pbz2"))
         # df_dict = pickle.loads(redis_manager.get("df_dict"))
         processed_df_dict = load_Cpickle(os.path.join(path_to_cache, "df_dict.pickle"))
@@ -588,3 +593,12 @@ def load_all_sql_files(  # noqa: C901
             # df_dict["referenceView"].to_pickle(".cache/referenceView.pkl")
 
     return processed_df_dict
+
+
+if __name__ == "__main__":
+    print("Build a new cache")
+    load_all_sql_files()
+    create_snp_table()
+    calculate_tri_mutation_sig()
+    calculate_mutation_sig()
+    print("--- Complete ----")
