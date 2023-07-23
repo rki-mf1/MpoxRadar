@@ -13,6 +13,8 @@ import plotly.express as px
 import redis
 import tomli
 
+from data_management.api.django.django_api import DjangoAPI
+
 load_dotenv()
 
 # CONFIG
@@ -21,8 +23,8 @@ DEBUG = os.getenv("DEBUG")
 DB_URL = os.getenv("DB_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL")
 # REDIS_URL =  os.getenv("REDIS_URL")
-REDIS_BACKEND_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BACKEND"))
-REDIS_BROKER_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BROKER"))
+#REDIS_BACKEND_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BACKEND"))
+#REDIS_BROKER_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BROKER"))
 CACHE_DIR = ".cache"
 # create .cache dir.
 if not os.path.exists(CACHE_DIR):
@@ -68,8 +70,13 @@ except PackageNotFoundError:  # pragma: no cover
         pkg_meta = tomli.load(pyproject)["tool"]["poetry"]
         __version__ = str(pkg_meta["version"])
 
+if "REST_IMPLEMENTATION" in os.environ:
+    cache = DjangoAPI()
+    background_manager = None
+    background_callback_manager = None
+    redis_manager = None
 
-if "REDIS_URL" in os.environ:
+elif "REDIS_URL" in os.environ:
     logging_radar.info("Use Redis & Celery")
     # Use Redis & Celery if REDIS_URL set as an env variable
     from celery import Celery  # type: ignore

@@ -3,16 +3,18 @@
 
 # DEPENDENCIES
 import json
+import os
 import sys
 from textwrap import fill
 import time
 
 import pandas as pd
+from data_management.api.django.django_api import DjangoAPI
 
 from pages.config import DB_URL
 from pages.config import logging_radar
 from pages.config import redis_manager
-from pages.DBManager import DBManager
+from data_management.api.mariadb_direct.db_manager import DBManager
 from pages.utils import generate_96_mutation_types
 from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
 from .libs.mpxsonar.src.mpxsonar.dbm import sonarDBManager
@@ -436,7 +438,10 @@ def calculate_mutation_sig():
     six classes of base substitution: C>A, C>G, C>T, T>A, T>C, T>G.
     """
     start = time.time()
-    if (
+    if os.environ.get("REST_IMPLEMENTATION") == "True":
+        data_ = DjangoAPI.get_instance().get_mutation_signature()
+        total_ = DjangoAPI.get_instance().count_unique_NT_Mut_Ref()
+    elif (
         redis_manager
         and redis_manager.exists("data_mutation_sig")
         and redis_manager.exists("total_mutation_sig")
@@ -489,7 +494,11 @@ def calculate_mutation_sig():
 def create_snp_table():  # noqa: C901
     start = time.time()
 
-    if redis_manager and redis_manager.exists("data_snp_table"):
+    if os.environ.get("REST_IMPLEMENTATION") == "True":
+        data_ = DjangoAPI.get_instance().get_variants_view_filtered({})
+        all_references_dict = {}
+
+    elif redis_manager and redis_manager.exists("data_snp_table"):
         data_ = json.loads(redis_manager.get("data_snp_table"))
 
         with DBManager() as dbm:

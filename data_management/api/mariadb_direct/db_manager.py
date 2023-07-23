@@ -3,6 +3,7 @@ import sys
 from urllib.parse import urlparse
 
 import mariadb
+from data_management.api.django.django_api import DjangoAPI
 
 from pages.config import DB_URL
 from pages.config import logging_radar
@@ -15,22 +16,22 @@ class DBManager(object):
     """
 
     def __init__(self, db_url=None, readonly=True):
-
-        if db_url is None:
-            db_url = DB_URL
-
-        # public attributes
-        self.connection = None
-        self.dbfile = db_url  # os.path.abspath(dbfile)
-        self.cursor = None
-        self.__references = {}
-        self.__uri = self.get_uri(db_url)
-        self.__mode = "ro" if readonly else "rwc"
-        self.db_user = self.__uri.username
-        self.db_pass = self.__uri.password
-        self.db_url = self.__uri.hostname
-        self.db_port = self.__uri.port
-        self.db_database = self.__uri.path.replace("/", "")
+        self.api = DjangoAPI.get_instance()
+        #if db_url is None:
+        #    db_url = DB_URL
+#
+        ## public attributes
+        #self.connection = None
+        #self.dbfile = db_url  # os.path.abspath(dbfile)
+        #self.cursor = None
+        #self.__references = {}
+        #self.__uri = self.get_uri(db_url)
+        #self.__mode = "ro" if readonly else "rwc"
+        #self.db_user = self.__uri.username
+        #self.db_pass = self.__uri.password
+        #self.db_url = self.__uri.hostname
+        #self.db_port = self.__uri.port
+        #self.db_database = self.__uri.path.replace("/", "")
 
     def __enter__(self):
         """establish connection and start transaction when class is initialized"""
@@ -214,15 +215,20 @@ class DBManager(object):
         return _rows
 
     def get_reference_gene(self, ref_accession):
-        sql = (
-            "SELECT`reference.accession`, `element.type`, `element.symbol`, `element.description`,"
-            " `element.start`, `element.end`, `element.strand`, `element.sequence` "
-            "FROM referenceView "
-            f"WHERE `element.type` = 'cds' AND `reference.accession` = '{ref_accession}';"
-        )
-        self.cursor.execute(sql)
-        _rows = self.cursor.fetchall()
-        return _rows
+        #sql = (
+        #    "SELECT`reference.accession`, `element.type`, `element.symbol`, `element.description`,"
+        #    " `element.start`, `element.end`, `element.strand`, `element.sequence` "
+        #    "FROM referenceView "
+        #    f"WHERE `element.type` = 'cds' AND `reference.accession` = '{ref_accession}';"
+        #)
+        #self.cursor.execute(sql)
+        #_rows = self.cursor.fetchall()
+        #return _rows
+        return self.api.get_genes(
+            {
+                "reference__accession": ref_accession,
+                "element__type": "cds",
+            })
 
     def get_mutation_signature(self):
 
@@ -270,12 +276,12 @@ class DBManager(object):
             "FROM  variantView "
             "WHERE (`variant.ref` = 'C' AND `variant.alt` = 'A') "
             "OR (`variant.ref` = 'C' AND `variant.alt` = 'G') "
-            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
             "OR (`variant.ref` = 'T' AND `variant.alt` = 'A') "
+            "OR (`variant.ref` = 'C' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'T') "
+            "OR (`variant.ref` = 'G' AND `variant.alt` = 'A') "
             "OR (`variant.ref` = 'T' AND `variant.alt` = 'C') "
             "OR (`variant.ref` = 'T' AND `variant.alt` = 'G') "
-            "OR (`variant.ref` = 'G' AND `variant.alt` = 'A') "
-            "OR (`variant.ref` = 'G' AND `variant.alt` = 'T') "
             "OR (`variant.ref` = 'G' AND `variant.alt` = 'C') "
             "OR (`variant.ref` = 'A' AND `variant.alt` = 'T') "
             "OR (`variant.ref` = 'A' AND `variant.alt` = 'G') "

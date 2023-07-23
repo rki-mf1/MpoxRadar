@@ -3,6 +3,8 @@ from datetime import datetime
 from dash import html
 import pandas as pd
 
+from data_management.api.django.django_api import DjangoAPI
+
 
 def select_variantView_dfs(
     df_dict: dict, complete_partial_radio: str, reference_value: int, aa_nt_radio: str
@@ -235,7 +237,7 @@ def filter_by_seqtech_country_gene_and_merge(
 
 
 def get_frequency_sorted_cds_mutation_by_filters(
-    df_dict: dict,
+    api: DjangoAPI,
     seqtech_value: list[str],
     country_value: list[str],
     gene_value: list[str],
@@ -252,23 +254,27 @@ def get_frequency_sorted_cds_mutation_by_filters(
     :return: highest mutation frequency in selection = nb of samples with same mutation
     :return: lowest mutation frequency in selecion
     """
-    merged_df = filter_by_seqtech_country_gene_and_merge(
-        df_dict["propertyView"]["complete"],
-        df_dict["variantView"]["complete"][reference_value]["cds"],
-        seqtech_value,
-        country_value,
-        gene_value,
-    )
+    #    merged_df = filter_by_seqtech_country_gene_and_merge(
+    #        df_dict["propertyView"]["complete"],
+    #        df_dict["variantView"]["complete"][reference_value]["cds"],
+    #        seqtech_value,
+    #        country_value,
+    #        gene_value,
+    #    )
+    #
+    #    if complete_partial_radio == "partial":
+    #        merged_df_2 = filter_by_seqtech_country_gene_and_merge(
+    #            df_dict["propertyView"]["partial"],
+    #            df_dict["variantView"]["partial"][reference_value]["cds"],
+    #            seqtech_value,
+    #            country_value,
+    #            gene_value,
+    #        )
+    #        merged_df = pd.concat([merged_df, merged_df_2], ignore_index=True, axis=0)
 
-    if complete_partial_radio == "partial":
-        merged_df_2 = filter_by_seqtech_country_gene_and_merge(
-            df_dict["propertyView"]["partial"],
-            df_dict["variantView"]["partial"][reference_value]["cds"],
-            seqtech_value,
-            country_value,
-            gene_value,
-        )
-        merged_df = pd.concat([merged_df, merged_df_2], ignore_index=True, axis=0)
+    merged_df = api.get_variants_view_filtered(
+        {"seqtech": seqtech_value, "country": country_value, "gene": gene_value}
+    )
 
     (
         sorted_mutation_options,
@@ -300,6 +306,7 @@ def get_frequency_sorted_mutation_by_df(
     :return: max_freq_nb, highest mutation frequency in selection = nb of samples with same mutation
     :return: min_nb_freq, None, user input or changed user iput depending on max_nb_freq
     """
+    return [], 0, 0
     df = (
         df.groupby(variant_columns)
         .size()

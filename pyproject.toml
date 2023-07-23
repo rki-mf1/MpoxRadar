@@ -5,7 +5,7 @@ description = "MonkeyPoxRadar"
 authors = ["Kunaphas.Kong <kunaphas.kon@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.9,<3.13"
 biopython = "~1.79"
 tqdm = "~4.59.0"
 more-itertools = "~8.7.0"
@@ -22,10 +22,10 @@ dash = {extras = ["celery"], version = "^2.7.1"}
 gunicorn = "^20.1.0"
 dash-mantine-components = "^0.11.0"
 SQLAlchemy = "^1.4.46"
-statsmodels = "^0.13.5"
+statsmodels = "0.14.0"
 PyMySQL = "^1.0.2"
 pyarrow = "^10.0.1"
-scipy = "1.8.1"
+scipy = "1.11.1"
 redis = "^4.4.2"
 Flask-Caching = "^2.0.2"
 

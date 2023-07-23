@@ -7,6 +7,7 @@ import time
 import pandas as pd
 from plotly import graph_objects as go
 import plotly.express as px
+from data_management.api.django.django_api import DjangoAPI
 from scipy.stats import linregress
 
 
@@ -908,22 +909,8 @@ class DateSlider:
     handles dates and date slider below map
     """
 
-    def __init__(self, df_dict: dict):
-        dates_in_propertyViews = sorted(
-            list(
-                {
-                    i
-                    for s in [
-                        set(df["COLLECTION_DATE"])
-                        for df in [
-                            df_dict["propertyView"]["complete"],
-                            df_dict["propertyView"]["partial"],
-                        ]
-                    ]
-                    for i in s
-                }
-            )
-        )
+    def __init__(self, api: DjangoAPI):
+        dates_in_propertyViews = api.get_instance().get_property_dates()
         # TODO hard coded min date
         defined_min_date = datetime.strptime(
             "2022-01-01", "%Y-%m-%d"

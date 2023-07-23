@@ -8,8 +8,9 @@ from re import finditer
 import _pickle as cPickle
 import pandas as pd
 import plotly.express as px
+from data_management.api.django.django_api import DjangoAPI
 
-from pages.DBManager import DBManager
+from data_management.api.mariadb_direct.db_manager import DBManager
 
 # from matplotlib.colors import to_rgba
 
@@ -26,13 +27,18 @@ def get_colour_map_gene(reference):
     Input: Reference accession.
     Output: the dataframe contain unique colour mapping with gene of given REF.
     """
-    with DBManager() as dbm:
-        list_dict = dbm.get_reference_gene(reference)
-
+    # with DBManager() as dbm:
+    #        list_dict = dbm.get_reference_gene(reference)
+    list_dict = DjangoAPI.get_instance().get_genes(
+        {
+            "reference__accession": reference,
+            "element__type": "cds",
+        }
+    )
     df = pd.DataFrame(list_dict)
     # * Unroll arguments from tuple
     df["color_hex"] = df.apply(
-        lambda row: "#{:02x}{:02x}{:02x}".format(*getRGBfromI(row["element.start"])),
+        lambda row: "#{:02x}{:02x}{:02x}".format(*getRGBfromI(row["start"])),
         axis=1,
     )
     # df.to_csv("text.tsv", sep="\t")
@@ -52,7 +58,7 @@ all_ref_dict = {
 }
 
 
-def get_color_dict(df_dict):
+def get_color_dict(api: DjangoAPI):
     """
     defined color by mutation
     color scheme contains 24 different colors, if #mutations>24 use second color scheme with 24 colors
@@ -61,28 +67,10 @@ def get_color_dict(df_dict):
     """
     color_dict = {}
     color_schemes = px.colors.qualitative.Dark24
-    reference_ids = set(df_dict["variantView"]["complete"].keys()).union(
-        set(df_dict["variantView"]["partial"].keys())
-    )
-    for k, reference_id in enumerate(list(reference_ids)):
-        color_dict[reference_id] = px.colors.qualitative.D3[k]
-        genes = set(
-            df_dict["variantView"]["complete"][reference_id]["cds"]["element.symbol"]
-        )
-        genes = sorted(
-            list(
-                genes.union(
-                    set(
-                        df_dict["variantView"]["partial"][reference_id]["cds"][
-                            "element.symbol"
-                        ]
-                    )
-                )
-            )
-        )
-        for i, gene in enumerate(genes):
-            j = i % 24
-            color_dict[gene] = color_schemes[j]
+    genes = api.get_distinct_symbols()
+    for i, gene in enumerate(genes):
+        j = i % 24
+        color_dict[gene] = color_schemes[j]
     color_dict["no_gene"] = "grey"
     color_dict["unchanged"] = "grey"
     return color_dict

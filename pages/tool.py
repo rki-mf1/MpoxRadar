@@ -10,10 +10,11 @@ from dash import no_update
 from dash import Output
 from dash import State
 import dash_bootstrap_components as dbc
-from data import load_all_sql_files
+#from data import load_all_sql_files
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from data_management.api.django.django_api import DjangoAPI
 
 from pages.config import color_schemes
 from pages.config import location_coordinates
@@ -56,47 +57,36 @@ from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
 
 
-df_dict = load_all_sql_files()
-date_slider = DateSlider(df_dict)
-color_dict = get_color_dict(df_dict)
+api = DjangoAPI.get_instance()
+
+date_slider = DateSlider(api)
+color_dict = get_color_dict(api)
 
 # initialize explore tool
-start_cond_ref_id = sorted(list(df_dict["variantView"]["complete"].keys()))[0]
+start_cond_ref_id = api.get_start_reference_id()
 start_cond_complete = "complete"
 start_cond_aa_nt = "cds"
 start_cond_min_freq = 1
 start_cond_len_shown_mut = 20
-all_reference_options = get_all_references(df_dict)
-all_seq_tech_options = get_all_frequency_sorted_seqtech(df_dict)
-start_all_gene_dict = get_all_gene_dict(
-    df_dict, start_cond_ref_id, start_cond_complete, color_dict
-)
-start_all_gene_value = [s["value"] for s in start_all_gene_dict]
-start_seq_tech_dict = get_frequency_sorted_seq_techs_by_filters(
-    df_dict,
-    all_seq_tech_options,
-    start_cond_complete,
-    start_cond_ref_id,
-    start_all_gene_value,
-    start_cond_aa_nt,
-)
-start_seq_tech_values = [s["value"] for s in start_seq_tech_dict if not s["disabled"]]
-start_country_options = get_all_frequency_sorted_countries_by_filters(
-    df_dict,
-    start_seq_tech_values,
-    start_cond_complete,
-    start_cond_ref_id,
-    start_all_gene_value,
-    start_cond_aa_nt,
-)
+all_reference_options = api.get_reference_options()
 
+all_seq_tech_options = api.get_sq_tech_options()
+
+start_seq_tech_dict = all_seq_tech_options
+start_seq_tech_values = [s["value"] for s in start_seq_tech_dict if not s["disabled"]]
+
+start_all_gene_dict = api.get_distinct_genes()
+start_all_gene_value = [s["value"] for s in start_all_gene_dict]
+
+start_country_options = api.get_distinct_countries()
 start_country_value = [i["value"] for i in start_country_options]
+
 (
     start_colored_mutation_options_dict,
     max_nb_freq,
     min_nb_freq,
 ) = get_frequency_sorted_cds_mutation_by_filters(
-    df_dict,
+    api,
     start_seq_tech_values,
     start_country_value,
     start_all_gene_value,
