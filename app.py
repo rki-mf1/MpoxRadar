@@ -35,7 +35,7 @@ app.layout = dbc.Container(
                     [
                         html.H1("MpoxRadar", style={"display": "inline-block"}),
                         html.Div(
-                            "An interactive dashboard for genomic surveillance of mpox."
+                            "An interactive dashboard for genomic surveillance of MPXV."
                         ),
                     ]
                 ),
