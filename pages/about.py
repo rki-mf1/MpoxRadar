@@ -206,94 +206,6 @@ layout = html.Div(
                                         dbc.Card(
                                             [
                                                 dbc.CardImg(
-                                                    src="assets/Prof.Dr.BR.jpeg",
-                                                    top=True,
-                                                    style=img_style,
-                                                    className="align-self-center mt-2",
-                                                ),
-                                                dbc.CardBody(
-                                                    [
-                                                        html.P(
-                                                            "Prof. Dr. Bernhard Renard"
-                                                        ),
-                                                    ]
-                                                ),
-                                            ],
-                                            className="mb-2",
-                                            style=card_style,
-                                        ),
-                                    ),
-                                    dbc.Col(
-                                        dbc.Card(
-                                            [
-                                                dbc.CardImg(
-                                                    src="assets/Dr.SF.png",
-                                                    top=True,
-                                                    style=img_style,
-                                                    className="align-self-center mt-2",
-                                                ),
-                                                dbc.CardBody(
-                                                    [
-                                                        html.P("Dr. Stephan Fuchs"),
-                                                    ]
-                                                ),
-                                            ],
-                                            className="mb-2",
-                                            style=card_style,
-                                        ),
-                                    ),
-                                    dbc.Col(
-                                        dbc.Card(
-                                            [
-                                                dbc.CardImg(
-                                                    src="assets/Dr.AJS.jpeg",
-                                                    top=True,
-                                                    style=img_style,
-                                                    className="align-self-center mt-2",
-                                                ),
-                                                dbc.CardBody(
-                                                    [
-                                                        html.P(
-                                                            "Dr. Anna-Juliane Schmachtenberg",
-                                                            style={
-                                                                "font-size": "0.82em"
-                                                            },
-                                                        ),
-                                                    ],
-                                                ),
-                                            ],
-                                            className="mb-2",
-                                            style=card_style,
-                                        ),
-                                    ),
-                                    dbc.Col(
-                                        dbc.Card(
-                                            [
-                                                dbc.CardImg(
-                                                    src="assets/AW.jpeg",
-                                                    top=True,
-                                                    style=img_style,
-                                                    className="align-self-center mt-2",
-                                                ),
-                                                dbc.CardBody(
-                                                    [
-                                                        html.P("Alice Wittig"),
-                                                    ]
-                                                ),
-                                            ],
-                                            className="mb-2",
-                                            style=card_style,
-                                        ),
-                                    ),
-                                ],
-                                className="mb-4",
-                            ),
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        dbc.Card(
-                                            [
-                                                dbc.CardImg(
                                                     src="assets/FN.jpeg",
                                                     top=True,
                                                     style=img_style,
@@ -334,6 +246,25 @@ layout = html.Div(
                                         dbc.Card(
                                             [
                                                 dbc.CardImg(
+                                                    src="assets/AW.jpeg",
+                                                    top=True,
+                                                    style=img_style,
+                                                    className="align-self-center mt-2",
+                                                ),
+                                                dbc.CardBody(
+                                                    [
+                                                        html.P("Alice Wittig"),
+                                                    ]
+                                                ),
+                                            ],
+                                            className="mb-2",
+                                            style=card_style,
+                                        ),
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            [
+                                                dbc.CardImg(
                                                     src="assets/JSC.png",
                                                     top=True,
                                                     style=img_style,
@@ -349,6 +280,11 @@ layout = html.Div(
                                             style=card_style,
                                         ),
                                     ),
+                                ],
+                                className="mb-4",
+                            ),
+                            dbc.Row(
+                                [
                                     dbc.Col(
                                         dbc.Card(
                                             [
@@ -368,11 +304,6 @@ layout = html.Div(
                                             style=card_style,
                                         ),
                                     ),
-                                ],
-                                className="mb-4",
-                            ),  # end ROw
-                            dbc.Row(
-                                [
                                     dbc.Col(
                                         dbc.Card(
                                             [
@@ -430,6 +361,11 @@ layout = html.Div(
                                             style=card_style,
                                         ),
                                     ),
+                                ],
+                                className="mb-4",
+                            ),  # end ROw
+                            dbc.Row(
+                                [
                                     dbc.Col(
                                         dbc.Card(
                                             [
@@ -442,6 +378,70 @@ layout = html.Div(
                                                 dbc.CardBody(
                                                     [
                                                         html.P("Andreas Nitsche"),
+                                                    ]
+                                                ),
+                                            ],
+                                            className="mb-2",
+                                            style=card_style,
+                                        ),
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            [
+                                                dbc.CardImg(
+                                                    src="assets/Dr.AJS.jpeg",
+                                                    top=True,
+                                                    style=img_style,
+                                                    className="align-self-center mt-2",
+                                                ),
+                                                dbc.CardBody(
+                                                    [
+                                                        html.P(
+                                                            "Dr. Anna-Juliane Schmachtenberg",
+                                                            style={
+                                                                "font-size": "0.82em"
+                                                            },
+                                                        ),
+                                                    ],
+                                                ),
+                                            ],
+                                            className="mb-2",
+                                            style=card_style,
+                                        ),
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            [
+                                                dbc.CardImg(
+                                                    src="assets/Prof.Dr.BR.jpeg",
+                                                    top=True,
+                                                    style=img_style,
+                                                    className="align-self-center mt-2",
+                                                ),
+                                                dbc.CardBody(
+                                                    [
+                                                        html.P(
+                                                            "Prof. Dr. Bernhard Y. Renard"
+                                                        ),
+                                                    ]
+                                                ),
+                                            ],
+                                            className="mb-2",
+                                            style=card_style,
+                                        ),
+                                    ),
+                                    dbc.Col(
+                                        dbc.Card(
+                                            [
+                                                dbc.CardImg(
+                                                    src="assets/Dr.SF.png",
+                                                    top=True,
+                                                    style=img_style,
+                                                    className="align-self-center mt-2",
+                                                ),
+                                                dbc.CardBody(
+                                                    [
+                                                        html.P("Dr. Stephan Fuchs"),
                                                     ]
                                                 ),
                                             ],
