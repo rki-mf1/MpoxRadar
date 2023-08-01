@@ -1,0 +1,65 @@
+# .github/workflows/tests.yml
+name: Test-format-flake8
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: mpx_test_04
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        sudo apt install libmariadb3 libmariadb-dev
+        pip install poetry
+
+    - name: Poetry install env.
+      run: poetry install
+    - name: Load database
+      run: |
+        mysql --protocol=tcp -h localhost --user=root --password=password -e "CREATE DATABASE IF NOT EXISTS mpx_test_04;"
+        mysql --protocol=tcp -h localhost --user=root --password=password -e "GRANT ALL PRIVILEGES ON mpx_test_04.* TO 'test_user'@'%' IDENTIFIED BY 'test_password';"
+        mysql --protocol=tcp -h localhost --user=root --password=password mpx_test_04 < tests/sql_dumps/mpx_test_04.sql
+        mysql --protocol=tcp -h localhost --user=root --password=password -e "use mpx_test_04; SHOW TABLES;"
+    - name: Run pytest
+      env:
+          DB_URL: "https://test_user:test_password@127.0.0.1:3306/mpx_test_04"
+          REDIS_URL: "redis://127.0.0.1:6379"
+          REDIS_DB_BROKER: 1
+          REDIS_DB_BACKEND: 1
+          DEBUG: True
+          LOG_LEVEL: "DEBUG"
+      run: poetry run pytest -rfeP -x tests/
+  format-checker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: pip install flake8 poetry
+    - name: Run flake8 - Code style check
+      run: poetry run flake8 . --config=.flake8 -v

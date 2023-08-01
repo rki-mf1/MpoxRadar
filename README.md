@@ -7,7 +7,7 @@ MpoxRadar is a worldwide interactive dashboard for genomic surveillance of Mpox 
      style=""  width="600" height="450" />
 </div>
 
-With this web server, we provide tools to explore and compare metadata from Mpox sequences available from our data sources. Furthermore, we provide an advanced tool for more detailed searches. The chosen data using our tools is visualised and presented in downloadable tables. As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed, aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users. 
+With this web server, we provide tools to explore and compare metadata from Mpox sequences available from our data sources. Furthermore, we provide an advanced tool for more detailed searches. The chosen data using our tools is visualised and presented in downloadable tables. As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed, aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users.
 
 
 -------
@@ -120,8 +120,14 @@ python app.py
 
 1. ⚠️Attention⚠️: These installation/run steps are for a straightforward setup to start the application; however, you should consider only some steps on the production server. The specifics of the setup process may vary depending on the software and the production environment. Following best practices and industry standards is essential to ensure a secure, reliable, and maintainable production environment. Please do not hesitate to contact us if you require support.❤️
 
-2. Currently, we use the caching system to keep data for 23 hours. If the restarting application has been made after 23 hours, it will build the new cache for the next 23 hours. You can remove the cache via the Redis command and restart the web application if needed.
+2. ⚠️ Currently, we use the caching system to keep data for 23 hours. If the restarting application has been made after 23 hours, it will build the new cache for the next 23 hours. You can remove the cache via the Redis command and restart the web application if needed.
+```sh
+# login
+redis-cli -n 1
 
+# then remove all keys
+FLUSHALL
+```
 ----
 
 ## Contributors

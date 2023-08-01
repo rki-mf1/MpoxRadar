@@ -4,10 +4,6 @@ import dash_bootstrap_components as dbc
 
 
 def create_world_map_explorer(date_slider):
-    """
-    contain layout page
-    """
-
     world_map_with_slider = html.Div(
         [
             html.H3("Output result from filter options", style={"textAlign": "center"}),
@@ -253,7 +249,7 @@ def html_elem_dropdown_aa_mutations(
                                             id=f"max_nb_txt_{elem_id}",
                                         ),
                                         html.I(
-                                            className="bi bi-info-circle ms-1 text-primary fa-1x"
+                                            className="bi bi-info-circle ms-1 text-primary"
                                         ),
                                         dbc.Tooltip(
                                             "Selects from frequency sorted variants the specified top n variants."
@@ -292,7 +288,7 @@ def html_elem_dropdown_aa_mutations(
                                             id=f"min_nb_freq_{elem_id}",
                                         ),
                                         html.I(
-                                            className="bi bi-info-circle ms-1 text-primary fa-1x"
+                                            className="bi bi-info-circle ms-1 text-primary"
                                         ),
                                     ]
                                 ),

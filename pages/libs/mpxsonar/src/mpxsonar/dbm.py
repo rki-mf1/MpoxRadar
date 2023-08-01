@@ -21,7 +21,6 @@ import mariadb
 import pandas as pd
 from tqdm import tqdm
 
-from .utils import insert_before_keyword
 from . import logging
 from .config import DB_URL
 from .utils import insert_before_keyword

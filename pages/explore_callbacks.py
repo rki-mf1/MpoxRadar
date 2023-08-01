@@ -5,16 +5,20 @@ from dash import Output
 from dash import State
 
 from pages.utils_filters import actualize_filters
-from pages.utils_filters import get_frequency_sorted_mutation_by_filters
+from pages.utils_filters import get_frequency_sorted_cds_mutation_by_filters
+from pages.utils_tables import TableFilter
 from pages.utils_worldMap_explorer import DateSlider
-from pages.utils_worldMap_explorer import TableFilter
+from pages.utils_worldMap_explorer import DetailPlots
 from pages.utils_worldMap_explorer import WorldMap
 
 
-# This is the EXPLORE TOOL PART
 def get_explore_callbacks(  # noqa: C901
     df_dict, date_slider, color_dict, location_coordinates
 ):
+    """
+    function contains all callbacks used in explore tool page (in tool.py file)
+    """
+
     @callback(
         [
             Output("mutation_dropdown_0", "options"),
@@ -34,7 +38,10 @@ def get_explore_callbacks(  # noqa: C901
             Input("complete_partial_radio_explore", "value"),
             Input("select_min_nb_frequent_mut_0", "value"),
         ],
-        [State("mutation_dropdown_0", "options"), State("min_nb_freq_0", "children")],
+        [
+            State("mutation_dropdown_0", "options"),
+            State("min_nb_freq_0", "children"),
+        ],
         prevent_initial_call=False,
     )
     def actualize_mutation_filter(
@@ -54,7 +61,11 @@ def get_explore_callbacks(  # noqa: C901
             max_select = len(mut_options)
 
         else:
-            mut_options, max_nb_freq = get_frequency_sorted_mutation_by_filters(
+            (
+                mut_options,
+                max_nb_freq,
+                min_nb_freq,
+            ) = get_frequency_sorted_cds_mutation_by_filters(
                 df_dict,
                 seqtech_value,
                 country_value,
@@ -70,15 +81,11 @@ def get_explore_callbacks(  # noqa: C901
             else:
                 select_x_mut = 20
             mut_value = [i["value"] for i in mut_options][0:select_x_mut]
-            if min_nb_freq > max_nb_freq:
-                min_nb_freq = max_nb_freq
-            if min_nb_freq == 0 and max_nb_freq > 0:
-                min_nb_freq = 1
             text_freq = (
                 f"Select minimum variant frequency. Highest frequency: {max_nb_freq}"
             )
-
-        text_nb_mut = f"Select n-th most frequent variants. Number variants matching filters: {len(mut_options)}"
+        text_nb_mut = f"Select n-th most frequent variants. Number variants matching filters: \
+            {len(mut_options)}"
 
         return (
             mut_options,
@@ -149,7 +156,7 @@ def get_explore_callbacks(  # noqa: C901
             gene_value,
             country_value,
             seq_tech_value,
-            min_date="2022-01-01",
+            str(date_slider.min_date),
         )
 
     # update map by change of filters or moving slider
@@ -182,20 +189,26 @@ def get_explore_callbacks(  # noqa: C901
         complete_partial_radio,
         layout,
     ):
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        world_map_dfs = [df_dict["world_map"]["complete"][reference_id]]
-        if complete_partial_radio == "partial":
-            world_map_dfs.append(df_dict["world_map"]["partial"][reference_id])
-        world_map = WorldMap(world_map_dfs, color_dict, location_coordinates)
-        fig = world_map.get_world_map(
-            mutation_list,
-            seqtech_list,
-            method,
-            date_list,
+        world_map_instance = WorldMap(
+            df_dict,
+            date_slider,
+            reference_id,
+            complete_partial_radio,
             countries,
+            seqtech_list,
+            mutation_list,
+            dates,
+            interval,
+            color_dict,
+            location_coordinates,
         )
-        # layout: {'geo.projection.rotation.lon': -99.26450411962647, 'geo.center.lon': -99.26450411962647,
-        # 'geo.center.lat': 39.65065298875763, 'geo.projection.scale': 2.6026837108838667}
+
+        fig = world_map_instance.get_world_map(method)
+        # layout: {'geo.projection.rotation.lon': -99.26450411962647,
+        #          'geo.center.lon': -99.26450411962647,
+        #           'geo.center.lat': 39.65065298875763,
+        #           'geo.projection.scale': 2.6026837108838667
+        # }
         # TODO sometimes not working
         if layout:
             fig.update_layout(layout)
@@ -289,7 +302,8 @@ def get_explore_callbacks(  # noqa: C901
     #     interval: increment the counter n_intervals every interval milliseconds.
     #     disabled (boolean; optional): If True, the counter will no longer update.
     #     n_intervals (number; default 0): Number of times the interval has passed.
-    #     max_intervals (number; default -1): Number of times the interval will be fired. If -1, then the interval has no limit
+    #     max_intervals (number; default -1): Number of times the interval will be fired.
+    #      If -1, then the interval has no limit
     #     (the default) and if 0 then the interval stops running.
     #     """
     #     if interval is None:
@@ -333,7 +347,7 @@ def get_explore_callbacks(  # noqa: C901
             State("complete_partial_radio_explore", "value"),
             State("country_dropdown_0", "value"),
         ],
-        prevent_initial_call=True,
+        prevent_initial_call=False,
     )
     # @cache.memoize()
     def update_upper_plot(
@@ -348,41 +362,39 @@ def get_explore_callbacks(  # noqa: C901
         complete_partial_radio,
         countries,
     ):
-        location_name = None
         try:
-            location_name = click_data["points"][0]["hovertext"]
+            clicked_country = click_data["points"][0]["hovertext"]
         except TypeError:
-            if countries:
-                location_name = countries[0]
-        if location_name and location_name not in countries and countries:
-            location_name = countries[0]
-        # date from slider
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        # title text
-        country = location_name if location_name else ""
-        title_text = f"Detailed look at the sequences with the chosen mutations for the selected country: {country}"
-        world_dfs = [df_dict["world_map"]["complete"][reference_id]]
-        if complete_partial_radio == "partial":
-            world_dfs.append(df_dict["world_map"]["partial"][reference_id])
-        world_map = WorldMap(world_dfs, color_dict, location_coordinates)
-        number_selected_sequences, seq_with_mut = world_map.get_nb_filtered_seq(
-            seqtech_list, date_list, [location_name], genes, mutations
+            clicked_country = ""
+
+        detail_plot_instance = DetailPlots(
+            df_dict,
+            date_slider,
+            reference_id,
+            complete_partial_radio,
+            countries,
+            seqtech_list,
+            mutations,
+            dates,
+            interval,
+            color_dict,
+            location_coordinates,
+            genes,
+            clicked_country,
         )
-        info_header = (
-            f"Number sequences for country {location_name} and selected properties  between "
-            f"{date_list[0]} - {date_list[-1]}: {number_selected_sequences} "
-            f"of which {seq_with_mut} sequences carry at least one of the selected mutations."
-        )
+        title_text = f"Detailed look at the sequences with the chosen mutations for the selected \
+                     country: {detail_plot_instance.location_name}"
+        info_header = f"Number sequences for country {detail_plot_instance.location_name} and \
+            selected properties between {detail_plot_instance.dates[0]} - \
+            {detail_plot_instance.dates[-1]}: {detail_plot_instance.number_selected_sequences} of \
+             which {detail_plot_instance.seq_with_mut} sequences carry at least one of the \
+            selected mutations."
         # 1. plot
         if method == "Increase":
-            fig = world_map.get_slope_bar_plot(
-                date_list, mutations, seqtech_list, location_name
-            )
+            fig = detail_plot_instance.create_slope_bar_plot()
             plot_header = "Slope mutations"
         elif method == "Frequency":
-            fig = world_map.get_frequency_bar_chart(
-                mutations, seqtech_list, date_list, location_name
-            )
+            fig = detail_plot_instance.get_frequency_bar_chart()
             plot_header = "Number Sequences"
         return fig, title_text, plot_header, info_header
 
@@ -398,6 +410,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("results_per_location", "clickData"),
             Input("complete_partial_radio_explore", "value"),
             Input("country_dropdown_0", "value"),
+            Input("gene_dropdown_0", "value"),
         ],
         prevent_initial_call=True,
     )
@@ -408,28 +421,34 @@ def get_explore_callbacks(  # noqa: C901
         seqtech_list,
         dates,
         interval,
-        clickDataBoxPlot,
+        click_data_box_plot,
         complete_partial_radio,
         countries,
+        genes,
     ):
         if ctx.triggered_id == "results_per_location":
-            mutations = [clickDataBoxPlot["points"][0]["label"]]
-        location_name = None
+            mutations = [click_data_box_plot["points"][0]["label"]]
         try:
-            location_name = click_data["points"][0]["hovertext"]
+            clicked_country = click_data["points"][0]["hovertext"]
         except TypeError:
-            if countries:
-                location_name = countries[0]
-        if location_name and location_name not in countries and countries:
-            location_name = countries[0]
-        date_list = date_slider.get_all_dates_in_interval(dates, interval)
-        world_dfs = [df_dict["world_map"]["complete"][reference_id]]
-        if complete_partial_radio == "partial":
-            world_dfs.append(df_dict["world_map"]["partial"][reference_id])
-        world_map = WorldMap(world_dfs, color_dict, location_coordinates)
-        fig_develop = world_map.get_frequency_development_scatter_plot(
-            mutations, seqtech_list, date_list, location_name
+            clicked_country = ""
+
+        detail_plot_instance = DetailPlots(
+            df_dict,
+            date_slider,
+            reference_id,
+            complete_partial_radio,
+            countries,
+            seqtech_list,
+            mutations,
+            dates,
+            interval,
+            color_dict,
+            location_coordinates,
+            genes,
+            clicked_country,
         )
+        fig_develop = detail_plot_instance.get_frequency_development_scatter_plot()
         return fig_develop
 
     # fill table
@@ -447,7 +466,7 @@ def get_explore_callbacks(  # noqa: C901
             Input("country_dropdown_0", "value"),
             Input("complete_partial_radio_explore", "value"),
         ],
-        prevent_initial_call=True,
+        prevent_initial_call=False,
     )
     # @cache.memoize()
     def update_table_filter(
@@ -471,11 +490,10 @@ def get_explore_callbacks(  # noqa: C901
         if reference_id is None:
             reference_id = sorted(list(df_dict["variantView"]["complete"].keys()))[0]
 
-        table_explorer = TableFilter()
-        table_df = table_explorer.get_filtered_table(
+        table_explorer = TableFilter("explorer", mutation_list)
+        table_df = table_explorer.create_explore_table(
             df_dict,
             complete_partial_radio,
-            mutation_list,
             seq_tech_list,
             reference_id,
             date_list,
