@@ -239,7 +239,7 @@ layout = html.Div(
                                                         html.P(
                                                             "Dr. Anna-Juliane Schmachtenberg",
                                                             style={
-                                                                "font-size": "0.82em"
+                                                                "fontSize": "0.82em"
                                                             },
                                                         ),
                                                     ],

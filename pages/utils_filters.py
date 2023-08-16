@@ -3,7 +3,9 @@ from datetime import datetime
 from dash import html
 import pandas as pd
 
-from data_management.api.django.django_api import DjangoAPI
+from data_management.data_manager import DataManager, ColoredMutationFrequency
+
+data_manager = DataManager.get_instance()
 
 
 def select_variantView_dfs(
@@ -237,7 +239,6 @@ def filter_by_seqtech_country_gene_and_merge(
 
 
 def get_frequency_sorted_cds_mutation_by_filters(
-    api: DjangoAPI,
     seqtech_value: list[str],
     country_value: list[str],
     gene_value: list[str],
@@ -245,7 +246,23 @@ def get_frequency_sorted_cds_mutation_by_filters(
     reference_value: int,
     color_dict: dict,
     min_nb_freq: int = 1,
-) -> (list[dict], int, int):
+) -> tuple[list[ColoredMutationFrequency], int, int]:
+    query: dict[str, object] = {
+        "min_nb_freq": min_nb_freq,
+        "countries": country_value,
+        "seq_techs": seqtech_value,
+        "genes": gene_value,
+        "include_partial": complete_partial_radio == "partial",
+        "reference": reference_value,
+    }
+    frequencies = data_manager.get_mutation_frequencies_display(query, color_dict)
+    max_count = (
+        max(frequencies, key=lambda x: x.freq).freq if len(frequencies) > 0 else 0
+    )
+    min_count = (
+        min(frequencies, key=lambda x: x.freq).freq if len(frequencies) > 0 else 0
+    )
+    return (frequencies, max_count, min_count)
     """
     :return: mutation options sorted by frequency,
         with color styling for AA variants and additional value frequency of mutation
@@ -272,8 +289,8 @@ def get_frequency_sorted_cds_mutation_by_filters(
     #        )
     #        merged_df = pd.concat([merged_df, merged_df_2], ignore_index=True, axis=0)
 
-    merged_df = api.get_variants_view_filtered(
-        {"seqtech": seqtech_value, "country": country_value, "gene": gene_value}
+    """ merged_df = data_manager.get_variants_view_filtered(
+        {"seq_techs": seqtech_value, "countries": country_value, "genes": gene_value}
     )
 
     (
@@ -283,7 +300,7 @@ def get_frequency_sorted_cds_mutation_by_filters(
     ) = get_frequency_sorted_mutation_by_df(
         merged_df, color_dict, ["gene:variant", "element.symbol"], "cds", min_nb_freq
     )
-    return sorted_mutation_options, max_nb_freq, min_nb_freq
+    return sorted_mutation_options, max_nb_freq, min_nb_freq """
 
 
 def get_frequency_sorted_mutation_by_df(
@@ -437,7 +454,6 @@ def get_frequency_sorted_seq_techs_by_filters(
 
 
 def actualize_filters(  # noqa: C901
-    df_dict: dict,
     color_dict: dict,
     triggered_id: str,
     aa_nt_radio: str,

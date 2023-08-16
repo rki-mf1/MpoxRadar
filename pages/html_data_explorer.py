@@ -318,7 +318,7 @@ def html_elem_dropdown_aa_mutations(
                 ),
             ],
             style={
-                "overflow-y": "auto",
+                "overflowY": "auto",
                 "maxHeight": 450,
                 "minHeight": 200,
             },

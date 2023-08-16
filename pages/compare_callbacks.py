@@ -4,7 +4,7 @@ from dash import Input
 from dash import Output
 from dash import State
 
-from pages.config import cache
+#from pages.config import cache
 from pages.utils_compare import create_comparison_tables
 from pages.utils_compare import find_unique_and_shared_variants
 from pages.utils_compare import select_min_x_frequent_mut
@@ -66,7 +66,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         ],
         prevent_initial_call=True,
     )
-    @cache.memoize()
+    #@cache.memoize()
     def actualize_mutation_filter(
         compare_button,
         select_all_mutations_left,
@@ -219,7 +219,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         ],
         prevent_initial_call=True,
     )
-    @cache.memoize()
+    #@cache.memoize()
     def actualize_tables(
         mut_value_left,
         mut_value_right,
@@ -297,7 +297,7 @@ def get_compare_callbacks(df_dict, color_dict):  # noqa: C901
         ],
         prevent_initial_call=True,
     )
-    @cache.memoize()
+    #@cache.memoize()
     def actualize_overview_table(
         mut_value_left,
         mut_value_right,

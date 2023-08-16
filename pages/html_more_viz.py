@@ -1,3 +1,4 @@
+import logging
 from dash import dash_table
 from dash import dcc
 from dash import html
@@ -5,13 +6,11 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from pages.app_controller import calculate_mutation_sig
-from pages.app_controller import calculate_tri_mutation_sig
-from pages.app_controller import create_snp_table
-
+from data_management.data_manager import DataManager
+data_manager = DataManager.get_instance()
 
 def create_TRIMTSIG_graph():  #
-    mutation_signature = calculate_tri_mutation_sig()
+    mutation_signature = data_manager.calculate_tri_mutation_sig()
     fig = make_subplots(
         rows=3,
         cols=1,
@@ -24,7 +23,6 @@ def create_TRIMTSIG_graph():  #
         labels = []
         values = []
         for mutation_type in mutation_signature[accession]:
-
             # Create a list of labels
             labels.extend(
                 [_type for _type in mutation_signature[accession][mutation_type]]
@@ -57,7 +55,7 @@ def create_TRIMTSIG_graph():  #
 
 # Create a bar plot to visualize the mutation signature
 def create_MTSIG_graph():  #
-    mutation_signature = calculate_mutation_sig()
+    mutation_signature = data_manager.calculate_mutation_sig()
     # Define the color scheme
     colors = [
         "rgb(252,141,98)",
@@ -83,7 +81,11 @@ def create_MTSIG_graph():  #
 
     # Create a trace for each accession
     for i, accession in enumerate(mutation_signature.keys()):
-        values = [mutation_signature[accession][label] for label in labels]
+        try:
+            values = [mutation_signature[accession][label] for label in labels]
+        except KeyError:
+            logging.warning(f"KeyError: {accession} not found in mutation_signature")
+            continue
         trace = go.Bar(x=labels, y=values, name=accession, marker=dict(color=colors))
         fig.add_trace(trace, row=1, col=i + 1)
 
@@ -98,7 +100,7 @@ def create_MTSIG_graph():  #
     return fig
 
 
-snp_table_df = create_snp_table()
+snp_table_df = data_manager.create_snp_table()
 
 mataion_signature_layout = html.Div(
     [

@@ -2,13 +2,8 @@ import base64
 
 from dash import html
 import dash_bootstrap_components as dbc
-
-from pages.app_controller import count_unique_MutRef
-from pages.app_controller import get_all_country
-from pages.app_controller import get_all_unique_sample
-from pages.app_controller import get_newlyadded_sample
-from pages.app_controller import get_top3_country
-
+from data_management.data_manager import DataManager
+data_manager = DataManager.get_instance()
 image_filename = "assets/virus.svg"
 encoded_image = base64.b64encode(open(image_filename, "rb").read()).decode()
 
@@ -28,12 +23,12 @@ sequences_card = dbc.Card(
                         [
                             html.H5("Number of sequences", className="card-title"),
                             html.H6(
-                                f"Total sample: {get_all_unique_sample()}",
+                                f"Total sample: {data_manager.get_all_unique_samples()}",
                                 className="card-text",
                                 id="number_seqs",
                             ),
                             html.Small(
-                                f"Newly added (last 30 days): {get_newlyadded_sample()}",
+                                f"Newly added (last 30 days): {data_manager.get_newest_samples()}",
                                 className="card-text text-muted",
                             ),
                         ]
@@ -78,7 +73,7 @@ mutation_card = dbc.Card(
                                 className="card-title",
                             ),
                             html.H6(
-                                f"MIN - MAX: {count_unique_MutRef()}",
+                                f"MIN - MAX: {data_manager.count_unique_mut_ref()}",
                                 className="card-text",
                                 id="number_seqs",
                             ),
@@ -118,12 +113,12 @@ country_card = dbc.Card(
                         [
                             html.H5("Number of countries", className="card-title"),
                             html.H6(
-                                f"Total country: {get_all_country()}",
+                                f"Total country: {data_manager.get_all_country()}",
                                 className="card-text",
                                 id="number_seqs",
                             ),
                             html.Small(
-                                f"Top 3: {get_top3_country()}",
+                                f"Top 3: {data_manager.get_top3_country()}",
                                 className="card-text text-muted",
                             ),
                         ]

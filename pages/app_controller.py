@@ -3,6 +3,7 @@
 
 # DEPENDENCIES
 import json
+import logging
 import os
 import sys
 from textwrap import fill
@@ -12,12 +13,12 @@ import pandas as pd
 from data_management.api.django.django_api import DjangoAPI
 
 from pages.config import DB_URL
-from pages.config import logging_radar
-from pages.config import redis_manager
 from data_management.api.mariadb_direct.db_manager import DBManager
 from pages.utils import generate_96_mutation_types
 from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
 from .libs.mpxsonar.src.mpxsonar.dbm import sonarDBManager
+
+redis_manager = False
 
 
 # CLASS
@@ -208,7 +209,7 @@ def get_all_references():
             # print(_dict)
             if _dict["accession"] in ["NC_063383.1", "MT903344.1", "ON563414.3"]:
                 _list.append({"value": _dict["accession"], "label": _dict["accession"]})
-    # logging_radar.info(_dict)
+    # logging.info(_dict)
     return _list
 
 
@@ -224,11 +225,11 @@ def get_all_seqtech():
                 _list.append(
                     {"value": _dict["value_text"], "label": _dict["value_text"]}
                 )
-    # logging_radar.info(_dict)
+    # logging.info(_dict)
     return _list
 
 
-def get_value_by_reference(checked_ref):
+""" def get_value_by_reference(checked_ref):
     output_df = pd.DataFrame()
     for ref in checked_ref:
         print("Query " + ref)
@@ -236,9 +237,9 @@ def get_value_by_reference(checked_ref):
         if type(_df) == str:
             continue
         output_df = pd.concat([output_df, _df], ignore_index=True)
-    return output_df
+    return output_df """
 
-
+""" 
 def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
     output_df = pd.DataFrame()
 
@@ -273,6 +274,7 @@ def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
             continue
         output_df = pd.concat([output_df, _df], ignore_index=True)
     return output_df
+ """
 
 
 def get_high_mutation():
@@ -285,21 +287,21 @@ def get_high_mutation():
             _list.append(
                 {"value": _dict["variant.label"], "label": _dict["variant.label"]}
             )
-    # logging_radar.info(_dict)
+    # logging.info(_dict)
     return _list
 
 
 # ----- descriptive summary part
 
 
-def get_all_unique_sample():
+def get_all_unique_samples():
     total = 0
     with DBManager() as dbm:
         total = dbm.count_all_samples()
     return total
 
 
-def get_newlyadded_sample():
+def get_newest_samples():
     total = 0
     with DBManager() as dbm:
         total = dbm.count_lastAdded30D_sample()
@@ -324,7 +326,7 @@ def get_top3_country():
     return return_string
 
 
-def count_unique_MutRef():
+def count_unique_mut_ref():
     """
     "Number of mutations", i.e., min and max of number of unique mutations
     (compared to each reference genome).
@@ -333,7 +335,7 @@ def count_unique_MutRef():
         "0 - 0 (cannot compute MIN/MAX, due to number of reference is less than 2)"
     )
     with DBManager() as dbm:
-        list_dict = dbm.count_unique_MutRef()
+        list_dict = dbm.count_unique_mut_ref()
     if len(list_dict) < 2:
         return return_string
     # it was already sorted.
@@ -350,52 +352,65 @@ def calculate_tri_mutation_sig():  # noqa: C901
     List all 96 possible mutation types
     (e.g. A[C>A]A, A[C>A]T, etc.).
     """
+    # TODO-smc make calculations in backend, specify endpoint for this
     start = time.time()
 
-    if (
-        redis_manager
-        and redis_manager.exists("data_tri_mutation_sig")
-        and redis_manager.exists("total_tri_mutation_sig")
-    ):
-        data_ = json.loads(redis_manager.get("data_tri_mutation_sig"))
-        total_ = json.loads(redis_manager.get("total_tri_mutation_sig"))
-        with DBManager() as dbm:
-            all_references_dict = {
-                x["accession"]: x["sequence"] for x in dbm.references
-            }
+    if os.environ.get("REST_IMPLEMENTATION") == "True":
+        data_ = DjangoAPI.get_instance().get_raw_mutation_signature()
+        total_mutations = DjangoAPI.get_instance().count_unique_NT_Mut_Ref()
+        all_references_dict = {
+            x.get("accession"): x.get("sequence")
+            for x in DjangoAPI.get_instance().get_references()
+        }
     else:
-        with DBManager() as dbm:
-            data_ = dbm.get_raw_mutation_signature()
-            total_ = dbm.count_unique_NT_Mut_Ref()
-            all_references_dict = {
-                x["accession"]: x["sequence"] for x in dbm.references
-            }
-            # Convert the list to a JSON string
-            redis_manager.set("data_tri_mutation_sig", json.dumps(data_), ex=3600 * 23)
-            redis_manager.set(
-                "total_tri_mutation_sig", json.dumps(total_), ex=3600 * 23
-            )
+        if (
+            redis_manager
+            and redis_manager.exists("data_tri_mutation_sig")
+            and redis_manager.exists("total_tri_mutation_sig")
+        ):
+            data_ = json.loads(redis_manager.get("data_tri_mutation_sig"))
+            total_ = json.loads(redis_manager.get("total_tri_mutation_sig"))
+            with DBManager() as dbm:
+                all_references_dict = {
+                    x["accession"]: x["sequence"] for x in dbm.references
+                }
+        else:
+            with DBManager() as dbm:
+                data_ = dbm.get_raw_mutation_signature()
+                total_ = dbm.count_unique_NT_Mut_Ref()
+                all_references_dict = {
+                    x["accession"]: x["sequence"] for x in dbm.references
+                }
+                # Convert the list to a JSON string
+                # redis_manager.set("data_tri_mutation_sig", json.dumps(data_), ex=3600 * 23)
+                # redis_manager.set(
+                #    "total_tri_mutation_sig", json.dumps(total_), ex=3600 * 23
+                # )
+            # normalize the total number of mutations for each reference accession
+            total_mutations = {x["reference.accession"]: x["Freq"] for x in total_}
 
     final_dict = {}
     # calculate freq.
     for mutation in data_:
-        accession = mutation["reference.accession"]
+        accession = mutation.get("reference_accession")
 
         if accession not in final_dict:
             final_dict[accession] = generate_96_mutation_types()
 
-        ref = mutation["variant.ref"]
-        alt = mutation["variant.alt"]
-        mutation_pos_before = mutation["variant.start"] - 1
-        mutation_pos_after = mutation["variant.end"]
+        ref = mutation.get("ref")
+        alt = mutation.get("alt")
+        mutation_pos_before = mutation.get("start") - 1
+        mutation_pos_after = mutation.get("end")
 
         # get NT from position.
         ref_seq = all_references_dict[accession]
+        nt_before = None
+        nt_after = None
         try:
             nt_before = ref_seq[mutation_pos_before]
             nt_after = ref_seq[mutation_pos_after]
         except IndexError:
-            logging_radar.error("IndexError")
+            logging.error("IndexError")
             print(mutation)
             print(
                 "IndexError:",
@@ -416,8 +431,6 @@ def calculate_tri_mutation_sig():  # noqa: C901
             print("_type:", _type)
             print("final_dict ->", final_dict[accession][mutation_type][_type])
             raise
-    # normalize the total number of mutations for each reference accession
-    total_mutations = {x["reference.accession"]: x["Freq"] for x in total_}
     # Calculate the mutation signature for each reference accession
 
     for accession in final_dict:
@@ -437,33 +450,41 @@ def calculate_mutation_sig():
     Calculate the
     six classes of base substitution: C>A, C>G, C>T, T>A, T>C, T>G.
     """
+    # TODO-smc make calculations in backend, specify endpoint for this
     start = time.time()
     if os.environ.get("REST_IMPLEMENTATION") == "True":
         data_ = DjangoAPI.get_instance().get_mutation_signature()
-        total_ = DjangoAPI.get_instance().count_unique_NT_Mut_Ref()
-    elif (
-        redis_manager
-        and redis_manager.exists("data_mutation_sig")
-        and redis_manager.exists("total_mutation_sig")
-    ):
-        data_ = json.loads(redis_manager.get("data_mutation_sig"))
-        total_ = json.loads(redis_manager.get("total_mutation_sig"))
+        total_mutations = DjangoAPI.get_instance().count_unique_NT_Mut_Ref()
     else:
-        with DBManager() as dbm:
-            data_ = dbm.get_mutation_signature()
-            total_ = dbm.count_unique_NT_Mut_Ref()
-            # Convert the list to a JSON string
-            redis_manager.set("data_mutation_sig", json.dumps(data_), ex=3600 * 23)
-            redis_manager.set("total_mutation_sig", json.dumps(total_), ex=3600 * 23)
+        if (
+            redis_manager
+            and redis_manager.exists("data_mutation_sig")
+            and redis_manager.exists("total_mutation_sig")
+        ):
+            data_ = json.loads(redis_manager.get("data_mutation_sig"))
+            total_ = json.loads(redis_manager.get("total_mutation_sig"))
+        else:
+            with DBManager() as dbm:
+                data_ = dbm.get_mutation_signature()
+                total_ = dbm.count_unique_NT_Mut_Ref()
+                # Convert the list to a JSON string
+                redis_manager.set("data_mutation_sig", json.dumps(data_), ex=3600 * 23)
+                redis_manager.set(
+                    "total_mutation_sig", json.dumps(total_), ex=3600 * 23
+                )
+
+        # normalize the total number of mutations for each reference accession
+        total_mutations = {x["reference.accession"]: x["Freq"] for x in total_}
 
     # Define a dictionary to store the mutation counts for each reference accession
     mutation_counts = {}
 
     # Loop through the mutation data and increment the appropriate mutation count
     for mutation in data_:
-        accession = mutation["reference.accession"]
-        ref = mutation["variant.ref"]
-        alt = mutation["variant.alt"]
+        # temporarily changed to django object reference
+        accession = mutation.get("reference_accession")
+        ref = mutation.get("ref")
+        alt = mutation.get("alt")
         mutation_type = f"{ref}>{alt}"
 
         if accession not in mutation_counts:
@@ -472,9 +493,6 @@ def calculate_mutation_sig():
             mutation_counts[accession][mutation_type] = 0
 
         mutation_counts[accession][mutation_type] += mutation["count"]
-
-    # normalize the total number of mutations for each reference accession
-    total_mutations = {x["reference.accession"]: x["Freq"] for x in total_}
 
     # Calculate the mutation signature for each reference accession
     mutation_signature = {}
@@ -512,7 +530,7 @@ def create_snp_table():  # noqa: C901
                 x["accession"]: x["sequence"] for x in dbm.references
             }
             # Convert the list to a JSON string
-            redis_manager.set("data_snp_table", json.dumps(data_), ex=3600 * 23)
+            # redis_manager.set("data_snp_table", json.dumps(data_), ex=3600 * 23)
 
     final_dict = {}
     # calculate freq.
@@ -541,7 +559,7 @@ def create_snp_table():  # noqa: C901
             nt_before = ref_seq[mutation_pos_before]
 
         except IndexError:
-            logging_radar.warning("IndexError")
+            logging.warning("IndexError")
             print(mutation)
             print(
                 "IndexError before:",
@@ -554,7 +572,7 @@ def create_snp_table():  # noqa: C901
         try:
             nt_after = ref_seq[mutation_pos_after]
         except IndexError:
-            # logging_radar.warning("IndexError")
+            # logging.warning("IndexError")
             # print(mutation)
             # print(
             #    "IndexError after:",

@@ -43,9 +43,9 @@ def html_aa_nt_radio():
                         value="cds",
                         inline=True,
                         style={
-                            "font-size": 20,
-                            "font-weight": "bold",
-                            "align-itmes": "center",
+                            "fontSize": 20,
+                            "fontWeight": "bold",
+                            "alignItems": "center",
                             "textAlign": "center",
                         },
                         id="aa_nt_radio",
@@ -73,7 +73,7 @@ def html_compare_button():
         className="me-1",
         color="primary",
         style={
-            "font-weight": "bold",
+            "fontWeight": "bold",
         },
         n_clicks=0,
     )

@@ -12,14 +12,14 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import exc
 
-from pages.app_controller import calculate_mutation_sig
-from pages.app_controller import calculate_tri_mutation_sig
-from pages.app_controller import create_snp_table
 from pages.config import CACHE_DIR
 from pages.config import DB_URL
 from pages.config import redis_manager
 from pages.utils import load_Cpickle
 from pages.utils import write_Cpickle
+
+from data_management.data_manager import DataManager
+data_manager = DataManager.get_instance()
 
 tables = ["propertyView", "variantView"]
 
@@ -598,7 +598,7 @@ def load_all_sql_files(  # noqa: C901
 if __name__ == "__main__":
     print("Build a new cache")
     load_all_sql_files()
-    create_snp_table()
-    calculate_tri_mutation_sig()
-    calculate_mutation_sig()
+    data_manager.create_snp_table()
+    data_manager.calculate_tri_mutation_sig()
+    data_manager.calculate_mutation_sig()
     print("--- Complete ----")

@@ -1,24 +1,20 @@
 import argparse
+import logging
 import shlex
 import time
 
 import dash
 from dash import callback
-from dash import html
-from dash import Input
-from dash import no_update
-from dash import Output
-from dash import State
+from dash import html, Input, no_update, Output, State
 import dash_bootstrap_components as dbc
-#from data import load_all_sql_files
+
+# from data import load_all_sql_files
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from data_management.api.django.django_api import DjangoAPI
 
 from pages.config import color_schemes
 from pages.config import location_coordinates
-from pages.config import logging_radar
 from pages.html_compare import html_aa_nt_radio
 from pages.html_compare import html_compare_button
 from pages.html_compare import html_date_picker
@@ -28,68 +24,64 @@ from pages.html_data_explorer import html_elem_dropdown_aa_mutations
 from pages.html_data_explorer import html_elem_method_radioitems
 from pages.html_data_explorer import html_interval
 from pages.html_more_viz import tab_more_tool
-from pages.html_shared import html_complete_partial_radio
-from pages.html_shared import html_disclaimer_seq_errors
-from pages.html_shared import html_elem_checklist_seq_tech
-from pages.html_shared import html_elem_dropdown_aa_mutations_without_max
-from pages.html_shared import html_elem_dropdown_countries
-from pages.html_shared import html_elem_dropdown_genes
-from pages.html_shared import html_elem_reference_radioitems
-from pages.html_shared import html_table
+from pages.html_shared import (
+    html_complete_partial_radio,
+    html_disclaimer_seq_errors,
+    html_elem_checklist_seq_tech,
+    html_elem_dropdown_aa_mutations_without_max,
+    html_elem_dropdown_countries,
+    html_elem_dropdown_genes,
+    html_elem_reference_radioitems,
+    html_table,
+)
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
-from pages.utils_filters import get_all_frequency_sorted_countries_by_filters
-from pages.utils_filters import get_all_frequency_sorted_seqtech
-from pages.utils_filters import get_all_gene_dict
-from pages.utils_filters import get_all_references
-from pages.utils_filters import get_frequency_sorted_cds_mutation_by_filters
-from pages.utils_filters import get_frequency_sorted_seq_techs_by_filters
+from pages.utils_filters import (
+    get_all_frequency_sorted_countries_by_filters,
+    get_all_frequency_sorted_seqtech,
+    get_all_gene_dict,
+    get_all_references,
+    get_frequency_sorted_cds_mutation_by_filters,
+    get_frequency_sorted_seq_techs_by_filters,
+)
 from pages.utils_tables import OverviewTable
 from pages.utils_tables import TableFilter
 from pages.utils_worldMap_explorer import DateSlider
-from .app_controller import get_freq_mutation
-from .app_controller import match_controller
-from .app_controller import sonarBasicsChild
+from util.SonarBasicsImpl import sonarBasicsChild
 from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
 from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
 
 
-api = DjangoAPI.get_instance()
+from data_management.data_manager import DataManager
 
-date_slider = DateSlider(api)
-color_dict = get_color_dict(api)
+data_manager = DataManager.get_instance()
+
+date_slider = DateSlider()
+color_dict = get_color_dict()
 
 # initialize explore tool
-start_cond_ref_id = api.get_start_reference_id()
+start_cond_ref_id = data_manager.get_start_reference_id()
 start_cond_complete = "complete"
 start_cond_aa_nt = "cds"
 start_cond_min_freq = 1
 start_cond_len_shown_mut = 20
-all_reference_options = api.get_reference_options()
 
-all_seq_tech_options = api.get_sq_tech_options()
-
-start_seq_tech_dict = all_seq_tech_options
-start_seq_tech_values = [s["value"] for s in start_seq_tech_dict if not s["disabled"]]
-
-start_all_gene_dict = api.get_distinct_genes()
-start_all_gene_value = [s["value"] for s in start_all_gene_dict]
-
-start_country_options = api.get_distinct_countries()
-start_country_value = [i["value"] for i in start_country_options]
+all_reference_options = data_manager.get_references()
+seq_tech_list = data_manager.get_all_seqtech()
+gene_list = data_manager.get_distinct_genes()
+country_options = data_manager.get_all_country()
 
 (
     start_colored_mutation_options_dict,
     max_nb_freq,
     min_nb_freq,
 ) = get_frequency_sorted_cds_mutation_by_filters(
-    api,
-    start_seq_tech_values,
-    start_country_value,
-    start_all_gene_value,
+    seq_tech_list,
+    country_options,
+    gene_list,
     start_cond_complete,
     start_cond_ref_id,
     color_dict,
@@ -100,7 +92,7 @@ nb_shown_options = (
     if len(start_colored_mutation_options_dict) < start_cond_len_shown_mut
     else start_cond_len_shown_mut
 )
-logging_radar.info("Prebuilt cache is complete.")
+logging.info("Prebuilt cache is complete.")
 dash.register_page(__name__, path="/Tool")
 compare_columns = TableFilter("compare", []).table_columns
 explore_columns = TableFilter("explorer", []).table_columns
@@ -149,23 +141,15 @@ tab_explored_tool = html.Div(
                                     width=2,
                                 ),
                                 dbc.Col(
-                                    [html_elem_dropdown_genes(start_all_gene_dict)],
+                                    [html_elem_dropdown_genes(gene_list)],
                                     width=4,
                                 ),
                                 dbc.Col(
-                                    [
-                                        html_elem_checklist_seq_tech(
-                                            start_seq_tech_dict, 0
-                                        )
-                                    ],
+                                    [html_elem_checklist_seq_tech(seq_tech_list, 0)],
                                     width=3,
                                 ),
                                 dbc.Col(
-                                    [
-                                        html_elem_dropdown_countries(
-                                            start_country_options
-                                        )
-                                    ],
+                                    [html_elem_dropdown_countries(country_options)],
                                     width=3,
                                 ),
                             ]
@@ -269,26 +253,26 @@ tab_compare_tool = (
                                                 "Left Filter",
                                                 style={
                                                     "textAlign": "center",
-                                                    "margin-top": 20,
+                                                    "marginTop": 20,
                                                 },
                                             )
                                         ]
                                     ),
                                     html.Div(
                                         html_elem_dropdown_genes(
-                                            start_all_gene_dict, g_id=1
+                                            gene_list, g_id=1
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_checklist_seq_tech(
-                                            start_seq_tech_dict, s_id=1
+                                            seq_tech_list, s_id=1
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_countries(
-                                            start_country_options, c_id=1
+                                            country_options, c_id=1
                                         ),
                                         className="mt-1",
                                     ),
@@ -314,25 +298,25 @@ tab_compare_tool = (
                                             "Right Filter",
                                             style={
                                                 "textAlign": "center",
-                                                "margin-top": 20,
+                                                "marginTop": 20,
                                             },
                                         )
                                     ),
                                     html.Div(
                                         html_elem_dropdown_genes(
-                                            start_all_gene_dict, g_id=2
+                                            gene_list, g_id=2
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_checklist_seq_tech(
-                                            start_seq_tech_dict, s_id=2
+                                            seq_tech_list, s_id=2
                                         ),
                                         className="mt-1",
                                     ),
                                     html.Div(
                                         html_elem_dropdown_countries(
-                                            start_country_options, c_id=2
+                                            country_options, c_id=2
                                         ),
                                         className="mt-1",
                                     ),
@@ -359,7 +343,7 @@ tab_compare_tool = (
                             dbc.Col(
                                 [
                                     html_elem_dropdown_aa_mutations_without_max(
-                                        [{"value": "no_mutation"}],
+                                        ["no_mutation"],
                                         title="Mutations unique for left selection",
                                         elem_id="left",
                                     ),
@@ -368,7 +352,7 @@ tab_compare_tool = (
                             dbc.Col(
                                 [
                                     html_elem_dropdown_aa_mutations_without_max(
-                                        [{"value": "no_mutation"}],
+                                        ["no_mutation"],
                                         title="Mutations in both selections",
                                         elem_id="both",
                                     )
@@ -377,7 +361,7 @@ tab_compare_tool = (
                             dbc.Col(
                                 [
                                     html_elem_dropdown_aa_mutations_without_max(
-                                        [{"value": "no_mutation"}],
+                                        ["no_mutation"],
                                         title="Mutations unique for right selection",
                                         elem_id="right",
                                     ),
@@ -519,7 +503,7 @@ def calculate_accumulator(ouput_df, column_profile="NUC_PROFILE"):
         inplace=True,
     )
     # a = ouput_df[column_profile].unique()
-    # logging_radar.debug(a)
+    # logging.debug(a)
     # ouput_df.to_csv("test-after.csv")
     ouput_df.reset_index(drop=True, inplace=True)
     return ouput_df
@@ -598,7 +582,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
             data = df.to_dict(orient="records")
             toggle_value = {"display": "block"}
         elif args.tool == "match":
-            _tmp_output = match_controller(args)
+            _tmp_output = data_manager.match_controller(args)
             if type(_tmp_output) == int:
                 output = _tmp_output
             elif type(_tmp_output) == str:
@@ -625,7 +609,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
                 toggle_value = {"display": "block"}
 
         elif args.tool == "dev":
-            get_freq_mutation(args)
+            data_manager.get_freq_mutation(args)
         else:
             output = "This command is not available."
 
@@ -652,8 +636,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
     # prevent_initial_call=True
 )
 def update_output_sonar_map(rows, columns):  # noqa: C901
-
-    # Callback handle sonar ouput to map.
+    # Callback handle sonar output to map.
 
     hidden_state = {"display": "none"}
 
@@ -852,9 +835,9 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
 """
 
 # This is the EXPLORE TOOL PART
-get_explore_callbacks(df_dict, date_slider, color_dict, location_coordinates)
+get_explore_callbacks(date_slider, color_dict, location_coordinates)
 
 # COMPARE PART
-get_compare_callbacks(df_dict, color_dict)
+#get_compare_callbacks(df_dict, color_dict)
 
-del df_dict
+#del df_dict

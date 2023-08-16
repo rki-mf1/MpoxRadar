@@ -12,12 +12,11 @@ import dash_bootstrap_components as dbc
 from dotenv import load_dotenv
 import pandas as pd
 
-from pages.app_controller import get_all_references
-from pages.app_controller import get_freq_mutation
-from pages.app_controller import get_value_by_reference
-from pages.app_controller import match_controller
-from pages.app_controller import sonarBasicsChild
+from ..util.SonarBasicsImpl import sonarBasicsChild
 from pages.libs.mpxsonar.src.mpxsonar.sonar import parse_args
+
+from data_management.data_manager import DataManager
+data_manager = DataManager.get_instance()
 
 load_dotenv()
 # stylesheet with the .dbc class
@@ -30,7 +29,7 @@ df = pd.DataFrame(
     }
 )
 # preload
-dat_checkbox_list_of_dict = get_all_references()
+dat_checkbox_list_of_dict = data_manager.get_all_references()
 server = app.server
 
 tool_checkbox_cards = html.Div(
@@ -346,7 +345,7 @@ app.layout = dbc.Container(
     Output("table1-results", "children"),
     Input(component_id="reference-selection", component_property="value"),
 )
-def checkbox(checked_value):
+""" def checkbox(checked_value):
     output_df = ""
     print(checked_value)
     if len(checked_value) == 0:
@@ -361,7 +360,7 @@ def checkbox(checked_value):
             output_df[0:5], striped=True, bordered=True, hover=True
         ),
     )
-
+ """
 
 @app.callback(
     Output(component_id="my-command", component_property="children"),
@@ -393,7 +392,7 @@ def update_output_sonar(n_clicks, commands):
             columns = [{"name": col, "id": col} for col in df.columns]
             data = df.to_dict(orient="records")
         elif args.tool == "match":
-            _tmp_output = match_controller(args)
+            _tmp_output = data_manager.match_controller(args)
             if type(_tmp_output) == int:
                 output = _tmp_output
             elif type(_tmp_output) == str:
@@ -403,7 +402,7 @@ def update_output_sonar(n_clicks, commands):
                 columns = [{"name": col, "id": col} for col in df.columns]
                 data = df.to_dict(orient="records")
         elif args.tool == "dev":
-            get_freq_mutation(args)
+            data_manager.get_freq_mutation(args)
         else:
             output = "This command is not available."
 

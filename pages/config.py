@@ -1,5 +1,4 @@
-import logging
-import os
+""" import logging
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -8,8 +7,6 @@ from dash import DiskcacheManager
 from dash.long_callback import CeleryLongCallbackManager
 from dotenv import load_dotenv
 from flask_caching import Cache
-import pandas as pd
-import plotly.express as px
 import redis
 import tomli
 
@@ -20,7 +17,6 @@ load_dotenv()
 # CONFIG
 SERVER = os.getenv("SERVER")
 DEBUG = os.getenv("DEBUG")
-DB_URL = os.getenv("DB_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL")
 # REDIS_URL =  os.getenv("REDIS_URL")
 #REDIS_BACKEND_URL = os.path.join(os.getenv("REDIS_URL"), os.getenv("REDIS_DB_BACKEND"))
@@ -32,11 +28,11 @@ if not os.path.exists(CACHE_DIR):
 
 
 def get_module_logger(mod_name):
-    """
+    
     format="MPXRadar:%(asctime)s %(levelname)-4s: %(message)s",
     level=LOG_LEVEL,
     datefmt="%Y-%m-%d %H:%M:%S",
-    """
+    
     logger = logging.getLogger(mod_name)
     if not logger.handlers:
         # Prevent logging from propagating to the root logger
@@ -56,19 +52,7 @@ logging_radar = get_module_logger("MPXRadar")
 # of the callback across all user sessions that are handled by a single server instance.
 # Each time a server process is restarted, the cache is cleared and a new UUID is generated.
 launch_uid = uuid4()
-# Determine version using pyproject.toml file
-try:
-    from importlib.metadata import version, PackageNotFoundError  # type: ignore
-except ImportError:  # pragma: no cover
-    from importlib_metadata import version, PackageNotFoundError  # type: ignore
 
-
-try:
-    __version__ = version(__name__)
-except PackageNotFoundError:  # pragma: no cover
-    with open("pyproject.toml", mode="rb") as pyproject:
-        pkg_meta = tomli.load(pyproject)["tool"]["poetry"]
-        __version__ = str(pkg_meta["version"])
 
 if "REST_IMPLEMENTATION" in os.environ:
     cache = DjangoAPI()
@@ -133,8 +117,14 @@ else:
         cache, expire=200, cache_by=[lambda: launch_uid]
     )
 
-
+ """
 # STRING
+
+import os
+import pandas as pd
+import plotly.express as px
+
+DB_URL = os.getenv("DB_URL")
 
 # load all data once
 location_coordinates = pd.read_csv("data/location_coordinates.csv")

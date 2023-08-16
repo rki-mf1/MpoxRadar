@@ -252,7 +252,7 @@ Output_mpxsonar = [
                     "top": "5px",
                     "right": "40%",
                     "width": "250px",
-                    "z-index": 9990,
+                    "zIndex": 9990,
                 },
             ),
         ]
@@ -365,7 +365,7 @@ Output_mpxsonar = [
                 title="Map:",
             ),
         ],
-        style={"z-index": 1230},
+        style={"zIndex": 1230},
     ),  # Accordion
 ]
 

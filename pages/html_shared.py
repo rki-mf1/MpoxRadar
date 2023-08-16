@@ -13,7 +13,7 @@ def html_elem_reference_radioitems(reference_options, start_ref_id, radio_id=0):
                     options=reference_options,
                     value=start_ref_id,
                     id=f"reference_radio_{radio_id}",
-                    style={"font-size": 16, "align-itmes": "center", "margin": "auto"},
+                    style={"fontSize": 16, "alignItems": "center", "margin": "auto"},
                 ),
             ]
         )
@@ -32,12 +32,13 @@ def html_elem_dropdown_genes(gene_options, g_id=0):
                         dbc.Spinner(
                             dcc.Dropdown(
                                 options=gene_options,
-                                value=[g["value"] for g in gene_options],
+                                value=gene_options,
                                 id=f"gene_dropdown_{g_id}",
                                 # maxHeight=200,  # just height of dropdown not choose option field
                                 optionHeight=35,  # height options in dropdown, not chosen options
                                 multi=True,
                                 searchable=True,
+                                style={"maxHeight": 200, "overflowY": "auto"},
                             ),
                             color="dark",
                             type="grow",
@@ -45,7 +46,6 @@ def html_elem_dropdown_genes(gene_options, g_id=0):
                     ),
                 ],
                 style={
-                    "overflow-y": "auto",  # without not scrollable, just cut
                     "maxHeight": 300,
                     "minHeight": 200,
                 },  # height field
@@ -74,9 +74,7 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                     dbc.Spinner(
                         dcc.Dropdown(
                             options=mutation_options,
-                            value=[
-                                mut_dict["value"] for mut_dict in mutation_options[0:20]
-                            ],
+                            value=mutation_options[0:20],
                             id=f"mutation_dropdown_{elem_id}",
                             optionHeight=50,
                             multi=True,
@@ -87,7 +85,7 @@ def html_elem_dropdown_aa_mutations_without_max(mutation_options, title, elem_id
                     ),
                     html.Br(),
                 ],
-                style={"overflow-y": "auto", "maxHeight": 300, "minHeight": 200},
+                style={"overflowY": "auto", "maxHeight": 300, "minHeight": 200},
             ),
             dbc.CardFooter(
                 [
@@ -147,16 +145,12 @@ def html_elem_checklist_seq_tech(seq_tech_options, s_id=0):
                     dbc.Spinner(
                         dbc.Checklist(
                             options=seq_tech_options,
-                            value=[
-                                s["value"]
-                                for s in seq_tech_options
-                                if not s["disabled"]
-                            ],
+                            value=[s for s in seq_tech_options if s != "disabled"],
                             id=f"seq_tech_dropdown_{s_id}",
                             labelStyle={"display": "block"},
                             style={
                                 "maxHeight": 200,
-                                "overflowY": "scroll",
+                                "overflowY": "auto",
                             },
                         ),
                         color="primary",
@@ -189,7 +183,7 @@ def html_elem_dropdown_countries(countries, c_id=0):
                     dbc.Spinner(
                         dcc.Dropdown(
                             options=countries,
-                            value=[c["value"] for c in countries if not c["disabled"]],
+                            value=[c for c in countries if c != "disabled"],
                             id=f"country_dropdown_{c_id}",
                             # maxHeight=200,
                             optionHeight=35,
@@ -201,7 +195,7 @@ def html_elem_dropdown_countries(countries, c_id=0):
                     ),
                 ],
                 style={
-                    "overflow-y": "auto",  # without not scrollable, just cut
+                    "overflowY": "auto",  # without not scrollable, just cut
                     "maxHeight": 300,
                     "minHeight": 200,
                 },  # height field
@@ -237,9 +231,9 @@ def html_complete_partial_radio(tab):
                         value="complete",
                         inline=True,
                         style={
-                            "font-size": 20,
-                            "font-weight": "bold",
-                            "align-itmes": "center",
+                            "fontSize": 20,
+                            "fontWeight": "bold",
+                            "alignItems": "center",
                             "textAlign": "center",
                             "overflowX": "auto",
                         },
@@ -269,7 +263,6 @@ def html_disclaimer_seq_errors(tool, only_cds=False):
 
 
 def html_table(df, title, tool):
-
     Output_table_standard = dbc.Card(
         [
             html.H3(title),
