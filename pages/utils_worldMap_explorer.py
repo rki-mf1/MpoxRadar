@@ -10,6 +10,10 @@ import plotly.express as px
 from data_management.api.django.django_api import DjangoAPI
 from scipy.stats import linregress
 
+from data_management.data_manager import DataManager
+
+data_manager = DataManager.get_instance()
+
 
 class VariantMapAndPlots(object):
     """
@@ -31,7 +35,6 @@ class VariantMapAndPlots(object):
 
     def __init__(
         self,
-        df_dict: dict,
         date_slider,  # <class 'pages.utils_worldMap_explorer.DateSlider'>
         reference_id: int,
         complete_partial_radio: str,
@@ -198,7 +201,6 @@ class WorldMap(VariantMapAndPlots):
 
     def __init__(
         self,
-        df_dict: dict,
         date_slider,  # <class 'pages.utils_worldMap_explorer.DateSlider'>
         reference_id: int,
         complete_partial_radio: str,
@@ -210,7 +212,6 @@ class WorldMap(VariantMapAndPlots):
         color_dict: dict,
         location_coordinates: dict,
     ):
-
         super().__init__(
             df_dict,
             date_slider,
@@ -353,7 +354,6 @@ class DetailPlots(VariantMapAndPlots):
 
     def __init__(
         self,
-        df_dict: dict,
         date_slider,  # <class 'pages.utils_worldMap_explorer.DateSlider'>
         reference_id: int,
         complete_partial_radio: str,
@@ -367,9 +367,7 @@ class DetailPlots(VariantMapAndPlots):
         genes: list,
         clicked_country: str,
     ):
-
         super().__init__(
-            df_dict,
             date_slider,
             reference_id,
             complete_partial_radio,
@@ -427,7 +425,7 @@ class DetailPlots(VariantMapAndPlots):
 
     def calculate_ticks_from_dates(
         self, dates: set[datetime.date], date_numbers: set[int]
-    ) -> (list[int], list[datetime.date]):
+    ) -> tuple[list[int], list[datetime.date]]:
         """
         set tickvals and ticktext for displaying dates in plot
         show only 6 dates for readability: /6
@@ -444,7 +442,7 @@ class DetailPlots(VariantMapAndPlots):
         self,
         clicked_country: str,
         genes: list[str],
-    ) -> (str, int, int):
+    ) -> tuple[str, int, int]:
         """
         define country to show detail plots depending on:
             1. user click data,
@@ -909,8 +907,8 @@ class DateSlider:
     handles dates and date slider below map
     """
 
-    def __init__(self, api: DjangoAPI):
-        dates_in_propertyViews = api.get_instance().get_property_dates()
+    def __init__(self):
+        dates_in_propertyViews = data_manager.get_property_dates()
         # TODO hard coded min date
         defined_min_date = datetime.strptime(
             "2022-01-01", "%Y-%m-%d"
