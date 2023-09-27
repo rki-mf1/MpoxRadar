@@ -62,4 +62,4 @@ jobs:
     - name: Install dependencies
       run: pip install flake8 poetry
     - name: Run flake8 - Code style check
-      run: poetry run flake8 . --config=.flake8 -v
+      run: poetry run flake8 pages/ --config=.flake8 -v

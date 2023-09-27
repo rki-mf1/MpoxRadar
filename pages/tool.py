@@ -609,9 +609,9 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
             toggle_value = {"display": "block"}
         elif args.tool == "match":
             _tmp_output = match_controller(args)
-            if type(_tmp_output) == int:
+            if type(_tmp_output) is int:
                 output = _tmp_output
-            elif type(_tmp_output) == str:
+            elif type(_tmp_output) is str:
                 output = _tmp_output
             else:
                 df = _tmp_output
