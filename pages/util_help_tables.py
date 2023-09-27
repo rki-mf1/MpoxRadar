@@ -32,11 +32,11 @@ row1 = html.Tr(
 row2 = html.Tr(
     [
         html.Td("MacOS"),
-        html.Td("HighSierra"),
-        html.Td("Not tested"),
-        html.Td("Not tested"),
+        html.Td("Monterey 12.1"),
+        html.Td("115.0.5790.114"),
+        html.Td("115.0.3"),
         html.Td("n/a"),
-        html.Td("Not tested"),
+        html.Td("Version 15.2 (17612.3.6.1.6)"),
     ]
 )
 row3 = html.Tr(
