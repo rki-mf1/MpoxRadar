@@ -40,7 +40,7 @@ layout = html.Div(
                                                     target="_blank",
                                                 ),
                                                 """. This alarming behavior demands action and highlights the need for genomic surveillance and spatio-temporal analyses.
-                                                Therefore, the Robert Koch Institute (RKI) together with the Hasso Platter Institute (HPI) joined forces to produce such a dashboard with a strong database background, inspired by the earlier work in our group 
+                                                Therefore, the Robert Koch Institute (RKI) together with the Hasso Platter Institute (HPI) joined forces to produce such a dashboard with a strong database background, inspired by the earlier work in our group
                                                 on """,
                                                 dcc.Link(
                                                     html.A("CovSonar"),
@@ -106,8 +106,8 @@ layout = html.Div(
                                 dbc.Col(
                                     """With this web server, we provide tools to explore and compare metadata from MPXV sequences available from our data source (listed below).
                                 Furthermore, we provide an advanced tool to enable more detailed queries. The chosen data using our tools is visualised and presented in downloadable tables.
-                                As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed, 
-                                aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users. 
+                                As Mpox does not have one defined reference genome, we provide multiple reference genomes to choose between. All sample genomes are pre-processed,
+                                aligned to multiple reference genomes, followed by variant calling on our servers to enable quick analysis and searches for our users.
                                 We confirm that this website is free and open to all users and there is no login requirement. Below is a simplified technical overview of our tool:
                                 """,
                                 ),
@@ -159,7 +159,7 @@ layout = html.Div(
                                 dbc.Col(
                                     [
                                         """
-                                    For more information on the tool, we re-direct you to our peer-reviewed and published paper (see "How to cite?"), and to our GitHub 
+                                    For more information on the tool, we re-direct you to our peer-reviewed and published paper (see "How to cite?"), and to our GitHub
                                     README pages (see "Link to code").
                                     We have described the functionalities of our tools in detail in the """,
                                         dcc.Link(
@@ -188,16 +188,18 @@ layout = html.Div(
                         [
                             dbc.Row(
                                 dbc.Col(
-                                    """In this project, we collaborated between three groups: 
-                                    the Data Analytics & Computational Statistics, Hasso Plattner Institute, University of Potsdam, Germany, and 
-                                    Bioinformatics and Systems Biology, Robert Koch Institute, Berlin, Germany, 
-                                    and Centre for Biological Threats and Special Pathogens, Robert Koch Institute, Berlin, Germany. 
-                                """,
-                                    dcc.Link(
-                                    html.A("Feel free to reach out to us!"),
-                                    href=("Contact"),
-                                    target="_blank",
-                                    ),
+                                    [
+                                        """In this project, we collaborated between three groups:
+                                        the Data Analytics & Computational Statistics, Hasso Plattner Institute, University of Potsdam, Germany, and
+                                        Bioinformatics and Systems Biology, Robert Koch Institute, Berlin, Germany,
+                                        and Centre for Biological Threats and Special Pathogens, Robert Koch Institute, Berlin, Germany.
+                                        """,
+                                        dcc.Link(
+                                            html.A("Feel free to reach out to us!"),
+                                            href=("Contact"),
+                                            target="_blank",
+                                        ),
+                                    ]
                                 ),
                             ),
                             dbc.Row(
@@ -506,12 +508,10 @@ layout = html.Div(
                         [
                             """
                                 Our work has been published and peer-reviewed in the Nucleic Acids Research (web server issue) in 2023. To cite us, please use the following paper:
-                                'Ferdous Nasri and others, MpoxRadar: a worldwide MPXV genomic surveillance dashboard, Nucleic Acids Research, Volume 51, Issue W1, 
+                                'Ferdous Nasri and others, MpoxRadar: a worldwide MPXV genomic surveillance dashboard, Nucleic Acids Research, Volume 51, Issue W1,
                                 5 July 2023, Pages W331–W337, """,
                             dcc.Link(
-                                html.A(
-                                    "https://doi.org/10.1093/nar/gkad325"
-                                ),
+                                html.A("https://doi.org/10.1093/nar/gkad325"),
                                 href="https://doi.org/10.1093/nar/gkad325",
                                 target="_blank",
                             ),
@@ -523,7 +523,7 @@ layout = html.Div(
                     html.Div(
                         [
                             """
-                                We want to give a big thanks to all our test users, especially in the central German Public Health institute, for giving us their valuable feedback 
+                                We want to give a big thanks to all our test users, especially in the central German Public Health institute, for giving us their valuable feedback
                                 and helping us better our tool. Furthermore, we want to thank the creators of """,
                             dcc.Link(
                                 html.A("CovRadar"),
@@ -536,7 +536,7 @@ layout = html.Div(
                                 href=("https://github.com/rki-mf1/covsonar"),
                                 target="_blank",
                             ),
-                            """ for showing the need for genomic surveillance dashboard and database for SARS-CoV-2, therefore inspiring the initiation of this project. 
+                            """ for showing the need for genomic surveillance dashboard and database for SARS-CoV-2, therefore inspiring the initiation of this project.
                             We are always open to feedback and promise a continued support and developement of our tool. """,
                             dcc.Link(
                                 html.A("Don't hesitate to get in touch."),
