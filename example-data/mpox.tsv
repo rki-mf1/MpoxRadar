@@ -1,0 +1,7 @@
+ID	ISOLATE	LENGTH	COUNTRY	GEO_LOCATION	RELEASE_DATE	COLLECTION_DATE	SEQ_TECH	HOST	GENOME_COMPLETENESS		
+OP764614.1	MPXV/Germany/2022/RKI556	197140	Germany	Germany	2022-11-03	2022-06-01	Illumina	Homo sapiens	complete
+OP764615.1	MPXV/Germany/2022/RKI557	197140	Germany	Germany	2022-11-03	2022-06-01	Illumina	Homo sapiens	complete
+OP764618.1	MPXV/Germany/2022/RKI560	197137	Germany	Germany	2022-11-03	2022-06-01	Illumina	Homo sapiens	complete
+OP764617.1	MPXV/Germany/2022/RKI559	197141	Germany	Germany	2022-11-03	2022-06-01	Illumina	Homo sapiens	complete
+OP764616.1	MPXV/Germany/2022/RKI558	197141	Germany	Germany	2022-11-03	2022-06-01	Illumina	Homo sapiens	complete
+

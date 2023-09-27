@@ -465,7 +465,7 @@ class sonarBasics(object):
         # importing sequences
         if fasta:
             cache.add_fasta(*fasta, propdict=properties)
-            aligner = sonarAligner(outdir=cachedir)
+            aligner = sonarAligner(cache_outdir=cachedir)
             l = len(cache._samplefiles_to_profile)
             # start alignment
             with WorkerPool(n_jobs=threads, start_method="fork") as pool, tqdm(
@@ -826,7 +826,7 @@ class sonarBasics(object):
     def set_key(dictionary, key, value):
         if key not in dictionary:
             dictionary[key] = value
-        elif type(dictionary[key]) == list:
+        elif type(dictionary[key]) is list:
             dictionary[key].append(value)
         else:
             dictionary[key] = [dictionary[key], value]
