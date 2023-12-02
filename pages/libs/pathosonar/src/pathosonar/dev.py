@@ -1,9 +1,9 @@
 from Bio.Align.Applications import MafftCommandline
 from tqdm import tqdm
 
-from pathosonar.dbm import sonarDBManager
-from pathosonar.logging import LoggingConfigurator
-from pathosonar.utils import calculate_mutation_type_DNA
+from .dbm import sonarDBManager
+from .logging import LoggingConfigurator
+from .utils import calculate_mutation_type_DNA
 
 # Initialize logger
 LOGGER = LoggingConfigurator.get_logger()
