@@ -1,0 +1,25 @@
+#!/bin/bash
+
+conda activate mpxsonar-dev
+
+sonar setup
+
+sonar add-ref --gbk refs/NC_063383.1.gb
+sonar add-ref --gbk refs/NC_003310.1.gb
+sonar add-ref --gbk refs/ON563414.3.gb
+sonar add-ref --gbk refs/ON568298.1.gb
+sonar add-ref --gbk refs/ON585033.1.gb
+sonar add-ref --gbk refs/MN648051.1.gb
+sonar add-ref --gbk refs/MT903344.1.gb
+
+
+# ------------------------------
+sonar add-prop --name COLLECTION_DATE --dtype text --descr "collection date"
+sonar add-prop --name RELEASE_DATE --dtype date --descr "A release date"
+sonar add-prop --name ISOLATE --dtype text --descr "isolate from where"
+sonar add-prop --name SEQ_TECH --dtype text --descr "sequencing technologies"
+sonar add-prop --name LENGTH --dtype integer --descr "dna length"
+sonar add-prop --name COUNTRY --dtype text --descr "A country"
+sonar add-prop --name GEO_LOCATION --dtype text --descr "A GEO_LOCATION"
+# sonar add-prop --name HOST --dtype text --descr "A host"
+# sonar add-prop --name FAMILY --dtype text --descr "A Family"
