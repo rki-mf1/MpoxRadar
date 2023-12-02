@@ -35,6 +35,7 @@ from pages.html_shared import html_elem_dropdown_countries
 from pages.html_shared import html_elem_dropdown_genes
 from pages.html_shared import html_elem_reference_radioitems
 from pages.html_shared import html_table
+from pages.libs.pathosonar.src.pathosonar.sonar import parse_args
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
@@ -52,7 +53,6 @@ from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
 from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
-from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
 
 
