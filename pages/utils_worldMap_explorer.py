@@ -926,7 +926,7 @@ class DateSlider:
         )
         # TODO hard coded min date
         defined_min_date = datetime.strptime(
-            "2022-01-01", "%Y-%m-%d"
+            "1960-01-01", "%Y-%m-%d"
         ).date()  # min(dates)
         if min(dates_in_propertyViews) < defined_min_date:
             self.min_date = defined_min_date

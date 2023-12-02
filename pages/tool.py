@@ -35,6 +35,7 @@ from pages.html_shared import html_elem_dropdown_countries
 from pages.html_shared import html_elem_dropdown_genes
 from pages.html_shared import html_elem_reference_radioitems
 from pages.html_shared import html_table
+from pages.libs.pathosonar.src.pathosonar.sonar import parse_args
 from pages.util_tool_mpoxsonar import Output_mpxsonar
 from pages.util_tool_mpoxsonar import query_card
 from pages.util_tool_summary import descriptive_summary_panel
@@ -52,7 +53,6 @@ from .app_controller import match_controller
 from .app_controller import sonarBasicsChild
 from .compare_callbacks import get_compare_callbacks
 from .explore_callbacks import get_explore_callbacks
-from .libs.mpxsonar.src.mpxsonar.sonar import parse_args
 from .utils import get_color_dict
 
 
@@ -482,12 +482,14 @@ def calculate_coordinate(ouput_df, selected_column):
     TODO:     1. improve performance of map
     """
     # concate the coordinate
-    ouput_df = ouput_df[selected_column]
-    result = pd.merge(
-        ouput_df, location_coordinates, left_on="COUNTRY", right_on="name"
-    )
-    result.drop(columns=["location_ID", "name"], inplace=True)
-
+    try:
+        ouput_df = ouput_df[selected_column]
+        result = pd.merge(
+            ouput_df, location_coordinates, left_on="COUNTRY", right_on="name"
+        )
+        result.drop(columns=["location_ID", "name"], inplace=True)
+    except Exception as e:
+        print(e)
     # result["number"] = [
     #    len(x.split(",")) for x in result["NUC_PROFILE"]
     # ]  # just count all mutation occur in each sample.
@@ -599,16 +601,20 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
     toggle_value = {"display": "none"}
     # get the start time
     st = time.time()
+
     try:
         args = parse_args(_list)
         output = ""
-        if args.tool == "list-prop":
+
+        if args.command == "list-prop":
             df = sonarBasicsChild.list_prop()
             columns = [{"name": col, "id": col} for col in df.columns]
             data = df.to_dict(orient="records")
             toggle_value = {"display": "block"}
-        elif args.tool == "match":
+        elif args.command == "match":
+
             _tmp_output = match_controller(args)
+            # print(_tmp_output)
             if type(_tmp_output) is int:
                 output = _tmp_output
             elif type(_tmp_output) is str:
@@ -634,7 +640,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
                 data = df.to_dict(orient="records")
                 toggle_value = {"display": "block"}
 
-        elif args.tool == "dev":
+        elif args.command == "dev":
             get_freq_mutation(args)
         else:
             output = "This command is not available."
@@ -643,6 +649,8 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
         output = exc.message
     except SystemExit:
         output = "error: unrecognized arguments/commands or it is not a valid variant definition."
+    except Exception as e:
+        print(e)
     # get the end time
     et = time.time()
     # get the execution time
@@ -666,7 +674,6 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     # Callback handle sonar ouput to map.
 
     hidden_state = {"display": "none"}
-
     if rows is None or len(rows) == 0:
         hidden_state = {"display": "block"}
         fig = go.Figure()
@@ -688,11 +695,12 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df = pd.DataFrame(rows, columns=[c["name"] for c in columns])
     selected_column = [
         "COUNTRY",
-        "AA_PROFILE",
-        "REFERENCE_ACCESSION",
+        "PROTEOMIC_PROFILE",
+        "REFERENCE",
     ]
-    column_profile = "AA_PROFILE"
+    column_profile = "PROTEOMIC_PROFILE"
     # table_df = table_df[selected_column]
+
     table_df = calculate_coordinate(table_df, selected_column)
     # table_df["Case"] = table_df.groupby(["COUNTRY","REFERENCE_ACCESSION","AA_PROFILE"])["AA_PROFILE"].transform("count")
     # FIXME: Remove emtpy mutation profile, please disable this IF needed,
@@ -714,7 +722,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df.drop_duplicates(
         subset=[
             "COUNTRY",
-            "REFERENCE_ACCESSION",
+            "REFERENCE",
             column_profile,
             "country_ID",
         ],
@@ -737,7 +745,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
     table_df = table_df.sort_values(by=["Case"], ascending=False)
     # print(table_df)
     table_df["mutation_list"] = (
-        table_df["AA_PROFILE"] + " " + table_df["Case"].astype(str)
+        table_df[column_profile] + " " + table_df["Case"].astype(str)
     )
     table_df.reset_index(drop=True, inplace=True)
     fig = px.scatter_mapbox(
@@ -754,9 +762,9 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
             "lat": False,
             "lon": False,
             "mutation_list": False,
-            "AA_PROFILE": True,
+            "PROTEOMIC_PROFILE": False,
             "Case": True,
-            "REFERENCE_ACCESSION": True,
+            "REFERENCE": True,
             "COUNTRY": True,
         },  # ["NUC_PROFILE", "COUNTRY", "RELEASE_DATE", "CaseNumber"],
         center=dict(lat=53, lon=9),
@@ -764,7 +772,7 @@ def update_output_sonar_map(rows, columns):  # noqa: C901
         color="mutation_list",
         color_discrete_sequence=color_schemes,
     )
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, showlegend=False)
 
     # update legend
 

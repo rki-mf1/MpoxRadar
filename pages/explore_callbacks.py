@@ -202,7 +202,6 @@ def get_explore_callbacks(  # noqa: C901
             color_dict,
             location_coordinates,
         )
-
         fig = world_map_instance.get_world_map(method)
         # layout: {'geo.projection.rotation.lon': -99.26450411962647,
         #          'geo.center.lon': -99.26450411962647,
