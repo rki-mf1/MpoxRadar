@@ -230,7 +230,7 @@ def get_value_by_reference(checked_ref):
     for ref in checked_ref:
         print("Query " + ref)
         _df = sonarBasicsChild.match(DB_URL, reference=ref)
-        if type(_df) == str:
+        if type(_df) is str:
             continue
         output_df = pd.concat([output_df, _df], ignore_index=True)
     return output_df
@@ -266,7 +266,7 @@ def get_value_by_filter(checked_ref, mut_checklist, seqtech_checklist):
         _df = sonarBasicsChild.match(
             DB_URL, profiles=mut_profiles, reference=ref, propdict=propdict
         )
-        if type(_df) == str:
+        if type(_df) is str:
             continue
         output_df = pd.concat([output_df, _df], ignore_index=True)
     return output_df

@@ -22,7 +22,17 @@ jobs:
           cd /opt/MpoxRadar/
           sudo git checkout dev
           sudo git pull
-
+    - name: Create a new cache...
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        port: 22
+        script: |
+          cd /opt/MpoxRadar/
+          bash build_cache.sh
     - name: Restart the application after deployment
       uses: appleboy/ssh-action@master
       with:

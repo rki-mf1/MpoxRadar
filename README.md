@@ -1,5 +1,5 @@
 # MpoxRadar-frontend
-MpoxRadar is a worldwide interactive dashboard for genomic surveillance of Mpox (Monkeypox virus).
+MpoxRadar is a worldwide interactive dashboard for genomic surveillance of MPXV (MonkeyPox virus).
 
 
 <img src="docs/MpoxRadar-GraphicalAbstract.drawio.png"
