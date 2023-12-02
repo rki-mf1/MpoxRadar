@@ -44,7 +44,6 @@ class sonarBasicsChild(sonarUtils):
             output = """The current MpoxSonar in the MpoxRadar is
             not supporting the save-output-to-file command (-o). """
             return output
-
         with sonarDBManager(db, debug=debug) as dbm:
             if reference is None:
                 reference = dbm.get_default_reference_accession()
@@ -176,7 +175,7 @@ def match_controller(args):  # noqa: C901
             valid_output_column = "all"
             # reserved_props[pname] = getattr(args, pname)
     format = "count" if args.count else args.format
-    # print(props)
+
     output = sonarBasicsChild.match(
         args.db,
         profiles=args.profile,

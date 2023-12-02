@@ -601,15 +601,18 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
     toggle_value = {"display": "none"}
     # get the start time
     st = time.time()
+
     try:
         args = parse_args(_list)
         output = ""
-        if args.tool == "list-prop":
+
+        if args.command == "list-prop":
             df = sonarBasicsChild.list_prop()
             columns = [{"name": col, "id": col} for col in df.columns]
             data = df.to_dict(orient="records")
             toggle_value = {"display": "block"}
-        elif args.tool == "match":
+        elif args.command == "match":
+
             _tmp_output = match_controller(args)
             # print(_tmp_output)
             if type(_tmp_output) is int:
@@ -637,7 +640,7 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
                 data = df.to_dict(orient="records")
                 toggle_value = {"display": "block"}
 
-        elif args.tool == "dev":
+        elif args.command == "dev":
             get_freq_mutation(args)
         else:
             output = "This command is not available."
@@ -646,6 +649,8 @@ def update_output_sonar(n_clicks, commands):  # noqa: C901
         output = exc.message
     except SystemExit:
         output = "error: unrecognized arguments/commands or it is not a valid variant definition."
+    except Exception as e:
+        print(e)
     # get the end time
     et = time.time()
     # get the execution time
