@@ -14,9 +14,9 @@ from pages.config import DB_URL
 from pages.config import logging_radar
 from pages.config import redis_manager
 from pages.DBManager import DBManager
-from pages.libs.pathosonar.src.pathosonar.dbm import sonarDBManager
-from pages.libs.pathosonar.src.pathosonar.utils import sonarUtils
 from pages.utils import generate_96_mutation_types
+from .libs.pathosonar.src.pathosonar.dbm import sonarDBManager
+from .libs.pathosonar.src.pathosonar.utils import sonarUtils
 
 
 # CLASS
