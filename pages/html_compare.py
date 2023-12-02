@@ -14,7 +14,7 @@ def html_date_picker(d_id):
                 dbc.Label("Date interval:"),
                 dcc.DatePickerRange(
                     id=f"date_picker_range_{d_id}",
-                    start_date="2022-01-01",
+                    start_date="1960-01-01",
                     end_date=today,
                     min_date_allowed=date(1960, 1, 1),
                     max_date_allowed=today,

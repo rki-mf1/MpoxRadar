@@ -6,6 +6,7 @@ import json
 import sys
 from textwrap import fill
 import time
+from typing import List
 
 import pandas as pd
 
@@ -14,12 +15,12 @@ from pages.config import logging_radar
 from pages.config import redis_manager
 from pages.DBManager import DBManager
 from pages.utils import generate_96_mutation_types
-from .libs.mpxsonar.src.mpxsonar.basics import sonarBasics
-from .libs.mpxsonar.src.mpxsonar.dbm import sonarDBManager
+from .libs.pathosonar.src.pathosonar.dbm import sonarDBManager
+from .libs.pathosonar.src.pathosonar.utils import sonarUtils
 
 
 # CLASS
-class sonarBasicsChild(sonarBasics):
+class sonarBasicsChild(sonarUtils):
     """
     this class inherit from sonarBasics to provides sonarBasics functionalities and intelligence
     """
@@ -28,8 +29,8 @@ class sonarBasicsChild(sonarBasics):
     @staticmethod
     def match(
         db,
-        profiles=[],
-        reserved_props_dict={},
+        profiles: List[str] = [],
+        samples: List[str] = [],
         propdict={},
         reference=None,
         outfile=None,
@@ -45,18 +46,21 @@ class sonarBasicsChild(sonarBasics):
             return output
 
         with sonarDBManager(db, debug=debug) as dbm:
-            if format == "vcf" and reference is None:
+            if reference is None:
                 reference = dbm.get_default_reference_accession()
-
-            cursor = dbm.match(
-                *profiles,
-                reserved_props=reserved_props_dict,
-                properties=propdict,
-                reference_accession=reference,
-                format=format,
-                output_column=output_column,
-                showNX=showNX,
-            )
+            try:
+                cursor = dbm.match(
+                    profiles=profiles,
+                    samples=samples,
+                    properties=propdict,
+                    reference_accession=reference,
+                    format=format,
+                    output_columns=output_column,
+                    filter_n=not showNX,
+                    filter_x=not showNX,
+                )
+            except Exception as e:
+                print(e)
             if format == "csv" or format == "tsv":
                 # cursor => list of dict
                 df = pd.DataFrame(cursor)
@@ -138,12 +142,12 @@ def get_freq_mutation(args):
     with sonarDBManager(args.db, readonly=False) as dbm:
         cursor = dbm.our_match()
         df = pd.DataFrame(cursor)
-        print(df)
+        # print(df)
+        return df
 
 
 def match_controller(args):  # noqa: C901
     props = {}
-    reserved_props = {}
 
     with sonarDBManager(args.db, readonly=False, debug=args.debug) as dbm:
         if args.reference:
@@ -170,23 +174,14 @@ def match_controller(args):  # noqa: C901
                 )
         else:
             valid_output_column = "all"
-    # for reserved keywords
-    reserved_key = ["sample"]
-    for pname in reserved_key:
-        if hasattr(args, pname):
-            if pname == "sample" and len(getattr(args, pname)) > 0:
-                # reserved_props[pname] = set([x.strip() for x in args.sample])
-                reserved_props = sonarBasics.set_key(
-                    reserved_props, pname, getattr(args, pname)
-                )
             # reserved_props[pname] = getattr(args, pname)
     format = "count" if args.count else args.format
     # print(props)
     output = sonarBasicsChild.match(
         args.db,
-        args.profile,
-        reserved_props,
-        props,
+        profiles=args.profile,
+        samples=args.sample,
+        propdict=props,
         outfile=args.out,
         output_column=valid_output_column,
         debug=args.debug,
